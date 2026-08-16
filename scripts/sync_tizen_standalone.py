@@ -17,6 +17,7 @@ def main():
         'index.html',
         'bootstrap.js',
         'runtime-version.json',
+        'brand-runtime.js',
         'main.js',
         'numeric-remote.js',
         'remote-input.js',
