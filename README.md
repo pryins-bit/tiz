@@ -2,9 +2,9 @@
 
 This repository is both a **TizenBrew application module** and the source of its Korean TV playlist.
 
-## One-click TizenBrew setup
+## Recommended path: TizenBrew module
 
-In TizenBrew, use **Add GitHub** and add:
+In the actual TizenBrew app, use **Add GitHub** and add:
 
 `https://github.com/pryins-bit/tiz`
 
@@ -13,6 +13,20 @@ After that, open **Korea TV** from TizenBrew. No QR pairing and no manual M3U UR
 `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u`
 
 The player starts the first available channel automatically, supports remote channel switching, and skips channels that fail during the current session.
+
+This module path is distinct from the separate **TizenBrew Installer** screen that shows `Update TizenBrew`, `Install from USB`, and `Install from GitHub`.
+
+## Standalone WGT / TizenBrew Installer
+
+The target TV is Samsung `KU50UA7050FXKR` on Tizen 6.0. TizenBrew Installer only performs its local package re-sign flow on Tizen 7 or newer, so a raw ZIP renamed to `.wgt` is not sufficient on this TV and fails with certificate errors such as `118, -12`.
+
+`.github/workflows/build-standalone.yml` now packages `KoreaTV.wgt` with Tizen Studio and verifies that both `author-signature.xml` and `signature1.xml` are present before publication. The rolling GitHub Release remains tagged `standalone-latest`.
+
+In TizenBrew Installer, **Install from GitHub** should use:
+
+`pryins-bit/tiz`
+
+The CI signing path follows the old-Tizen Tizen packaging model: an author signature plus the Tizen Studio public distributor signer. The CI-generated author key is currently ephemeral, so a future standalone binary update may require uninstall/reinstall unless a persistent author key is later configured as an encrypted repository secret. Never commit a signing private key.
 
 ## Mom TV Home overlay
 
@@ -47,4 +61,4 @@ This repository does not host, proxy, decrypt, or bypass access controls for vid
 
 ## Verification boundary
 
-Repository CI can verify JSON/JavaScript syntax and playlist structure. External HLS probes help remove obviously stale entries, but **real-device playback on the target Samsung TV remains the final check** because network policy, geo restrictions and Tizen codec behavior can differ.
+Repository CI can verify JSON/JavaScript syntax, manifest structure, WGT signature files, and playlist structure. External HLS probes help remove obviously stale entries, but **real-device installation and playback on the target Samsung TV remain the final checks** because device certificate policy, network policy, geo restrictions, and Tizen codec behavior can differ.
