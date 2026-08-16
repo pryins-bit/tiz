@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import json
+import struct
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def png_size(path: Path):
+    data = path.read_bytes()
+    assert data.startswith(b'\x89PNG\r\n\x1a\n'), 'icon.png is not a PNG'
+    assert data[12:16] == b'IHDR', 'icon.png missing IHDR'
+    return struct.unpack('>II', data[16:24])
+
+
+def main():
+    package = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))
+    assert package.get('appName') == '수니TV', 'TizenBrew appName must be 수니TV'
+    assert 'icon.png' in package.get('files', []), 'TizenBrew package must ship icon.png'
+
+    icon = ROOT / 'icon.png'
+    assert icon.exists(), 'icon.png missing'
+    width, height = png_size(icon)
+    assert width == height and width >= 256, f'launcher icon too small: {width}x{height}'
+
+    config = ROOT / 'tizen-standalone' / 'config.xml'
+    root = ET.parse(config).getroot()
+    ns = {'w': 'http://www.w3.org/ns/widgets'}
+    icon_node = root.find('w:icon', ns)
+    name_node = root.find('w:name', ns)
+    assert icon_node is not None and icon_node.attrib.get('src') == 'icon.png', 'standalone config must use icon.png'
+    assert name_node is not None and (name_node.text or '').strip() == '수니TV', 'standalone app name must be 수니TV'
+
+    index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
+    assert '<title>수니TV</title>' in index
+    assert '수니</span><span class="suni-tv">TV' in index
+    assert 'KOREA TV' not in index, 'old in-app KOREA TV brand restored'
+
+    adapter = (ROOT / 'app' / 'avplay-adapter.js').read_text(encoding='utf-8')
+    assert 'MOM_PIP_RECT = { x: 0, y: 0, width: 1240, height: 1080 }' in adapter
+    assert 'setMomPip' in adapter and 'setFullscreen' in adapter
+    assert 'api.open-meteo.com' in adapter
+    assert '서울 강남' in adapter and '대구 대명동' in adapter
+    assert '37.5172,35.8482' in adapter
+    assert '127.0473,128.5771' in adapter
+
+    sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
+    assert "ICON = ROOT / 'icon.png'" in sync
+    assert "shutil.copy2(ICON, DST / 'icon.png')" in sync
+
+    print('Suni TV branding + launcher icon + Mom PIP + Seoul/Daegu weather contract OK')
+
+
+if __name__ == '__main__':
+    main()
