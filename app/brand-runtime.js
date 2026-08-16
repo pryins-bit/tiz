@@ -28,6 +28,24 @@
     };
   }
 
+  function ensureStyle() {
+    if (document.getElementById('runtimeBrandStyle')) return;
+    var style = document.createElement('style');
+    style.id = 'runtimeBrandStyle';
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode(
+      '.runtime-branded{display:flex;align-items:center;gap:14px}' +
+      '.runtime-brand-icon{display:block;object-fit:contain;flex:0 0 auto}' +
+      '.home-brand .runtime-brand-icon{width:58px;height:58px;border-radius:13px}' +
+      '.home-brand .runtime-brand-label{font-size:54px;font-weight:900;letter-spacing:-2px}' +
+      '.mom-title .runtime-brand-icon{width:54px;height:54px;border-radius:12px}' +
+      '.mom-title .runtime-brand-label{font:inherit;font-weight:800}' +
+      '.mom-home.pip-active .mom-title .runtime-brand-icon{width:36px;height:36px;border-radius:8px}' +
+      '.mom-home.pip-active .mom-title{gap:9px}'
+    ));
+    document.head.appendChild(style);
+  }
+
   function iconNode(brand) {
     var img = document.createElement('img');
     img.className = 'runtime-brand-icon';
@@ -51,6 +69,7 @@
 
   function apply(brand) {
     brand = normalize(brand);
+    ensureStyle();
     diagnostics.loaded = true;
     diagnostics.name = brand.name;
     diagnostics.iconUrl = brand.icon_url;
