@@ -11,39 +11,81 @@
 </head>
 <body>
   <video id="video" autoplay playsinline></video>
+  <div id="dim" class="dim hidden"></div>
+
+  <section id="tvHome" class="tv-home hidden" aria-live="polite">
+    <header class="home-head">
+      <div>
+        <div class="home-brand">KOREA TV</div>
+        <div id="homeClock" class="home-clock"></div>
+      </div>
+      <div class="home-now">
+        <div class="eyebrow">NOW</div>
+        <div id="homeNowName" class="home-now-name">채널 불러오는 중…</div>
+      </div>
+    </header>
+
+    <div class="quick-grid" id="quickGrid">
+      <button class="quick-card focusable" data-action="continue"><span class="quick-icon">▶</span><b>TV 계속 보기</b><small>현재 채널로 돌아가기</small></button>
+      <button class="quick-card focusable" data-action="favorites"><span class="quick-icon">★</span><b>즐겨찾기</b><small id="favCount">0개</small></button>
+      <button class="quick-card focusable" data-action="recent"><span class="quick-icon">↶</span><b>최근 채널</b><small>최근 본 방송</small></button>
+      <button class="quick-card focusable" data-action="categories"><span class="quick-icon">▦</span><b>카테고리</b><small>공중파 · 영화 · 뉴스 등</small></button>
+      <button class="quick-card focusable" data-action="search"><span class="quick-icon">⌕</span><b>채널 검색</b><small>리모컨 키보드 지원</small></button>
+      <button class="quick-card focusable" data-action="mom"><span class="quick-icon">♥</span><b>엄마 TV 홈</b><small>일정 · 관심 시세</small></button>
+      <button class="quick-card focusable" data-action="health"><span class="quick-icon">✓</span><b>채널 상태</b><small id="healthText">실패 기록 없음</small></button>
+      <button class="quick-card focusable" data-action="report"><span class="quick-icon">!</span><b>현재 채널 제외</b><small>안 나오는 채널 기억</small></button>
+    </div>
+
+    <div class="home-section-head">
+      <div id="homeListTitle" class="home-section-title">즐겨찾기 / 최근 채널</div>
+      <div class="key-hints"><span class="red-dot"></span>홈 <span class="green-dot"></span>즐겨찾기 <span class="yellow-dot"></span>검색 <span class="blue-dot"></span>카테고리</div>
+    </div>
+    <div id="homeChannelList" class="channel-strip"></div>
+  </section>
+
+  <section id="browserPanel" class="browser-panel hidden">
+    <div class="browser-head">
+      <div>
+        <div id="browserTitle" class="browser-title">채널</div>
+        <div id="browserSubtitle" class="browser-subtitle"></div>
+      </div>
+      <button class="close-button focusable" data-action="close-browser">닫기</button>
+    </div>
+    <div id="categoryTabs" class="category-tabs"></div>
+    <div id="browserList" class="browser-list"></div>
+  </section>
+
+  <section id="searchPanel" class="search-panel hidden">
+    <div class="search-box">
+      <div class="search-title">채널 검색</div>
+      <input id="searchInput" class="search-input" type="text" autocomplete="off" placeholder="예: 중국, 영화, KBS, 스포츠" />
+      <div class="search-help">확인 버튼으로 입력 · 검색어가 바뀌면 즉시 필터됩니다.</div>
+      <div id="searchResults" class="search-results"></div>
+    </div>
+  </section>
 
   <section id="momHome" class="mom-home hidden" aria-live="polite">
     <div class="mom-head">
-      <div>
-        <div class="mom-title">엄마 TV 홈</div>
-        <div id="momClock" class="mom-clock"></div>
-      </div>
+      <div><div class="mom-title">엄마 TV 홈</div><div id="momClock" class="mom-clock"></div></div>
       <div id="momState" class="mom-state">연결 확인 중…</div>
     </div>
-
     <div id="momApproval" class="approval hidden">
       <div class="approval-label">이 TV를 한 번만 승인하세요</div>
       <div id="approvalCode" class="approval-code">------</div>
       <div class="approval-help">승인 후에는 이 TV에 토큰이 저장되어 자동 연결됩니다.</div>
     </div>
-
     <div id="momContent" class="mom-content hidden">
-      <div class="mom-column">
-        <div class="mom-section-title">오늘</div>
-        <div id="momItems" class="mom-items"></div>
-      </div>
-      <div class="mom-column stocks-column">
-        <div class="mom-section-title">관심 시세</div>
-        <div id="momStocks" class="mom-stocks"></div>
-      </div>
+      <div class="mom-column"><div class="mom-section-title">오늘</div><div id="momItems" class="mom-items"></div></div>
+      <div class="mom-column stocks-column"><div class="mom-section-title">관심 시세</div><div id="momStocks" class="mom-stocks"></div></div>
     </div>
   </section>
 
+  <div id="toast" class="toast hidden"></div>
   <div id="status" class="status">최신 채널 목록을 불러오는 중…</div>
   <div id="banner" class="banner hidden">
     <div id="channelName" class="channel-name"></div>
-    <div id="channelUrl" class="channel-url"></div>
+    <div id="channelMeta" class="channel-meta"></div>
   </div>
-  <div id="help" class="help hidden">↑/↓ 또는 채널 +/- : 채널 변경 · 확인 : 배너 · 초록색 : 엄마 TV 홈 · 재생/일시정지 지원</div>
+  <div id="help" class="help hidden">채널 +/- : 이동 · 빨강: 홈 · 초록: 즐겨찾기 · 노랑: 검색 · 파랑: 카테고리 · 확인: 정보</div>
 </body>
 </html>
