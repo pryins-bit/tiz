@@ -60,7 +60,10 @@ assert.equal(windowObject.KoreaTVAVPlayDiagnostics.momPip, true);
 
 assert.equal(player.setFullscreen(), true);
 assert.equal(windowObject.KoreaTVAVPlayDiagnostics.momPip, false);
-assert.deepEqual(windowObject.KoreaTVAVPlayDiagnostics.displayRect, { x: 0, y: 0, width: 1920, height: 1080 });
+assert.equal(windowObject.KoreaTVAVPlayDiagnostics.displayRect.x, 0);
+assert.equal(windowObject.KoreaTVAVPlayDiagnostics.displayRect.y, 0);
+assert.equal(windowObject.KoreaTVAVPlayDiagnostics.displayRect.width, 1920);
+assert.equal(windowObject.KoreaTVAVPlayDiagnostics.displayRect.height, 1080);
 
 listener.onbufferingstart();
 listener.onbufferingcomplete();
@@ -85,5 +88,6 @@ assert(source.includes('대구 대명동'));
 assert(source.includes('api.open-meteo.com'));
 assert(source.includes('37.5172,35.8482'));
 assert(source.includes('127.0473,128.5771'));
+assert(source.includes('raw.githubusercontent.com/pryins-bit/tiz/main/market.json'));
 
-console.log('Samsung AVPlay + Mom PIP + dual-weather simulation OK');
+console.log('Samsung AVPlay + Mom PIP + dual-weather + GitHub-market simulation OK');
