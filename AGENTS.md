@@ -15,6 +15,12 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - A standalone release named `KoreaTV.wgt` must contain both `author-signature.xml` and `signature1.xml`; never publish a plain ZIP renamed to `.wgt` as an installable release asset.
 - The standalone Tizen Web App manifest must use a 10-character alphanumeric `tizen:application` package ID, and the application ID must begin with that package ID followed by a dot. CI must reject invalid identifiers before publishing `KoreaTV.wgt`.
 - The current CI fallback creates an ephemeral author certificate and uses the Tizen Studio public old-Tizen distributor signer. This is intended to make a first installation possible on the Tizen 6 target, but a later binary update signed by a different ephemeral author key may require uninstall/reinstall. A persistent author key may be configured later, but it must be stored only as an encrypted repository secret and must never be committed.
+- Remote-control behavior is part of the real-device contract. Channel +/- , digits 0-9, red/green/yellow/blue, and media keys are device-dependent Tizen TVInputDevice keys and must be explicitly registered. The standalone manifest must include `http://tizen.org/privilege/tv.inputdevice`; the runtime must call `tizen.tvinputdevice.registerKeyBatch()` with individual `registerKey()` fallback.
+- `package.json.keys` is the TizenBrew-module registration contract and must include digits 0-9, ChannelUp/ChannelDown, the four color keys, and the media keys used by the app. Do not assume this package-level registration applies to the separately installed standalone WGT.
+- Do not register VolumeUp/VolumeDown/VolumeMute, Home, or Power for app handling. Volume must retain Samsung's platform-default behavior.
+- Mandatory ArrowLeft/ArrowUp/ArrowRight/ArrowDown/Enter/Back do not need TVInputDevice registration. Because older Tizen firmware may provide a numeric `keyCode` with an empty `event.key`, arrow handling must remain compatible with keyCodes 37/38/39/40 rather than depending only on `event.key`.
+- Numeric channel entry must work even when the startup TV Home or another panel is open. Never restore the old `if (panelsOpen()) return;` behavior that silently discarded digits.
+- Current color-key semantics are: Red = Korea TV Home, Green = favorite toggle, Yellow = search, Blue = categories. Mom TV Home remains accessible from the Korea TV Home tile unless the owner explicitly changes the mapping.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
 - Discovery playlists may be searched for candidates, but only source files with a GitHub file update within the last 365 days are eligible for automated collection.
 - Automated collection must keep only Korean HLS streams with observed resolution of at least 720p. Lower-resolution streams remain only in the registry/history as excluded records, not in `stream_candidates.json`.
@@ -51,9 +57,11 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 
 ## Architecture
 
-- `package.json`: TizenBrew application-module manifest.
+- `package.json`: TizenBrew application-module manifest and module-level remote key registration list.
 - `app/index.html`: TV player shell and optional Mom TV Home overlay shell.
-- `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip, and device-approved Mom TV Home client.
+- `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote actions, failed-channel skip, and device-approved Mom TV Home client.
+- `app/remote-input.js`: standalone/runtime TVInputDevice key registration plus old-Tizen arrow-key normalization. It deliberately leaves volume/home/power to Samsung's platform behavior.
+- `app/numeric-remote.js`: numeric channel buffer and channel-number tuning helper; it must not discard digits merely because a panel is open.
 - `app/style.css`: 1920x1080 TV/player/overlay UI.
 - `korea.m3u`: stable approved 720p+ playlist consumed by the module.
 - `stream_sources.json`: recent GitHub Korean IPTV discovery sources and freshness limits.
@@ -66,24 +74,41 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `.github/workflows/check-streams.yml`: scheduled/manual collection and validation; refreshes the playlist only from the already approved set.
 - `scripts/update_playlist.py`: selects the best current 720p+ URL for each approved channel and emits `korea.m3u`.
 - `.github/workflows/update-playlist.yml`: scheduled/manual approved-playlist regeneration and structure validation.
-- `.github/workflows/validate-module.yml`: static module validation.
+- `.github/workflows/validate-module.yml`: static module and Samsung remote-input contract validation.
+- `scripts/validate_remote_contract.py`: checks module keys, standalone privilege, runtime registration, numeric-panel behavior, and standalone sync coverage.
 - `.github/workflows/build-standalone.yml`: builds the standalone app, creates an old-Tizen-compatible signed WGT, verifies signature files, and publishes the rolling `standalone-latest` release.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
 - Supabase backend: private tables for approved TV devices, dashboard items and stock quotes, exposed only through the custom-token-validated `mom-tv` Edge Function.
+
+## Root causes and rejected approaches
+
+### 2026-08-16 remote input failure
+
+The physical Samsung TV accepted the standalone WGT and volume still worked, but Channel +/- , digits, and color keys did not. The failure was composite rather than a single keyCode bug:
+
+1. Earlier fixes added remote names to `package.json.keys`, which only describes the TizenBrew module-loading path. The user was running the separately installed standalone WGT, so that registration path was bypassed.
+2. The standalone `config.xml` had only the Internet privilege and omitted `http://tizen.org/privilege/tv.inputdevice`.
+3. No standalone runtime code called `tizen.tvinputdevice.registerKey()`/`registerKeyBatch()`, so device-dependent keys were never delivered to the application. Volume still worked because it remained a platform-handled key, which was an important diagnostic distinction.
+4. Numeric support was added as a keydown helper, but it explicitly returned whenever any TV panel was open. Since Korea TV automatically opens its TV Home shortly after startup, numeric entry was disabled in the most common initial state even if numeric key events were delivered.
+5. Several arrow-navigation branches relied on `event.key` strings although Samsung's documented integration model centers on `event.keyCode`; old Tizen runtimes can therefore need keyCode normalization.
+
+Rejected: repeatedly adding more numeric keyCode cases without first granting the privilege and registering keys. A handler cannot process an event that Tizen never delivers. Also rejected: registering volume/home/power merely to prove key capture, because that can suppress their normal platform functions.
 
 ## Validation
 
 For module changes:
 
 1. Parse `package.json` as JSON.
-2. Run `node --check app/main.js`.
-3. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
-4. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
-5. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml` before publishing.
-6. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
-7. Inspect GitHub Actions conclusion after merge.
-8. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
-9. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
+2. Run `node --check app/main.js`, `node --check app/numeric-remote.js`, and `node --check app/remote-input.js`.
+3. Run `python scripts/validate_remote_contract.py`.
+4. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
+5. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
+6. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml` before publishing.
+7. Verify the standalone WGT contains `remote-input.js` and its `config.xml` contains `http://tizen.org/privilege/tv.inputdevice`.
+8. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
+9. Inspect GitHub Actions conclusion after merge.
+10. Report TV remote behavior separately; CI success is not Samsung/Tizen real-device confirmation.
+11. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
 
 For stream collection/updater changes:
 

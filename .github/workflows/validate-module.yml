@@ -5,6 +5,9 @@ on:
     paths:
       - "package.json"
       - "app/**"
+      - "tizen-standalone/config.xml"
+      - "scripts/sync_tizen_standalone.py"
+      - "scripts/validate_remote_contract.py"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
   push:
@@ -12,6 +15,9 @@ on:
     paths:
       - "package.json"
       - "app/**"
+      - "tizen-standalone/config.xml"
+      - "scripts/sync_tizen_standalone.py"
+      - "scripts/validate_remote_contract.py"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
 
@@ -27,6 +33,11 @@ jobs:
         run: |
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); if(p.packageType!=='app') throw new Error('packageType must be app'); if(!p.appName) throw new Error('appName missing'); if(!p.appPath || !fs.existsSync(p.appPath)) throw new Error('appPath missing');"
       - name: Check JavaScript syntax
-        run: node --check app/main.js
+        run: |
+          node --check app/main.js
+          node --check app/numeric-remote.js
+          node --check app/remote-input.js
+      - name: Verify Samsung remote input contract
+        run: python scripts/validate_remote_contract.py
       - name: Verify fixed playlist contract
         run: grep -F "https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u" app/main.js

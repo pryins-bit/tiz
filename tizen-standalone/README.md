@@ -12,6 +12,18 @@ The primary target is Samsung `KU50UA7050FXKR` running Tizen 6.0. TizenBrew Inst
 
 A plain ZIP renamed to `.wgt` is not a valid old-Tizen release package. CI must reject any release package missing either `author-signature.xml` or `signature1.xml`.
 
+## Remote-control requirement
+
+The standalone WGT does not pass through TizenBrew's module loader, so `package.json.keys` alone cannot activate remote buttons for this installation path. `config.xml` must grant:
+
+`http://tizen.org/privilege/tv.inputdevice`
+
+and `app/remote-input.js` must register the device-dependent buttons through `tizen.tvinputdevice`.
+
+The app registers digits 0-9, ChannelUp/ChannelDown, the four color keys, and media playback keys. It deliberately does **not** register volume, Home, or Power, leaving those to Samsung's platform behavior. Arrow/Enter/Back are mandatory TV keys and need no explicit registration; the runtime normalizes old-Tizen arrow events when only keyCode is populated.
+
+Numeric tuning must also remain usable while the startup TV Home is visible. `scripts/validate_remote_contract.py` guards these requirements in CI.
+
 ## TizenBrew Installer
 
 Every relevant push to `main` runs `.github/workflows/build-standalone.yml`. The workflow syncs the app assets, validates the manifest, installs the Tizen Studio CLI, creates an author certificate for the build, signs the package with the old-Tizen public distributor profile, verifies the signature files, and publishes/replaces `KoreaTV.wgt` in the rolling GitHub Release tagged `standalone-latest`.
@@ -36,4 +48,4 @@ Playlist-only changes do not require a standalone rebuild because the app fetche
 
 ## Verification boundary
 
-CI confirmation means the WGT has valid package structure and both required signature files. It does **not** prove that Samsung's Tizen 6 package manager accepted the package on the physical TV. The actual TV installation result remains the final certificate-policy check.
+CI confirmation means the WGT has valid package structure, both required signature files, the remote-input runtime, and the required manifest privilege. It does **not** prove that Samsung's Tizen 6 package manager accepted the package or that the physical remote delivered every key on the target TV. Those remain real-device checks.

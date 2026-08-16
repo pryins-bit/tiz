@@ -12,7 +12,7 @@ def main():
     if DST.exists():
         shutil.rmtree(DST)
     DST.mkdir(parents=True, exist_ok=True)
-    for name in ('index.html', 'main.js', 'numeric-remote.js', 'style.css'):
+    for name in ('index.html', 'main.js', 'numeric-remote.js', 'remote-input.js', 'style.css'):
         shutil.copy2(SRC / name, DST / name)
     shutil.copy2(CONFIG, DST / 'config.xml')
     print(f'prepared standalone Tizen project at {DST}')
