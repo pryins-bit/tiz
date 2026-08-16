@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 */6 * * *"
+  pull_request:
+    paths:
+      - "scripts/update_playlist.py"
+      - "korea.m3u"
+      - ".github/workflows/update-playlist.yml"
 
 permissions:
   contents: write
@@ -37,6 +42,7 @@ jobs:
           ' korea.m3u
 
       - name: Commit changes
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
