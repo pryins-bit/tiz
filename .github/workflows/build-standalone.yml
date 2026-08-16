@@ -16,6 +16,9 @@ on:
       - 'scripts/sync_tizen_standalone.py'
       - '.github/workflows/build-standalone.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,13 +33,59 @@ jobs:
           node --check app/numeric-remote.js
       - name: Build standalone project
         run: python scripts/sync_tizen_standalone.py
+      - name: Stamp rolling package version
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          path = 'tizen-standalone/build/config.xml'
+          tree = ET.parse(path)
+          root = tree.getroot()
+          run_number = int(os.environ['GITHUB_RUN_NUMBER'])
+          root.set('version', f'0.3.{run_number}')
+          tree.write(path, encoding='UTF-8', xml_declaration=True)
+          print('WGT version:', root.attrib['version'])
+          PY
       - name: Validate Tizen manifest
         run: |
           python -c "import xml.etree.ElementTree as ET; root=ET.parse('tizen-standalone/build/config.xml').getroot(); assert root.attrib.get('version'); assert root.find('{http://www.w3.org/ns/widgets}content') is not None; print('config.xml OK')"
-      - name: Package project files
-        run: cd tizen-standalone/build && zip -r ../../korea-tv-tizen-project.zip .
+      - name: Package project ZIP and WGT
+        run: |
+          cd tizen-standalone/build
+          zip -r ../../korea-tv-tizen-project.zip .
+          zip -r ../../KoreaTV.wgt .
+          cd ../..
+          python - <<'PY'
+          import zipfile
+          for name in ('korea-tv-tizen-project.zip', 'KoreaTV.wgt'):
+              with zipfile.ZipFile(name) as zf:
+                  names = set(zf.namelist())
+                  assert 'config.xml' in names, f'{name}: config.xml missing at package root'
+                  assert 'index.html' in names, f'{name}: index.html missing at package root'
+              print(name, 'OK')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: korea-tv-tizen-project
-          path: korea-tv-tizen-project.zip
+          path: |
+            korea-tv-tizen-project.zip
+            KoreaTV.wgt
           if-no-files-found: error
+      - name: Publish rolling GitHub release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view standalone-latest >/dev/null 2>&1; then
+            gh release edit standalone-latest \
+              --title 'Korea TV Standalone (latest)' \
+              --notes 'Automatically rebuilt from the latest main branch. In TizenBrew Installer use: pryins-bit/tiz' \
+              --latest
+          else
+            gh release create standalone-latest \
+              --target "$GITHUB_SHA" \
+              --title 'Korea TV Standalone (latest)' \
+              --notes 'Automatically rebuilt from the latest main branch. In TizenBrew Installer use: pryins-bit/tiz' \
+              --latest
+          fi
+          gh release upload standalone-latest KoreaTV.wgt --clobber
