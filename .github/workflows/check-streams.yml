@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "27 */6 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "stream_sources.json"
+      - "scripts/collect_hd_korean_streams.py"
+      - ".github/workflows/check-streams.yml"
   pull_request:
     paths:
       - "stream_sources.json"
