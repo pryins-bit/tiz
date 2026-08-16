@@ -15,6 +15,8 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - The player should auto-start, allow remote channel switching, and skip failed channels during the current session.
 - Do not host, proxy, decrypt, or bypass access controls for video streams.
 - Do not commit credentials, cookies, tokens, private URLs, or service-role secrets.
+- Mom TV Home may use a public Edge Function endpoint, but all private dashboard data and privileged Supabase credentials must remain server-side.
+- A TV must be approved before private Mom TV Home data are returned. The public client may persist only a device-scoped token, never a Supabase service-role/secret key.
 
 ## Protected state
 
@@ -25,14 +27,15 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 ## Architecture
 
 - `package.json`: TizenBrew application-module manifest.
-- `app/index.html`: TV player shell.
-- `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip.
-- `app/style.css`: 1920x1080 TV UI.
+- `app/index.html`: TV player shell and optional Mom TV Home overlay shell.
+- `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip, and device-approved Mom TV Home client.
+- `app/style.css`: 1920x1080 TV/player/overlay UI.
 - `korea.m3u`: stable generated playlist consumed by the module.
 - `scripts/update_playlist.py`: merges/filter upstream Korean playlist data and writes `korea.m3u`.
 - `.github/workflows/update-playlist.yml`: scheduled/manual updater.
 - `.github/workflows/validate-module.yml`: static module validation.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
+- Supabase backend: private tables for approved TV devices, dashboard items and stock quotes, exposed only through the custom-token-validated `mom-tv` Edge Function.
 
 ## Validation
 
@@ -44,6 +47,7 @@ For module changes:
 4. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
 5. Inspect GitHub Actions conclusion after merge.
 6. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
+7. Verify no Supabase service-role/secret key or personal dashboard data are committed.
 
 For updater changes:
 
