@@ -1,6 +1,6 @@
 # tiz — one-click Korea TV for TizenBrew
 
-This repository is both a **TizenBrew application module** and the source of its automatically refreshed Korean TV playlist.
+This repository is both a **TizenBrew application module** and the source of its Korean TV playlist.
 
 ## One-click TizenBrew setup
 
@@ -26,13 +26,15 @@ Private items such as medication, appointments, family notices and stock quotes 
 
 The previous `tizenbrew-iptv` module stored its own playlist/pairing state. This repository does not read or reuse that state. It fetches `korea.m3u` fresh on every launch with cache-busting, so stale channels from the removed module are irrelevant to **Korea TV**.
 
-## Playlist updating
+## Playlist policy
 
-GitHub Actions refreshes `korea.m3u` every 6 hours from current public upstream playlists and commits only when generated output changes.
+`korea.m3u` is now intentionally conservative. Public discovery lists such as iptv-org, Free-TV and other GitHub M3U repositories are used to find candidates, but they are **not merged automatically** because stale proxy/IP entries can re-introduce dead channels.
 
-The updater prioritizes Korean terrestrial/public-broadcast related entries such as KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS, and prefers direct HLS (`.m3u8`) URLs.
+Only a small curated set with recent independent HLS verification is emitted by default. If a channel fails on the real Samsung TV, it should be removed/quarantined first and re-added only after a fresh verification. Prefer broadcaster/CDN HTTPS endpoints; HTTP or raw-IP direct HLS is retained only when it is the best recently verified fallback.
 
-This repository does not host, proxy, decrypt, or bypass access controls for video streams. It only uses URLs exposed by public upstream playlists.
+The scheduled workflow regenerates the curated playlist and validates its structure, so the stable raw URL does not change.
+
+This repository does not host, proxy, decrypt, or bypass access controls for video streams.
 
 ## Controls
 
@@ -45,4 +47,4 @@ This repository does not host, proxy, decrypt, or bypass access controls for vid
 
 ## Verification boundary
 
-Repository CI can verify JSON/JavaScript syntax and playlist structure. It cannot prove codec/network compatibility on a specific Samsung TV. Real-device playback must still be confirmed on the TV.
+Repository CI can verify JSON/JavaScript syntax and playlist structure. External HLS probes help remove obviously stale entries, but **real-device playback on the target Samsung TV remains the final check** because network policy, geo restrictions and Tizen codec behavior can differ.
