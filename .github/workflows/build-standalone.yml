@@ -8,12 +8,14 @@ on:
       - 'app/**'
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
+      - 'scripts/validate_remote_contract.py'
       - '.github/workflows/build-standalone.yml'
   pull_request:
     paths:
       - 'app/**'
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
+      - 'scripts/validate_remote_contract.py'
       - '.github/workflows/build-standalone.yml'
 
 permissions:
@@ -35,6 +37,10 @@ jobs:
         run: |
           node --check app/main.js
           node --check app/numeric-remote.js
+          node --check app/remote-input.js
+
+      - name: Validate Samsung remote input contract
+        run: python scripts/validate_remote_contract.py
 
       - name: Build standalone project
         run: python scripts/sync_tizen_standalone.py
@@ -82,12 +88,17 @@ jobs:
           assert application_id.startswith(package_id + '.'), (
               f'application id {application_id!r} must start with {package_id!r} + dot'
           )
+          privileges = {
+              node.attrib.get('name')
+              for node in root.findall('{http://tizen.org/ns/widgets}privilege')
+          }
+          assert 'http://tizen.org/privilege/tv.inputdevice' in privileges, 'tv.inputdevice privilege missing'
           assert '<widget ' in text or '<widget\n' in text
           assert '<tizen:application ' in text
           assert 'xmlns:tizen="http://tizen.org/ns/widgets"' in text
           assert '<ns0:widget' not in text
           assert '<ns1:application' not in text
-          print('config.xml OK for TizenBrew Installer xml2js parser and Tizen package-id contract')
+          print('config.xml OK for TizenBrew Installer parser, Tizen IDs, and TV input privilege')
           PY
 
       - name: Download Tizen Studio CLI
@@ -155,18 +166,31 @@ jobs:
       - name: Validate signed WGT contents
         run: |
           python - <<'PY'
+          import xml.etree.ElementTree as ET
           import zipfile
 
           with zipfile.ZipFile('KoreaTV.wgt') as zf:
               names = set(zf.namelist())
-              required = {'config.xml', 'index.html', 'author-signature.xml', 'signature1.xml'}
+              required = {
+                  'config.xml', 'index.html', 'main.js', 'numeric-remote.js', 'remote-input.js',
+                  'author-signature.xml', 'signature1.xml'
+              }
               missing = sorted(required - names)
-              assert not missing, f'KoreaTV.wgt missing signed-package files: {missing}'
-              config = zf.read('config.xml').decode('utf-8')
+              assert not missing, f'KoreaTV.wgt missing required files: {missing}'
+              config_bytes = zf.read('config.xml')
+              config = config_bytes.decode('utf-8')
               assert '<widget ' in config or '<widget\n' in config
               assert '<tizen:application ' in config
               assert 'PryinsTV01.KoreaTV' in config
-          print('KoreaTV.wgt contains author + distributor signatures and valid manifest files')
+              root = ET.fromstring(config_bytes)
+              privileges = {
+                  node.attrib.get('name')
+                  for node in root.findall('{http://tizen.org/ns/widgets}privilege')
+              }
+              assert 'http://tizen.org/privilege/tv.inputdevice' in privileges
+              remote = zf.read('remote-input.js').decode('utf-8')
+              assert 'registerKeyBatch' in remote and 'ChannelUp' in remote and 'ColorF0Red' in remote
+          print('KoreaTV.wgt contains signatures, remote runtime, and TV input privilege')
           PY
 
       - name: Package editable project ZIP
@@ -187,7 +211,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES='Signed standalone WGT for Samsung TVs including the target Tizen 6.0 set. The package contains both author and public distributor signatures. In TizenBrew Installer use: pryins-bit/tiz'
+          NOTES='Signed standalone WGT for Samsung Tizen 6 with TVInputDevice remote-key registration. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
               --title 'Korea TV Standalone (signed latest)' \
