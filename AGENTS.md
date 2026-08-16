@@ -11,7 +11,9 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - Do not depend on or reuse `tizenbrew-iptv` pairing/local-storage state. Stale playlists from that module must not affect Korea TV.
 - Keep the raw `korea.m3u` URL stable.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
-- Prefer direct HLS `.m3u8` links. Prefer HTTPS over HTTP, but retain HTTP direct-HLS fallbacks when no better upstream entry exists.
+- Discovery playlists may be searched for candidates, but do not automatically merge broad public M3U sources into the default playlist. The default playlist should contain only a small curated set with recent independent HLS verification or real-TV confirmation.
+- Prefer direct HLS `.m3u8` links. Prefer broadcaster/CDN HTTPS endpoints; retain HTTP/raw-IP direct-HLS only when it is the best recently verified fallback.
+- If a stream fails on the target Samsung TV, remove or quarantine it before adding more candidates. Real-TV success has higher priority than list size.
 - The player should auto-start, allow remote channel switching, and skip failed channels during the current session.
 - Do not host, proxy, decrypt, or bypass access controls for video streams.
 - Do not commit credentials, cookies, tokens, private URLs, or service-role secrets.
@@ -30,9 +32,9 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `app/index.html`: TV player shell and optional Mom TV Home overlay shell.
 - `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip, and device-approved Mom TV Home client.
 - `app/style.css`: 1920x1080 TV/player/overlay UI.
-- `korea.m3u`: stable generated playlist consumed by the module.
-- `scripts/update_playlist.py`: merges/filter upstream Korean playlist data and writes `korea.m3u`.
-- `.github/workflows/update-playlist.yml`: scheduled/manual updater.
+- `korea.m3u`: stable curated playlist consumed by the module.
+- `scripts/update_playlist.py`: emits the reviewed curated Korean HLS set and validates direct-HLS structure; broad discovery sources are not auto-merged.
+- `.github/workflows/update-playlist.yml`: scheduled/manual playlist regeneration and structure validation.
 - `.github/workflows/validate-module.yml`: static module validation.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
 - Supabase backend: private tables for approved TV devices, dashboard items and stock quotes, exposed only through the custom-token-validated `mom-tv` Edge Function.
@@ -53,7 +55,8 @@ For updater changes:
 
 1. Generate the playlist and verify the first line is `#EXTM3U`.
 2. Verify each emitted channel has `#EXTINF` followed by HTTP(S) direct-HLS `.m3u8`.
-3. Inspect GitHub Actions conclusion.
+3. Keep only channels backed by recent independent HLS verification or real-device confirmation; discovery-list presence alone is insufficient.
+4. Inspect GitHub Actions conclusion.
 
 ## Rollback
 
