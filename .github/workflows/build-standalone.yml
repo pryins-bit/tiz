@@ -33,22 +33,46 @@ jobs:
           node --check app/numeric-remote.js
       - name: Build standalone project
         run: python scripts/sync_tizen_standalone.py
-      - name: Stamp rolling package version
+      - name: Stamp rolling package version without rewriting XML namespaces
         run: |
           python - <<'PY'
           import os
-          import xml.etree.ElementTree as ET
-          path = 'tizen-standalone/build/config.xml'
-          tree = ET.parse(path)
-          root = tree.getroot()
+          import re
+          from pathlib import Path
+
+          path = Path('tizen-standalone/build/config.xml')
+          text = path.read_text(encoding='utf-8')
           run_number = int(os.environ['GITHUB_RUN_NUMBER'])
-          root.set('version', f'0.3.{run_number}')
-          tree.write(path, encoding='UTF-8', xml_declaration=True)
-          print('WGT version:', root.attrib['version'])
+          version = f'0.3.{run_number}'
+          updated, count = re.subn(
+              r'(<widget\b[^>]*\bversion=")[^"]+("[^>]*>)',
+              rf'\g<1>{version}\g<2>',
+              text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('Could not stamp widget version')
+          path.write_text(updated, encoding='utf-8')
+          print('WGT version:', version)
           PY
-      - name: Validate Tizen manifest
+      - name: Validate Tizen manifest and Installer parser contract
         run: |
-          python -c "import xml.etree.ElementTree as ET; root=ET.parse('tizen-standalone/build/config.xml').getroot(); assert root.attrib.get('version'); assert root.find('{http://www.w3.org/ns/widgets}content') is not None; print('config.xml OK')"
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          path = Path('tizen-standalone/build/config.xml')
+          text = path.read_text(encoding='utf-8')
+          root = ET.parse(path).getroot()
+          assert root.attrib.get('version')
+          assert root.find('{http://www.w3.org/ns/widgets}content') is not None
+          assert '<widget ' in text or '<widget\n' in text
+          assert '<tizen:application ' in text
+          assert 'xmlns:tizen="http://tizen.org/ns/widgets"' in text
+          assert '<ns0:widget' not in text
+          assert '<ns1:application' not in text
+          print('config.xml OK for TizenBrew Installer xml2js parser')
+          PY
       - name: Package project ZIP and WGT
         run: |
           cd tizen-standalone/build
@@ -62,6 +86,9 @@ jobs:
                   names = set(zf.namelist())
                   assert 'config.xml' in names, f'{name}: config.xml missing at package root'
                   assert 'index.html' in names, f'{name}: index.html missing at package root'
+                  config = zf.read('config.xml').decode('utf-8')
+                  assert '<widget ' in config or '<widget\n' in config, f'{name}: widget prefix rewritten'
+                  assert '<tizen:application ' in config, f'{name}: tizen:application prefix missing'
               print(name, 'OK')
           PY
       - uses: actions/upload-artifact@v4
