@@ -9,6 +9,7 @@
   var RECENTS_KEY = 'korea_tv_recents_v1';
   var FAILURES_KEY = 'korea_tv_failures_v1';
   var LAST_CHANNEL_KEY = 'korea_tv_last_channel_v1';
+  var ZAP_DEBOUNCE_MS = 320;
 
   var video = document.getElementById('video');
   var statusEl = document.getElementById('status');
@@ -51,7 +52,10 @@
   var hls = null;
   var bannerTimer = null;
   var failureTimer = null;
+  var autoAdvanceTimer = null;
   var toastTimer = null;
+  var playbackGeneration = 0;
+  var lastZapAt = 0;
   var failedThisRound = {};
   var favorites = readJson(FAVORITES_KEY, []);
   var recents = readJson(RECENTS_KEY, []);
@@ -187,6 +191,11 @@
     return info.count >= 3 && Date.now() - Number(info.last || 0) < 24 * 60 * 60 * 1000;
   }
 
+  function isManuallyBlocked(channel) {
+    var info = failureInfo(channel);
+    return !!(info && info.blocked);
+  }
+
   function recordFailure(channel, manual) {
     if (!channel) return;
     var item = failures[channel.url] || { count: 0, last: 0, blocked: false };
@@ -209,114 +218,231 @@
     healthTextEl.textContent = blocked ? blocked + '개 수동 제외 · ' + recentFails + '개 최근 실패' : (recentFails ? recentFails + '개 최근 실패' : '실패 기록 없음');
   }
 
-  function destroyPlayer() {
-    clearTimeout(failureTimer);
-    failureTimer = null;
-    if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
-    try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e2) {}
+  function clearVideoHandlers() {
+    video.onerror = null;
+    video.onplaying = null;
+    video.onwaiting = null;
+    video.onstalled = null;
+    video.onabort = null;
   }
 
-  function markFailedAndAdvance(reason) {
-    var channel = currentChannel();
-    if (!channel || failedThisRound[channel.url]) return;
+  function destroyPlayer() {
+    clearTimeout(failureTimer);
+    clearTimeout(autoAdvanceTimer);
+    failureTimer = null;
+    autoAdvanceTimer = null;
+    clearVideoHandlers();
+    if (hls) {
+      try { hls.destroy(); } catch (e) {}
+      hls = null;
+    }
+    try {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    } catch (e2) {}
+  }
+
+  function samePlayback(generation, channel) {
+    var active = currentChannel();
+    return generation === playbackGeneration && !!active && !!channel && active.url === channel.url;
+  }
+
+  function markFailedAndAdvance(generation, channel, reason) {
+    if (!samePlayback(generation, channel) || failedThisRound[channel.url]) return;
     failedThisRound[channel.url] = true;
     recordFailure(channel, false);
     showStatus('재생 실패: ' + channel.name + '\n다음 채널로 이동 중…');
-    setTimeout(function () { changeChannel(1, true); }, 650);
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = setTimeout(function () {
+      if (!samePlayback(generation, channel)) return;
+      changeChannel(1, true);
+    }, 650);
   }
 
-  function attachCommonEvents() {
-    video.onerror = function () { markFailedAndAdvance('video-error'); };
+  function attachCommonEvents(generation, channel) {
+    video.onerror = function () {
+      markFailedAndAdvance(generation, channel, 'video-error');
+    };
     video.onplaying = function () {
+      if (!samePlayback(generation, channel)) return;
       clearTimeout(failureTimer);
+      failureTimer = null;
       hideStatus();
-      addRecent(currentChannel());
+      addRecent(channel);
       renderHome();
       showBanner();
     };
+    video.onwaiting = function () {
+      if (samePlayback(generation, channel)) showStatus('버퍼링 중: ' + channel.name);
+    };
+    video.onstalled = function () {
+      if (samePlayback(generation, channel)) showStatus('신호 재연결 중: ' + channel.name);
+    };
   }
 
-  function playChannel() {
-    if (!channels.length) { showStatus('재생할 채널이 없습니다.'); return; }
-    var channel = currentChannel();
-    if (isAutoSkipped(channel)) { changeChannel(1, true); return; }
+  function playChannel(force) {
+    if (!channels.length) {
+      showStatus('재생할 채널이 없습니다.');
+      return;
+    }
 
+    var channel = currentChannel();
+    if (!force && isAutoSkipped(channel)) {
+      index = findNextPlayable(index, 1, true);
+      channel = currentChannel();
+    }
+
+    playbackGeneration += 1;
+    var generation = playbackGeneration;
     destroyPlayer();
-    attachCommonEvents();
-    showStatus('재생 중: ' + channel.name);
+    attachCommonEvents(generation, channel);
+    showStatus('채널 전환: ' + channel.name);
     homeNowNameEl.textContent = channel.name;
-    failureTimer = setTimeout(function () { markFailedAndAdvance('timeout'); }, 12000);
+    showBanner();
+
+    failureTimer = setTimeout(function () {
+      markFailedAndAdvance(generation, channel, 'startup-timeout');
+    }, 15000);
 
     var nativeHls = '';
     try { nativeHls = video.canPlayType('application/vnd.apple.mpegurl'); } catch (e) {}
     if (nativeHls) {
       video.src = channel.url;
       var nativePlay = video.play();
-      if (nativePlay && typeof nativePlay.catch === 'function') nativePlay.catch(function () { markFailedAndAdvance('native-play-rejected'); });
+      if (nativePlay && typeof nativePlay.catch === 'function') {
+        nativePlay.catch(function () {
+          markFailedAndAdvance(generation, channel, 'native-play-rejected');
+        });
+      }
       return;
     }
 
     if (window.Hls && window.Hls.isSupported()) {
-      hls = new window.Hls({ enableWorker: false, lowLatencyMode: false, backBufferLength: 30 });
-      hls.loadSource(channel.url);
-      hls.attachMedia(video);
-      hls.on(window.Hls.Events.MANIFEST_PARSED, function () {
-        var p = video.play();
-        if (p && typeof p.catch === 'function') p.catch(function () { markFailedAndAdvance('hls-play-rejected'); });
+      var player = new window.Hls({
+        enableWorker: false,
+        lowLatencyMode: false,
+        backBufferLength: 15,
+        manifestLoadingMaxRetry: 2,
+        levelLoadingMaxRetry: 2,
+        fragLoadingMaxRetry: 2
       });
-      hls.on(window.Hls.Events.ERROR, function (event, data) { if (data && data.fatal) markFailedAndAdvance('hls-fatal'); });
+      hls = player;
+      player.attachMedia(video);
+      player.on(window.Hls.Events.MEDIA_ATTACHED, function () {
+        if (!samePlayback(generation, channel) || hls !== player) return;
+        player.loadSource(channel.url);
+      });
+      player.on(window.Hls.Events.MANIFEST_PARSED, function () {
+        if (!samePlayback(generation, channel) || hls !== player) return;
+        var p = video.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(function () {
+            markFailedAndAdvance(generation, channel, 'hls-play-rejected');
+          });
+        }
+      });
+      player.on(window.Hls.Events.ERROR, function (_event, data) {
+        if (!samePlayback(generation, channel) || hls !== player) return;
+        if (data && data.fatal) markFailedAndAdvance(generation, channel, 'hls-fatal');
+      });
       return;
     }
-    markFailedAndAdvance('no-hls-support');
+
+    markFailedAndAdvance(generation, channel, 'no-hls-support');
   }
 
-  function findNextPlayable(start, delta) {
+  function findNextPlayable(start, delta, automatic) {
     if (!channels.length) return 0;
     var candidate = start;
     for (var attempts = 0; attempts < channels.length; attempts += 1) {
       candidate = (candidate + delta + channels.length) % channels.length;
-      if (!failedThisRound[channels[candidate].url] && !isAutoSkipped(channels[candidate])) return candidate;
+      var channel = channels[candidate];
+      if (automatic) {
+        if (!failedThisRound[channel.url] && !isAutoSkipped(channel)) return candidate;
+      } else if (!isManuallyBlocked(channel)) {
+        return candidate;
+      }
     }
-    failedThisRound = {};
+    if (automatic) failedThisRound = {};
     return (start + delta + channels.length) % channels.length;
   }
 
   function changeChannel(delta, automatic) {
     if (!channels.length) return;
-    index = findNextPlayable(index, delta);
+    index = findNextPlayable(index, delta, !!automatic);
     if (!automatic) failedThisRound = {};
-    playChannel();
+    playChannel(false);
+  }
+
+  function requestChannelChange(delta, event) {
+    var now = Date.now();
+    if (event && event.repeat) return;
+    if (now - lastZapAt < ZAP_DEBOUNCE_MS) return;
+    lastZapAt = now;
+    closeAllPanels();
+    changeChannel(delta, false);
+  }
+
+  function tuneToIndex(targetIndex) {
+    if (!channels.length) return false;
+    targetIndex = Number(targetIndex);
+    if (!isFinite(targetIndex) || targetIndex < 0 || targetIndex >= channels.length) return false;
+    index = targetIndex;
+    failedThisRound = {};
+    closeAllPanels();
+    playChannel(true);
+    return true;
+  }
+
+  function tuneToNumber(number) {
+    number = Number(number);
+    if (!number || number < 1 || number > channels.length) {
+      toast('없는 채널 번호입니다.');
+      return false;
+    }
+    return tuneToIndex(number - 1);
   }
 
   function tuneToKey(key) {
     for (var i = 0; i < channels.length; i += 1) {
-      if (channelKey(channels[i]) === key) {
-        index = i;
-        closeAllPanels();
-        playChannel();
-        return true;
-      }
+      if (channelKey(channels[i]) === key) return tuneToIndex(i);
     }
     return false;
   }
 
+  window.KoreaTVPlayer = {
+    tuneToNumber: tuneToNumber,
+    tuneToIndex: tuneToIndex,
+    changeChannel: function (delta) { requestChannelChange(Number(delta) < 0 ? -1 : 1); },
+    currentNumber: function () { return channels.length ? index + 1 : 0; },
+    channelCount: function () { return channels.length; }
+  };
+
   function loadPlaylist() {
     showStatus('최신 채널 목록을 불러오는 중…');
     fetch(PLAYLIST_URL + '?t=' + Date.now(), { cache: 'no-store' })
-      .then(function (response) { if (!response.ok) throw new Error('HTTP ' + response.status); return response.text(); })
+      .then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.text();
+      })
       .then(function (text) {
         channels = parseM3U(text);
         if (!channels.length) throw new Error('채널 0개');
         var last = '';
         try { last = localStorage.getItem(LAST_CHANNEL_KEY) || ''; } catch (e) {}
-        for (var i = 0; i < channels.length; i += 1) if (channelKey(channels[i]) === last) { index = i; break; }
+        for (var i = 0; i < channels.length; i += 1) {
+          if (channelKey(channels[i]) === last) { index = i; break; }
+        }
         failedThisRound = {};
         updateHealth();
         renderHome();
-        playChannel();
+        playChannel(true);
         setTimeout(openHome, 900);
       })
-      .catch(function (error) { showStatus('채널 목록을 불러오지 못했습니다.\n' + String(error && error.message ? error.message : error)); });
+      .catch(function (error) {
+        showStatus('채널 목록을 불러오지 못했습니다.\n' + String(error && error.message ? error.message : error));
+      });
   }
 
   function formatClock() {
@@ -331,7 +457,9 @@
   function updateMomClock() { momClockEl.textContent = formatClock(); }
 
   function channelByKey(key) {
-    for (var i = 0; i < channels.length; i += 1) if (channelKey(channels[i]) === key) return channels[i];
+    for (var i = 0; i < channels.length; i += 1) {
+      if (channelKey(channels[i]) === key) return channels[i];
+    }
     return null;
   }
 
@@ -339,9 +467,14 @@
     var button = document.createElement('button');
     button.className = 'channel-card focusable';
     button.setAttribute('data-channel-key', channelKey(channel));
-    var n = document.createElement('div'); n.className = 'card-name'; n.textContent = channel.name;
-    var m = document.createElement('div'); m.className = 'card-meta'; m.textContent = (isFavorite(channel) ? '★ · ' : '') + channel.group;
-    button.appendChild(n); button.appendChild(m);
+    var n = document.createElement('div');
+    n.className = 'card-name';
+    n.textContent = channel.name;
+    var m = document.createElement('div');
+    m.className = 'card-meta';
+    m.textContent = (isFavorite(channel) ? '★ · ' : '') + channel.group;
+    button.appendChild(n);
+    button.appendChild(m);
     return button;
   }
 
@@ -357,15 +490,23 @@
     var added = 0;
     keys.forEach(function (key) {
       var item = channelByKey(key);
-      if (item) { homeChannelListEl.appendChild(makeChannelCard(item)); added += 1; }
+      if (item) {
+        homeChannelListEl.appendChild(makeChannelCard(item));
+        added += 1;
+      }
     });
     if (!added) {
-      var empty = document.createElement('div'); empty.className = 'empty-home'; empty.textContent = '채널을 시청하거나 초록 버튼으로 즐겨찾기를 추가하세요.'; homeChannelListEl.appendChild(empty);
+      var empty = document.createElement('div');
+      empty.className = 'empty-home';
+      empty.textContent = '채널을 시청하거나 초록 버튼으로 즐겨찾기를 추가하세요.';
+      homeChannelListEl.appendChild(empty);
     }
   }
 
   function openHome() {
-    closeBrowser(); closeSearch(); closeMom();
+    closeBrowser();
+    closeSearch();
+    closeMom();
     homeOpen = true;
     tvHomeEl.classList.remove('hidden');
     dimEl.classList.add('hidden');
@@ -376,7 +517,11 @@
     setTimeout(function () { focusFirst(tvHomeEl); }, 20);
   }
 
-  function closeHome() { homeOpen = false; tvHomeEl.classList.add('hidden'); clearInterval(homeClockTimer); }
+  function closeHome() {
+    homeOpen = false;
+    tvHomeEl.classList.add('hidden');
+    clearInterval(homeClockTimer);
+  }
 
   function uniqueGroups() {
     var preferred = ['공중파','드라마·영화','케이블·일반','뉴스·경제','쇼핑','종교'];
@@ -389,32 +534,64 @@
 
   function renderBrowserRows(list) {
     browserListEl.innerHTML = '';
-    if (!list.length) { var empty = document.createElement('div'); empty.className = 'empty-home'; empty.textContent = '표시할 채널이 없습니다.'; browserListEl.appendChild(empty); return; }
+    if (!list.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-home';
+      empty.textContent = '표시할 채널이 없습니다.';
+      browserListEl.appendChild(empty);
+      return;
+    }
     list.forEach(function (channel) {
       var row = document.createElement('button');
       row.className = 'browser-row focusable';
       row.setAttribute('data-channel-key', channelKey(channel));
-      var a = document.createElement('span'); a.className = 'browser-index'; a.textContent = String(channels.indexOf(channel) + 1);
-      var b = document.createElement('span'); b.className = 'browser-name'; b.textContent = (isFavorite(channel) ? '★ ' : '') + channel.name;
-      var c = document.createElement('span'); c.className = 'browser-group'; c.textContent = channel.group;
-      row.appendChild(a); row.appendChild(b); row.appendChild(c); browserListEl.appendChild(row);
+      var a = document.createElement('span');
+      a.className = 'browser-index';
+      a.textContent = String(channels.indexOf(channel) + 1);
+      var b = document.createElement('span');
+      b.className = 'browser-name';
+      b.textContent = (isFavorite(channel) ? '★ ' : '') + channel.name;
+      var c = document.createElement('span');
+      c.className = 'browser-group';
+      c.textContent = channel.group;
+      row.appendChild(a);
+      row.appendChild(b);
+      row.appendChild(c);
+      browserListEl.appendChild(row);
     });
   }
 
   function openBrowser(mode, value) {
-    closeHome(); closeSearch(); closeMom();
+    closeHome();
+    closeSearch();
+    closeMom();
     browserOpen = true;
-    browserPanelEl.classList.remove('hidden'); dimEl.classList.remove('hidden');
+    browserPanelEl.classList.remove('hidden');
+    dimEl.classList.remove('hidden');
     categoryTabsEl.innerHTML = '';
     var list = channels.slice();
-    if (mode === 'favorites') { browserTitleEl.textContent = '즐겨찾기'; browserSubtitleEl.textContent = favorites.length + '개 채널'; list = favorites.map(channelByKey).filter(Boolean); }
-    else if (mode === 'recent') { browserTitleEl.textContent = '최근 채널'; browserSubtitleEl.textContent = '최근 시청 순서'; list = recents.map(channelByKey).filter(Boolean); }
-    else if (mode === 'failed') { browserTitleEl.textContent = '채널 상태'; browserSubtitleEl.textContent = '최근 실패/수동 제외 채널'; list = channels.filter(function (c) { return !!failureInfo(c); }); }
-    else {
-      browserTitleEl.textContent = '카테고리'; browserSubtitleEl.textContent = '좌우로 분류 이동 · 확인으로 재생';
+    if (mode === 'favorites') {
+      browserTitleEl.textContent = '즐겨찾기';
+      browserSubtitleEl.textContent = favorites.length + '개 채널';
+      list = favorites.map(channelByKey).filter(Boolean);
+    } else if (mode === 'recent') {
+      browserTitleEl.textContent = '최근 채널';
+      browserSubtitleEl.textContent = '최근 시청 순서';
+      list = recents.map(channelByKey).filter(Boolean);
+    } else if (mode === 'failed') {
+      browserTitleEl.textContent = '채널 상태';
+      browserSubtitleEl.textContent = '최근 실패/수동 제외 채널';
+      list = channels.filter(function (c) { return !!failureInfo(c); });
+    } else {
+      browserTitleEl.textContent = '카테고리';
+      browserSubtitleEl.textContent = '좌우로 분류 이동 · 확인으로 재생';
       var groups = uniqueGroups();
       groups.forEach(function (group) {
-        var tab = document.createElement('button'); tab.className = 'category-tab focusable' + (group === value ? ' active' : ''); tab.textContent = group; tab.setAttribute('data-group', group); categoryTabsEl.appendChild(tab);
+        var tab = document.createElement('button');
+        tab.className = 'category-tab focusable' + (group === value ? ' active' : '');
+        tab.textContent = group;
+        tab.setAttribute('data-group', group);
+        categoryTabsEl.appendChild(tab);
       });
       var selected = value || groups[0];
       list = channels.filter(function (c) { return c.group === selected; });
@@ -423,14 +600,22 @@
     setTimeout(function () { focusFirst(browserPanelEl); }, 20);
   }
 
-  function closeBrowser() { browserOpen = false; browserPanelEl.classList.add('hidden'); if (!searchOpen && !momOpen) dimEl.classList.add('hidden'); }
+  function closeBrowser() {
+    browserOpen = false;
+    browserPanelEl.classList.add('hidden');
+    if (!searchOpen && !momOpen) dimEl.classList.add('hidden');
+  }
 
   function renderSearchResults() {
     var q = String(searchInputEl.value || '').trim().toLowerCase();
-    var list = q ? channels.filter(function (c) { return (c.name + ' ' + c.group + ' ' + c.tvgId).toLowerCase().indexOf(q) >= 0; }).slice(0, 12) : recents.map(channelByKey).filter(Boolean).slice(0, 8);
+    var list = q ? channels.filter(function (c) {
+      return (c.name + ' ' + c.group + ' ' + c.tvgId).toLowerCase().indexOf(q) >= 0;
+    }).slice(0, 12) : recents.map(channelByKey).filter(Boolean).slice(0, 8);
     searchResultsEl.innerHTML = '';
     list.forEach(function (channel) {
-      var row = document.createElement('button'); row.className = 'browser-row focusable'; row.setAttribute('data-channel-key', channelKey(channel));
+      var row = document.createElement('button');
+      row.className = 'browser-row focusable';
+      row.setAttribute('data-channel-key', channelKey(channel));
       row.innerHTML = '<span class="browser-index">' + (channels.indexOf(channel) + 1) + '</span><span class="browser-name"></span><span class="browser-group"></span>';
       row.children[1].textContent = (isFavorite(channel) ? '★ ' : '') + channel.name;
       row.children[2].textContent = channel.group;
@@ -439,13 +624,23 @@
   }
 
   function openSearch() {
-    closeHome(); closeBrowser(); closeMom();
-    searchOpen = true; searchPanelEl.classList.remove('hidden'); dimEl.classList.remove('hidden');
-    searchInputEl.value = ''; renderSearchResults();
+    closeHome();
+    closeBrowser();
+    closeMom();
+    searchOpen = true;
+    searchPanelEl.classList.remove('hidden');
+    dimEl.classList.remove('hidden');
+    searchInputEl.value = '';
+    renderSearchResults();
     setTimeout(function () { searchInputEl.focus(); }, 30);
   }
 
-  function closeSearch() { searchOpen = false; searchPanelEl.classList.add('hidden'); if (!browserOpen && !momOpen) dimEl.classList.add('hidden'); try { searchInputEl.blur(); } catch (e) {} }
+  function closeSearch() {
+    searchOpen = false;
+    searchPanelEl.classList.add('hidden');
+    if (!browserOpen && !momOpen) dimEl.classList.add('hidden');
+    try { searchInputEl.blur(); } catch (e) {}
+  }
   searchInputEl.addEventListener('input', renderSearchResults);
 
   function manualReportCurrent() {
@@ -459,10 +654,19 @@
 
   function resetFailure(channel) {
     if (!channel) return;
-    delete failures[channel.url]; saveJson(FAILURES_KEY, failures); updateHealth(); toast('실패 기록을 초기화했습니다.');
+    delete failures[channel.url];
+    saveJson(FAILURES_KEY, failures);
+    updateHealth();
+    toast('실패 기록을 초기화했습니다.');
   }
 
-  function closeAllPanels() { closeHome(); closeBrowser(); closeSearch(); closeMom(); dimEl.classList.add('hidden'); }
+  function closeAllPanels() {
+    closeHome();
+    closeBrowser();
+    closeSearch();
+    closeMom();
+    dimEl.classList.add('hidden');
+  }
 
   function focusFirst(root) {
     var target = root.querySelector('.focusable:not(.hidden)');
@@ -479,7 +683,8 @@
     var list = visibleFocusables();
     if (!list.length) return;
     var at = list.indexOf(document.activeElement);
-    if (at < 0) at = 0; else at = (at + delta + list.length) % list.length;
+    if (at < 0) at = 0;
+    else at = (at + delta + list.length) % list.length;
     list[at].focus();
     try { list[at].scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
   }
@@ -504,7 +709,10 @@
     else if (action === 'close-browser') { closeBrowser(); openHome(); }
   });
 
-  function momToken() { try { return localStorage.getItem(MOM_TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function momToken() {
+    try { return localStorage.getItem(MOM_TOKEN_KEY) || ''; } catch (e) { return ''; }
+  }
+
   function makeDeviceId() {
     var saved = '';
     try { saved = localStorage.getItem(MOM_DEVICE_KEY) || ''; } catch (e) {}
@@ -513,65 +721,207 @@
     try { localStorage.setItem(MOM_DEVICE_KEY, value); } catch (e2) {}
     return value;
   }
+
   function momFetch(action, options) {
-    options = options || {}; var headers = options.headers || {}; var token = momToken();
+    options = options || {};
+    var headers = options.headers || {};
+    var token = momToken();
     if (token) headers['x-tv-token'] = token;
-    headers['Content-Type'] = 'application/json'; options.headers = headers;
+    headers['Content-Type'] = 'application/json';
+    options.headers = headers;
     return fetch(MOM_API_URL + '?action=' + encodeURIComponent(action), options).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) {
-        if (!response.ok) { var error = new Error(body.error || ('HTTP ' + response.status)); error.status = response.status; error.body = body; throw error; }
+        if (!response.ok) {
+          var error = new Error(body.error || ('HTTP ' + response.status));
+          error.status = response.status;
+          error.body = body;
+          throw error;
+        }
         return body;
       });
     });
   }
-  function showApproval(code) { approvalCodeEl.textContent = code || '------'; momApprovalEl.classList.remove('hidden'); momContentEl.classList.add('hidden'); momStateEl.textContent = '승인 대기 중'; }
+
+  function showApproval(code) {
+    approvalCodeEl.textContent = code || '------';
+    momApprovalEl.classList.remove('hidden');
+    momContentEl.classList.add('hidden');
+    momStateEl.textContent = '승인 대기 중';
+  }
+
   function renderMomData(data) {
-    var items = data.items || [], stocks = data.stocks || [];
-    momApprovalEl.classList.add('hidden'); momContentEl.classList.remove('hidden'); momStateEl.textContent = '승인됨 · 자동 동기화';
+    var items = data.items || [];
+    var stocks = data.stocks || [];
+    momApprovalEl.classList.add('hidden');
+    momContentEl.classList.remove('hidden');
+    momStateEl.textContent = '승인됨 · 자동 동기화';
     momItemsEl.innerHTML = '';
     if (!items.length) momItemsEl.innerHTML = '<div class="empty-row">등록된 일정/복약/공지 없음</div>';
-    items.slice(0,6).forEach(function (item) { var card = document.createElement('div'); card.className='mom-card'; var t=document.createElement('div'); t.className='mom-card-title'; t.textContent=String(item.title||''); card.appendChild(t); if(item.body){var b=document.createElement('div');b.className='mom-card-body';b.textContent=String(item.body);card.appendChild(b);} momItemsEl.appendChild(card); });
+    items.slice(0, 6).forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'mom-card';
+      var t = document.createElement('div');
+      t.className = 'mom-card-title';
+      t.textContent = String(item.title || '');
+      card.appendChild(t);
+      if (item.body) {
+        var b = document.createElement('div');
+        b.className = 'mom-card-body';
+        b.textContent = String(item.body);
+        card.appendChild(b);
+      }
+      momItemsEl.appendChild(card);
+    });
     momStocksEl.innerHTML = '';
     if (!stocks.length) momStocksEl.innerHTML = '<div class="empty-row">관심종목 데이터 없음</div>';
-    stocks.slice(0,8).forEach(function (stock) { var row=document.createElement('div');row.className='stock-row';var left=document.createElement('div');left.className='stock-name';left.textContent=String(stock.display_name||stock.symbol||'');var right=document.createElement('div');var price=document.createElement('span');price.className='stock-price';price.textContent=stock.price==null?'-':Number(stock.price).toLocaleString();var change=document.createElement('span');change.className='stock-change';if(stock.change_percent!=null){var pct=Number(stock.change_percent);change.textContent=(pct>0?'▲ ':pct<0?'▼ ':'')+Math.abs(pct).toFixed(2)+'%';}right.appendChild(price);right.appendChild(change);row.appendChild(left);row.appendChild(right);momStocksEl.appendChild(row); });
+    stocks.slice(0, 8).forEach(function (stock) {
+      var row = document.createElement('div');
+      row.className = 'stock-row';
+      var left = document.createElement('div');
+      left.className = 'stock-name';
+      left.textContent = String(stock.display_name || stock.symbol || '');
+      var right = document.createElement('div');
+      var price = document.createElement('span');
+      price.className = 'stock-price';
+      price.textContent = stock.price == null ? '-' : Number(stock.price).toLocaleString();
+      var change = document.createElement('span');
+      change.className = 'stock-change';
+      if (stock.change_percent != null) {
+        var pct = Number(stock.change_percent);
+        change.textContent = (pct > 0 ? '▲ ' : pct < 0 ? '▼ ' : '') + Math.abs(pct).toFixed(2) + '%';
+      }
+      right.appendChild(price);
+      right.appendChild(change);
+      row.appendChild(left);
+      row.appendChild(right);
+      momStocksEl.appendChild(row);
+    });
   }
+
   function registerMomDevice() {
-    momStateEl.textContent='TV 등록 중…';
-    return momFetch('register',{method:'POST',body:JSON.stringify({device_id:makeDeviceId(),device_name:'Samsung Tizen TV'})}).then(function(data){try{localStorage.setItem(MOM_TOKEN_KEY,data.tv_token);}catch(e){}showApproval(data.approval_code);scheduleMomPoll();}).catch(function(error){momStateEl.textContent='등록 실패: '+(error.message||'unknown');});
+    momStateEl.textContent = 'TV 등록 중…';
+    return momFetch('register', { method: 'POST', body: JSON.stringify({ device_id: makeDeviceId(), device_name: 'Samsung Tizen TV' }) })
+      .then(function (data) {
+        try { localStorage.setItem(MOM_TOKEN_KEY, data.tv_token); } catch (e) {}
+        showApproval(data.approval_code);
+        scheduleMomPoll();
+      })
+      .catch(function (error) { momStateEl.textContent = '등록 실패: ' + (error.message || 'unknown'); });
   }
+
   function checkMomStatus() {
-    if(!momToken()) return registerMomDevice();
-    momStateEl.textContent='승인 상태 확인 중…';
-    return momFetch('status',{method:'GET'}).then(function(data){if(data.approved)return loadMomData();showApproval(data.approval_code);}).catch(function(error){if(error.status===401){try{localStorage.removeItem(MOM_TOKEN_KEY);}catch(e){}return registerMomDevice();}momStateEl.textContent='연결 실패: '+(error.message||'unknown');});
+    if (!momToken()) return registerMomDevice();
+    momStateEl.textContent = '승인 상태 확인 중…';
+    return momFetch('status', { method: 'GET' }).then(function (data) {
+      if (data.approved) return loadMomData();
+      showApproval(data.approval_code);
+    }).catch(function (error) {
+      if (error.status === 401) {
+        try { localStorage.removeItem(MOM_TOKEN_KEY); } catch (e) {}
+        return registerMomDevice();
+      }
+      momStateEl.textContent = '연결 실패: ' + (error.message || 'unknown');
+    });
   }
+
   function loadMomData() {
-    return momFetch('data',{method:'GET'}).then(renderMomData).catch(function(error){if(error.status===403&&error.body){showApproval(error.body.approval_code);return;}if(error.status===401){try{localStorage.removeItem(MOM_TOKEN_KEY);}catch(e){}return registerMomDevice();}momStateEl.textContent='데이터 실패: '+(error.message||'unknown');});
+    return momFetch('data', { method: 'GET' }).then(renderMomData).catch(function (error) {
+      if (error.status === 403 && error.body) { showApproval(error.body.approval_code); return; }
+      if (error.status === 401) {
+        try { localStorage.removeItem(MOM_TOKEN_KEY); } catch (e) {}
+        return registerMomDevice();
+      }
+      momStateEl.textContent = '데이터 실패: ' + (error.message || 'unknown');
+    });
   }
-  function scheduleMomPoll() { clearTimeout(momPollTimer); if(!momOpen)return; momPollTimer=setTimeout(function(){checkMomStatus().then(scheduleMomPoll);},10000); }
-  function openMom() { closeHome();closeBrowser();closeSearch();momOpen=true;momHomeEl.classList.remove('hidden');dimEl.classList.remove('hidden');updateMomClock();clearInterval(momClockTimer);momClockTimer=setInterval(updateMomClock,30000);checkMomStatus().then(scheduleMomPoll); }
-  function closeMom() { momOpen=false;momHomeEl.classList.add('hidden');clearTimeout(momPollTimer);clearInterval(momClockTimer);if(!browserOpen&&!searchOpen)dimEl.classList.add('hidden'); }
+
+  function scheduleMomPoll() {
+    clearTimeout(momPollTimer);
+    if (!momOpen) return;
+    momPollTimer = setTimeout(function () { checkMomStatus().then(scheduleMomPoll); }, 10000);
+  }
+
+  function openMom() {
+    closeHome();
+    closeBrowser();
+    closeSearch();
+    momOpen = true;
+    momHomeEl.classList.remove('hidden');
+    dimEl.classList.remove('hidden');
+    updateMomClock();
+    clearInterval(momClockTimer);
+    momClockTimer = setInterval(updateMomClock, 30000);
+    checkMomStatus().then(scheduleMomPoll);
+  }
+
+  function closeMom() {
+    momOpen = false;
+    momHomeEl.classList.add('hidden');
+    clearTimeout(momPollTimer);
+    clearInterval(momClockTimer);
+    if (!browserOpen && !searchOpen) dimEl.classList.add('hidden');
+  }
+
+  function remoteKeyName(event) {
+    if (window.KoreaTVRemote && typeof window.KoreaTVRemote.getName === 'function') {
+      return window.KoreaTVRemote.getName(event);
+    }
+    var code = Number(event.keyCode || event.which || 0);
+    var fallback = {
+      13: 'Enter', 37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown',
+      403: 'ColorF0Red', 404: 'ColorF1Green', 405: 'ColorF2Yellow', 406: 'ColorF3Blue',
+      427: 'ChannelUp', 428: 'ChannelDown',
+      447: 'ColorF0Red', 448: 'ColorF1Green', 449: 'ColorF2Yellow', 450: 'ColorF3Blue',
+      10009: 'Back', 10252: 'MediaPlayPause', 415: 'MediaPlay', 19: 'MediaPause'
+    };
+    return event.key || event.keyIdentifier || fallback[code] || '';
+  }
 
   document.addEventListener('keydown', function (event) {
-    var code = event.keyCode || event.which;
-    var key = event.key || '';
+    var key = remoteKeyName(event);
     var typing = document.activeElement === searchInputEl;
 
-    if (code === 403) { event.preventDefault(); homeOpen ? closeHome() : openHome(); return; }
-    if (code === 404) { event.preventDefault(); toggleFavorite(currentChannel()); return; }
-    if (code === 405) { event.preventDefault(); openSearch(); return; }
-    if (code === 406) { event.preventDefault(); openBrowser('categories'); return; }
+    // Colors are semantic TV buttons, not generic keyboard codes. Resolve them
+    // by Samsung key name first so firmware-specific numeric codes still work.
+    if (key === 'ColorF0Red') {
+      event.preventDefault();
+      homeOpen ? closeHome() : openHome();
+      return;
+    }
+    if (key === 'ColorF1Green') {
+      event.preventDefault();
+      toggleFavorite(currentChannel());
+      return;
+    }
+    if (key === 'ColorF2Yellow') {
+      event.preventDefault();
+      openSearch();
+      return;
+    }
+    if (key === 'ColorF3Blue') {
+      event.preventDefault();
+      openBrowser('categories');
+      return;
+    }
 
-    if (key === 'Escape' || code === 10009 || key === 'Back') {
+    if (key === 'Back') {
       if (searchOpen) { event.preventDefault(); closeSearch(); openHome(); return; }
       if (browserOpen) { event.preventDefault(); closeBrowser(); openHome(); return; }
       if (momOpen) { event.preventDefault(); closeMom(); openHome(); return; }
       if (homeOpen) { event.preventDefault(); closeHome(); return; }
-      try { if (window.tizen && tizen.application) tizen.application.getCurrentApplication().exit(); else history.back(); } catch (e) { history.back(); }
+      try {
+        if (window.tizen && tizen.application) tizen.application.getCurrentApplication().exit();
+        else history.back();
+      } catch (e) { history.back(); }
       return;
     }
 
     if (typing) {
-      if (key === 'ArrowDown') { event.preventDefault(); var first = searchResultsEl.querySelector('.focusable'); if (first) first.focus(); }
+      if (key === 'ArrowDown') {
+        event.preventDefault();
+        var first = searchResultsEl.querySelector('.focusable');
+        if (first) first.focus();
+      }
       return;
     }
 
@@ -580,15 +930,45 @@
       if (key === 'ArrowLeft') { event.preventDefault(); moveFocus(-1); return; }
       if (key === 'ArrowDown') { event.preventDefault(); moveFocus(homeOpen ? 4 : 1); return; }
       if (key === 'ArrowUp') { event.preventDefault(); moveFocus(homeOpen ? -4 : -1); return; }
-      if (key === 'Enter' || code === 13) { var active=document.activeElement; if(active&&typeof active.click==='function'){event.preventDefault();active.click();return;} }
+      if (key === 'Enter') {
+        var active = document.activeElement;
+        if (active && typeof active.click === 'function') {
+          event.preventDefault();
+          active.click();
+          return;
+        }
+      }
     }
 
-    if (key === 'ArrowUp' || key === 'ArrowRight' || code === 427) { event.preventDefault(); changeChannel(1,false); return; }
-    if (key === 'ArrowDown' || key === 'ArrowLeft' || code === 428) { event.preventDefault(); changeChannel(-1,false); return; }
-    if (key === 'Enter' || code === 13) { showBanner(); return; }
-    if (key === 'MediaPlayPause' || code === 10252) { if(video.paused)video.play();else video.pause(); return; }
-    if (key === 'MediaPlay' || code === 415) { video.play(); return; }
-    if (key === 'MediaPause' || code === 19) { video.pause(); }
+    // TV-list semantics: up means a lower channel number, down means a higher
+    // one. Right/left retain familiar next/previous horizontal behavior.
+    if (key === 'ArrowUp' || key === 'ChannelUp') {
+      event.preventDefault();
+      requestChannelChange(-1, event);
+      return;
+    }
+    if (key === 'ArrowDown' || key === 'ChannelDown') {
+      event.preventDefault();
+      requestChannelChange(1, event);
+      return;
+    }
+    if (key === 'ArrowRight') {
+      event.preventDefault();
+      requestChannelChange(1, event);
+      return;
+    }
+    if (key === 'ArrowLeft') {
+      event.preventDefault();
+      requestChannelChange(-1, event);
+      return;
+    }
+    if (key === 'Enter') { showBanner(); return; }
+    if (key === 'MediaPlayPause') {
+      if (video.paused) video.play(); else video.pause();
+      return;
+    }
+    if (key === 'MediaPlay') { video.play(); return; }
+    if (key === 'MediaPause') { video.pause(); }
   });
 
   loadPlaylist();

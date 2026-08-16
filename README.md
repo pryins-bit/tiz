@@ -26,7 +26,7 @@ In TizenBrew Installer, **Install from GitHub** should use:
 
 `pryins-bit/tiz`
 
-The intended operating model is now **install the bootstrap shell once, then stop reinstalling for normal fixes**.
+The intended operating model is **install the bootstrap shell once, then stop reinstalling for normal fixes**.
 
 On every app launch:
 
@@ -44,18 +44,17 @@ The CI signing path currently uses an ephemeral author certificate. Because norm
 
 ## Samsung remote-control handling
 
-The standalone WGT and the TizenBrew module have different key-registration paths. `package.json.keys` covers the TizenBrew module loader, while the standalone WGT must grant the `tv.inputdevice` privilege and register device-dependent keys at runtime.
+The standalone WGT and the TizenBrew module have different key-registration paths. `package.json.keys` covers the TizenBrew module loader, while the standalone WGT grants the `tv.inputdevice` privilege and registers device-dependent keys at runtime.
 
-`app/remote-input.js` registers:
+`app/remote-input.js` registers digits, ChannelUp/ChannelDown, the four color keys, and media playback keys. It then builds a key-code map from Samsung's `tizen.tvinputdevice.getSupportedKeys()` instead of assuming that every firmware emits the same number. The resolver also accepts named `event.key` / `keyIdentifier` events and both common Samsung color-code families (`403–406` and `447–450`) as fallbacks.
 
-- digits `0` through `9`
-- `ChannelUp` / `ChannelDown`
-- red / green / yellow / blue
-- play / pause / play-pause / stop
+Volume, Home, and Power are intentionally **not** registered by Korea TV, so Samsung's normal platform behavior remains intact.
 
-Volume, Home, and Power are intentionally **not** registered by Korea TV, so Samsung's normal platform behavior remains intact. Arrow, Enter, and Back are mandatory Tizen keys and do not need explicit registration; old-Tizen arrow events are normalized when firmware supplies only the numeric keyCode.
+The player zapping path is generation-guarded: asynchronous errors from the old HLS/video source are ignored after a new channel starts. Physical channel navigation also suppresses key-repeat bursts for a short window, so one remote press cannot destroy/recreate the player several times in succession.
 
-Numeric channel entry also works when the startup Korea TV Home panel is open. The previous helper discarded all numeric input whenever a panel was visible, which made the feature appear dead immediately after launch.
+Numeric entry tunes directly to the requested playlist index once. It no longer simulates dozens of intermediate Channel +/- key presses.
+
+The remote normalization strategy follows the same general integration model used by Samsung's public Tizen TV reference applications and mature Tizen IPTV/player projects: register semantic TV keys, obtain device-specific codes when available, and keep fallback codes only as compatibility guards.
 
 ## Mom TV Home overlay
 
@@ -81,9 +80,11 @@ This repository does not host, proxy, decrypt, or bypass access controls for vid
 
 ## Controls
 
-- Up / Right / Channel +: next channel
-- Down / Left / Channel -: previous channel
-- Number keys: tune by playlist channel number
+- Up / Channel +: previous channel (lower playlist number)
+- Down / Channel -: next channel (higher playlist number)
+- Right: next channel
+- Left: previous channel
+- Number keys: tune directly by playlist channel number
 - Enter: show current channel banner / activate focused item
 - Red: Korea TV Home
 - Green: toggle current-channel favorite
@@ -95,4 +96,4 @@ This repository does not host, proxy, decrypt, or bypass access controls for vid
 
 ## Verification boundary
 
-Repository CI can verify JSON/JavaScript syntax, the launch-updater contract, TVInputDevice registration, manifest privileges, WGT signature files, and playlist structure. External HLS probes help remove obviously stale entries, but **real-device launch timing, remote-key delivery, and playback on the target Samsung TV remain the final checks** because firmware/network behavior can differ.
+Repository CI can verify JSON/JavaScript syntax, the launch-updater contract, TVInputDevice registration, semantic/fallback remote-key mapping, race-safe player lifecycle guards, manifest privileges, WGT signature files, and playlist structure. External HLS probes help remove obviously stale entries, but **real-device launch timing, remote-key delivery, and playback on the target Samsung TV remain the final checks** because firmware/network behavior can differ.
