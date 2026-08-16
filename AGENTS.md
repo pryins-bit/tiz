@@ -10,7 +10,11 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - On launch, Korea TV must fetch `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u` automatically with cache-busting.
 - Do not depend on or reuse `tizenbrew-iptv` pairing/local-storage state. Stale playlists from that module must not affect Korea TV.
 - Keep the raw `korea.m3u` URL stable.
+- The primary real-device target is Samsung `KU50UA7050FXKR` running Tizen 6.0 and TizenBrew 2.0.5.
+- TizenBrew Installer only performs its local package re-sign path on Tizen 7 or newer. Therefore the target Tizen 6.0 TV requires a standalone WGT that is already signed before GitHub/USB installation.
+- A standalone release named `KoreaTV.wgt` must contain both `author-signature.xml` and `signature1.xml`; never publish a plain ZIP renamed to `.wgt` as an installable release asset.
 - The standalone Tizen Web App manifest must use a 10-character alphanumeric `tizen:application` package ID, and the application ID must begin with that package ID followed by a dot. CI must reject invalid identifiers before publishing `KoreaTV.wgt`.
+- The current CI fallback creates an ephemeral author certificate and uses the Tizen Studio public old-Tizen distributor signer. This is intended to make a first installation possible on the Tizen 6 target, but a later binary update signed by a different ephemeral author key may require uninstall/reinstall. A persistent author key may be configured later, but it must be stored only as an encrypted repository secret and must never be committed.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
 - Discovery playlists may be searched for candidates, but only source files with a GitHub file update within the last 365 days are eligible for automated collection.
 - Automated collection must keep only Korean HLS streams with observed resolution of at least 720p. Lower-resolution streams remain only in the registry/history as excluded records, not in `stream_candidates.json`.
@@ -23,7 +27,7 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - If a stream fails on the target Samsung TV, remove or quarantine it before adding more candidates. Real-TV success has higher priority than list size.
 - The player should auto-start, allow remote channel switching, and skip failed channels during the current session.
 - Do not host, proxy, decrypt, or bypass access controls for video streams.
-- Do not commit credentials, cookies, tokens, private URLs, or service-role secrets.
+- Do not commit credentials, cookies, tokens, private URLs, private signing keys, author certificates containing private keys, or service-role secrets.
 - Mom TV Home may use a public Edge Function endpoint, but all private dashboard data and privileged Supabase credentials must remain server-side.
 - A TV must be approved before private Mom TV Home data are returned. The public client may persist only a device-scoped token, never a Supabase service-role/secret key.
 
@@ -63,6 +67,7 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `scripts/update_playlist.py`: selects the best current 720p+ URL for each approved channel and emits `korea.m3u`.
 - `.github/workflows/update-playlist.yml`: scheduled/manual approved-playlist regeneration and structure validation.
 - `.github/workflows/validate-module.yml`: static module validation.
+- `.github/workflows/build-standalone.yml`: builds the standalone app, creates an old-Tizen-compatible signed WGT, verifies signature files, and publishes the rolling `standalone-latest` release.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
 - Supabase backend: private tables for approved TV devices, dashboard items and stock quotes, exposed only through the custom-token-validated `mom-tv` Edge Function.
 
@@ -74,10 +79,11 @@ For module changes:
 2. Run `node --check app/main.js`.
 3. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
 4. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
-5. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
-6. Inspect GitHub Actions conclusion after merge.
-7. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
-8. Verify no Supabase service-role/secret key or personal dashboard data are committed.
+5. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml` before publishing.
+6. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
+7. Inspect GitHub Actions conclusion after merge.
+8. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
+9. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
 
 For stream collection/updater changes:
 
