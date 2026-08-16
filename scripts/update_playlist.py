@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Promote the reviewed 720p+ Korean stream candidates into korea.m3u.
+"""Promote approved 720p+ Korean stream candidates into korea.m3u.
 
-stream_candidates.json is produced by the separate collector/validator. This
-script does not discover new streams; it only converts the already filtered,
-deduplicated candidate snapshot into the stable playlist consumed by Korea TV.
+stream_candidates.json is refreshed automatically by the collector. The separate
+approved_channels.json snapshot is the promotion boundary: newly discovered
+channels are not exposed on the TV until explicitly approved.
 """
 
 from __future__ import annotations
@@ -20,37 +20,33 @@ def is_direct_hls(url: str) -> bool:
 
 def clean_name(name: str) -> str:
     name = re.sub(r"\s*\[(?:Not 24/7|Geo-blocked)\]\s*", " ", name, flags=re.I)
+    name = re.sub(r"\s*\(\d{3,4}p\)\s*$", "", name, flags=re.I)
     return re.sub(r"\s+", " ", name).strip()
 
 
 def channel_key(row: dict) -> str:
     tvg_id = str(row.get("tvg_id") or "").strip()
-    if tvg_id:
-        return tvg_id.casefold()
-    name = clean_name(str(row.get("channel") or "Unknown"))
-    name = re.sub(r"\s*\(\d{3,4}p\)\s*$", "", name, flags=re.I)
-    return name.casefold()
+    return (tvg_id or clean_name(str(row.get("channel") or "Unknown"))).casefold()
 
 
-def rank(row: dict) -> tuple[int, int, int, str]:
+def rank(row: dict) -> tuple[int, int, int, int, str]:
     url = str(row.get("url") or "")
     host = re.sub(r"^https?://", "", url, flags=re.I).split("/", 1)[0].split(":", 1)[0]
     raw_ip = 1 if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host) else 0
     https_penalty = 0 if url.startswith("https://") else 1
     live_penalty = 0 if row.get("status") == "live-hd" else 1
-    return (-int(row.get("height") or 0), live_penalty, https_penalty + raw_ip, url)
+    return (-int(row.get("height") or 0), live_penalty, https_penalty, raw_ip, url)
 
 
-def generate(rows: list[dict]) -> str:
+def generate(rows: list[dict], approved_keys: set[str]) -> str:
     eligible = [
         r for r in rows
-        if int(r.get("height") or 0) >= 720
+        if channel_key(r) in approved_keys
+        and int(r.get("height") or 0) >= 720
         and r.get("status") in ("live-hd", "manifest-hd")
         and is_direct_hls(str(r.get("url") or ""))
     ]
 
-    # One best stream per logical channel. URL-level dedupe has already happened
-    # in the collector, but repeat it here defensively.
     best_by_channel: dict[str, dict] = {}
     for row in eligible:
         key = channel_key(row)
@@ -68,7 +64,6 @@ def generate(rows: list[dict]) -> str:
             continue
         seen_urls.add(canonical)
         name = clean_name(str(row.get("channel") or "Unknown"))
-        name = re.sub(r"\s*\(\d{3,4}p\)\s*$", "", name, flags=re.I)
         height = int(row.get("height") or 0)
         tvg_id = str(row.get("tvg_id") or "")
         output.append(f'#EXTINF:-1 tvg-id="{tvg_id}" group-title="한국 720p+",{name} ({height}p)')
@@ -82,7 +77,7 @@ def validate(text: str) -> None:
     if not lines or lines[0] != "#EXTM3U":
         raise ValueError("playlist must start with #EXTM3U")
     if len(lines) < 3:
-        raise ValueError("playlist has no channel entries")
+        raise ValueError("playlist has no promoted channel entries")
     urls: set[str] = set()
     for i, line in enumerate(lines[1:], start=1):
         if not line.startswith("#EXTINF:"):
@@ -100,15 +95,18 @@ def validate(text: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", default="stream_candidates.json")
+    parser.add_argument("--approved", default="approved_channels.json")
     parser.add_argument("--output", default="korea.m3u")
     args = parser.parse_args()
 
     rows = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    playlist = generate(rows)
+    approvals = json.loads(Path(args.approved).read_text(encoding="utf-8"))
+    approved_keys = {str(r["key"]).casefold() for r in approvals if r.get("key")}
+    playlist = generate(rows, approved_keys)
     validate(playlist)
     Path(args.output).write_text(playlist, encoding="utf-8", newline="\n")
     count = sum(1 for line in playlist.splitlines() if line.startswith("#EXTINF:"))
-    print(f"promoted {count} unique 720p+ channels to {args.output}")
+    print(f"promoted {count} approved unique 720p+ channels to {args.output}")
     return 0
 
 
