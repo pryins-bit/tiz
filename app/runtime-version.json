@@ -1,0 +1,9 @@
+{
+  "version": "2026.08.16.1",
+  "files": [
+    "remote-input.js",
+    "numeric-remote.js",
+    "main.js",
+    "style.css"
+  ]
+}
