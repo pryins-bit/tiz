@@ -1,0 +1,85 @@
+name: Validate branding and launcher icon
+
+on:
+  pull_request:
+    paths:
+      - 'icon.png'
+      - 'brand.json'
+      - 'app/brand-runtime.js'
+      - 'app/bootstrap.js'
+      - 'app/runtime-version.json'
+      - 'scripts/sync_tizen_standalone.py'
+      - 'scripts/validate_branding.py'
+      - '.github/workflows/stamp-runtime-version.yml'
+      - '.github/workflows/brand-icon-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'icon.png'
+      - 'brand.json'
+      - '.github/workflows/brand-icon-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  validate-brand:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate brand manifest and PNG
+        run: |
+          python -m json.tool brand.json >/dev/null
+          python scripts/validate_branding.py
+      - name: Validate branding JavaScript
+        run: |
+          node --check app/brand-runtime.js
+          node --check app/bootstrap.js
+      - name: Verify standalone packaging inputs
+        run: |
+          python scripts/sync_tizen_standalone.py
+          test -f tizen-standalone/build/icon.png
+          test -f tizen-standalone/build/brand-runtime.js
+          cmp icon.png tizen-standalone/build/icon.png
+
+  signed-wgt-gate:
+    needs: validate-brand
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dispatch signed WGT build for this exact ref and wait
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_REF: ${{ github.head_ref }}
+          PUSH_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          REF="$PUSH_REF"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            REF="$PR_REF"
+          fi
+          echo "Brand gate ref: $REF"
+          BEFORE="$(gh run list --repo "$REPO" --workflow build-standalone.yml --branch "$REF" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run build-standalone.yml --repo "$REPO" --ref "$REF"
+
+          RUN_ID=''
+          for attempt in $(seq 1 30); do
+            CANDIDATE="$(gh run list --repo "$REPO" --workflow build-standalone.yml --branch "$REF" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [ "$CANDIDATE" != "0" ] && [ "$CANDIDATE" != "$BEFORE" ]; then
+              RUN_ID="$CANDIDATE"
+              break
+            fi
+            sleep 2
+          done
+          test -n "$RUN_ID"
+          echo "Waiting for signed build run $RUN_ID"
+          gh run watch "$RUN_ID" --repo "$REPO" --exit-status
