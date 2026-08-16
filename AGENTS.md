@@ -2,14 +2,18 @@
 
 ## Purpose
 
-This repository maintains a stable M3U URL for the owner's Samsung TV running TizenBrew IPTV Player. The TV-facing contract is `korea.m3u` on the `main` branch.
+This repository is the owner's one-click Korean IPTV module for Samsung TizenBrew. Adding `https://github.com/pryins-bit/tiz` through TizenBrew's **Add GitHub** must be sufficient; the user should not have to pair by QR or manually enter an M3U URL after installation.
 
 ## Authoritative requirements
 
-- Keep `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u` stable so the TV does not need a new QR pairing whenever channel links change.
+- `package.json` + `app/` define the TizenBrew application module named **Korea TV**.
+- On launch, Korea TV must fetch `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u` automatically with cache-busting.
+- Do not depend on or reuse `tizenbrew-iptv` pairing/local-storage state. Stale playlists from that module must not affect Korea TV.
+- Keep the raw `korea.m3u` URL stable.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
 - Prefer direct HLS `.m3u8` links. Prefer HTTPS over HTTP, but retain HTTP direct-HLS fallbacks when no better upstream entry exists.
-- Do not host, proxy, decrypt, or bypass access controls for video streams. This repository only republishes playlist metadata/URLs already exposed by upstream public playlists.
+- The player should auto-start, allow remote channel switching, and skip failed channels during the current session.
+- Do not host, proxy, decrypt, or bypass access controls for video streams.
 - Do not commit credentials, cookies, tokens, private URLs, or service-role secrets.
 
 ## Protected state
@@ -20,28 +24,33 @@ This repository maintains a stable M3U URL for the owner's Samsung TV running Ti
 
 ## Architecture
 
-- `korea.m3u`: stable TV-facing generated playlist.
-- `scripts/update_playlist.py`: fetches upstream Korean playlist data, filters relevant channels, normalizes/deduplicates entries, and writes `korea.m3u`.
-- `.github/workflows/update-playlist.yml`: scheduled/manual updater that commits only when generated output changes.
-- `README.md`: user-facing setup and verification notes.
-
-## Upstream
-
-Primary upstream: `https://raw.githubusercontent.com/iptv-org/iptv/master/streams/kr.m3u`.
-
-The upstream project changes independently. A recent upstream commit does not prove an individual channel stream works on the owner's TV.
+- `package.json`: TizenBrew application-module manifest.
+- `app/index.html`: TV player shell.
+- `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip.
+- `app/style.css`: 1920x1080 TV UI.
+- `korea.m3u`: stable generated playlist consumed by the module.
+- `scripts/update_playlist.py`: merges/filter upstream Korean playlist data and writes `korea.m3u`.
+- `.github/workflows/update-playlist.yml`: scheduled/manual updater.
+- `.github/workflows/validate-module.yml`: static module validation.
+- `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
 
 ## Validation
 
-For any updater change:
+For module changes:
 
-1. Run `python scripts/update_playlist.py --input <fixture-or-url> --output <tempfile>` where practical.
-2. Verify first line is `#EXTM3U`.
-3. Verify every emitted channel has an `#EXTINF` line followed by an HTTP(S) `.m3u8` URL.
-4. Verify duplicate `(name, URL)` entries are removed.
-5. Inspect GitHub Actions conclusion after merge/deployment.
-6. Report TV playback separately as real-device verification; CI success is not Samsung/Tizen playback confirmation.
+1. Parse `package.json` as JSON.
+2. Run `node --check app/main.js`.
+3. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
+4. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
+5. Inspect GitHub Actions conclusion after merge.
+6. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
+
+For updater changes:
+
+1. Generate the playlist and verify the first line is `#EXTM3U`.
+2. Verify each emitted channel has `#EXTINF` followed by HTTP(S) direct-HLS `.m3u8`.
+3. Inspect GitHub Actions conclusion.
 
 ## Rollback
 
-Revert the latest playlist/updater commit or reset `main` to the previous known-good commit. Do not alter protected backup branches.
+Revert the latest module/updater commit or reset to the previous known-good commit. Never alter protected backup branches.
