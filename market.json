@@ -1,0 +1,22 @@
+{
+  "updated_at": null,
+  "source": "github-actions/yahoo-chart",
+  "stocks": [
+    {
+      "name": "삼성전자",
+      "symbol": "005930.KS",
+      "price": null,
+      "change_value": null,
+      "change_percent": null,
+      "quote_time": null
+    },
+    {
+      "name": "SK하이닉스",
+      "symbol": "000660.KS",
+      "price": null,
+      "change_value": null,
+      "change_percent": null,
+      "quote_time": null
+    }
+  ]
+}

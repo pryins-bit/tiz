@@ -4,25 +4,35 @@ on:
   pull_request:
     paths:
       - "package.json"
+      - "icon.png"
+      - "market.json"
       - "app/**"
       - "tizen-standalone/config.xml"
       - "scripts/sync_tizen_standalone.py"
+      - "scripts/update_market.py"
       - "scripts/validate_remote_contract.py"
+      - "scripts/validate_suni_tv.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
       - "THIRD_PARTY_NOTICES.md"
+      - ".github/workflows/refresh-market.yml"
       - ".github/workflows/validate-module.yml"
   push:
     branches: [main]
     paths:
       - "package.json"
+      - "icon.png"
+      - "market.json"
       - "app/**"
       - "tizen-standalone/config.xml"
       - "scripts/sync_tizen_standalone.py"
+      - "scripts/update_market.py"
       - "scripts/validate_remote_contract.py"
+      - "scripts/validate_suni_tv.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
       - "THIRD_PARTY_NOTICES.md"
+      - ".github/workflows/refresh-market.yml"
       - ".github/workflows/validate-module.yml"
 
 jobs:
@@ -33,6 +43,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Validate manifest and entrypoint
         run: |
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); if(p.packageType!=='app') throw new Error('packageType must be app'); if(!p.appName) throw new Error('appName missing'); if(!p.appPath || !fs.existsSync(p.appPath)) throw new Error('appPath missing');"
@@ -44,11 +57,17 @@ jobs:
           node --check app/avplay-adapter.js
           node --check scripts/test_remote_input_runtime.js
           node --check scripts/test_avplay_adapter.js
+      - name: Check Python syntax and market template
+        run: |
+          python -m py_compile scripts/update_market.py scripts/validate_remote_contract.py scripts/validate_suni_tv.py
+          python scripts/update_market.py --validate-template
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
-      - name: Simulate Samsung AVPlay lifecycle
+      - name: Simulate Samsung AVPlay and Mom PIP
         run: node scripts/test_avplay_adapter.js
       - name: Verify Samsung remote input contract
         run: python scripts/validate_remote_contract.py
+      - name: Verify Suni TV branding, PIP, weather, and market contract
+        run: python scripts/validate_suni_tv.py
       - name: Verify fixed playlist contract
         run: grep -F "https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u" app/main.js
