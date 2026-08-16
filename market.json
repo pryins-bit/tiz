@@ -1,22 +1,22 @@
 {
-  "updated_at": null,
+  "updated_at": "2026-08-16T16:34:12.314239+00:00",
   "source": "github-actions/yahoo-chart",
   "stocks": [
     {
       "name": "삼성전자",
       "symbol": "005930.KS",
-      "price": null,
-      "change_value": null,
-      "change_percent": null,
-      "quote_time": null
+      "price": 274500.0,
+      "change_value": 43500.0,
+      "change_percent": 18.831,
+      "quote_time": "2026-08-14T06:30:24+00:00"
     },
     {
       "name": "SK하이닉스",
       "symbol": "000660.KS",
-      "price": null,
-      "change_value": null,
-      "change_percent": null,
-      "quote_time": null
+      "price": 1645000.0,
+      "change_value": 223000.0,
+      "change_percent": 15.682,
+      "quote_time": "2026-08-14T06:30:10+00:00"
     }
   ]
 }
