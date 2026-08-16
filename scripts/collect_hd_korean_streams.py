@@ -18,10 +18,10 @@ REGISTRY_FILE = ROOT / "stream_registry.json"
 CANDIDATES_FILE = ROOT / "stream_candidates.json"
 HISTORY_FILE = ROOT / "stream_history.jsonl"
 REPORT_FILE = ROOT / "stream-check" / "report.md"
-USER_AGENT = "Mozilla/5.0 Korea-TV-HD-Collector/1.3-fast"
+USER_AGENT = "Mozilla/5.0 Korea-TV-HD-Collector/1.4-loose"
 HTTP_TIMEOUT = float(os.getenv("STREAM_HTTP_TIMEOUT", "4"))
-PROBE_TIMEOUT = float(os.getenv("STREAM_PROBE_TIMEOUT", "6"))
-WORKERS = int(os.getenv("STREAM_WORKERS", "16"))
+PROBE_TIMEOUT = float(os.getenv("STREAM_PROBE_TIMEOUT", "10"))
+WORKERS = int(os.getenv("STREAM_WORKERS", "12"))
 
 
 def now_utc() -> dt.datetime:
@@ -140,11 +140,11 @@ def parse_master_resolution(manifest: str) -> tuple[int, int] | None:
 
 
 def fast_decode_probe(url: str) -> tuple[bool, int, int, str]:
-    """Decode the first video frame only; this verifies that media data is actually playable."""
+    """Try to decode one video frame quickly; success strengthens a valid HLS-manifest result."""
     cmd = [
         "ffmpeg", "-hide_banner", "-loglevel", "info",
-        "-rw_timeout", "3000000",
-        "-analyzeduration", "1000000", "-probesize", "1000000",
+        "-rw_timeout", "5000000",
+        "-analyzeduration", "1500000", "-probesize", "1500000",
         "-i", url,
         "-map", "0:v:0", "-frames:v", "1",
         "-f", "null", "-",
@@ -152,11 +152,9 @@ def fast_decode_probe(url: str) -> tuple[bool, int, int, str]:
     try:
         cp = subprocess.run(cmd, capture_output=True, text=True, timeout=PROBE_TIMEOUT)
         stderr = cp.stderr or ""
-        frames = [int(x) for x in re.findall(r"frame=\s*(\d+)", stderr)]
-        decoded = cp.returncode == 0 and bool(frames) and max(frames) >= 1
+        decoded = cp.returncode == 0
 
         width = height = 0
-        # Prefer dimensions from the selected video stream / output description.
         dims = re.findall(r"Video:.*?(\d{2,5})x(\d{2,5})(?:\D|$)", stderr)
         if dims:
             width, height = map(int, dims[-1])
@@ -182,7 +180,6 @@ def validate_one(row: dict) -> dict:
         master = parse_master_resolution(manifest)
         if master:
             width, height = master
-            # No need to touch media segments when the manifest itself is below the 720p policy.
             if height < 720:
                 status = "manifest-below-720p"
                 return {**row, "http": code, "status": status, "width": width, "height": height, "codec": codec}
@@ -198,6 +195,11 @@ def validate_one(row: dict) -> dict:
                 status = "live-below-720p"
             else:
                 status = "live-resolution-unknown"
+        elif master and master[1] >= 720:
+            # Loose fallback: a valid HLS master advertising 720p+ remains a candidate
+            # even when the short US-runner media probe times out or is region-sensitive.
+            width, height = master
+            status = "manifest-hd"
         else:
             status = "segment-fail"
 
@@ -212,11 +214,20 @@ def load_old_registry() -> dict[str, dict]:
         return {}
 
 
+def load_old_candidates() -> list[dict]:
+    try:
+        rows = json.loads(CANDIDATES_FILE.read_text(encoding="utf-8"))
+        return rows if isinstance(rows, list) else []
+    except Exception:
+        return []
+
+
 def candidate_score(row: dict) -> tuple:
+    live_score = 2 if row["status"] == "live-hd" else 1
     https_score = 1 if row["url"].startswith("https://") else 0
     host = urllib.parse.urlsplit(row["url"]).hostname or ""
     non_raw_ip = 0 if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", host) else 1
-    return (row["height"], row["width"], https_score, non_raw_ip)
+    return (live_score, row["height"], row["width"], https_score, non_raw_ip)
 
 
 def main() -> int:
@@ -251,6 +262,7 @@ def main() -> int:
             merged[key]["sources"].append(src)
 
     old = load_old_registry()
+    old_candidates = load_old_candidates()
     rows = [merged[k] for k in sorted(merged)]
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         validated = list(pool.map(validate_one, rows))
@@ -268,7 +280,7 @@ def main() -> int:
             "last_checked": checked_at,
         }
         registry.append(current)
-        if is_tv_channel(row) and row["status"] == "live-hd" and row["height"] >= 720:
+        if is_tv_channel(row) and row["status"] in ("live-hd", "manifest-hd") and row["height"] >= 720:
             eligible.append(current)
 
         signature = (previous.get("status"), previous.get("width"), previous.get("height"))
@@ -282,7 +294,6 @@ def main() -> int:
                 "to": {"status": row["status"], "width": row["width"], "height": row["height"]},
             })
 
-    # One visible candidate per logical channel. All alternate URLs remain in registry as fallbacks/history.
     by_channel: dict[str, dict] = {}
     for row in eligible:
         key = channel_key(row)
@@ -293,6 +304,10 @@ def main() -> int:
     hd_live = sorted(by_channel.values(), key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
     registry.sort(key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
 
+    # Guard against a clearly broken probe run wiping a previously healthy candidate set.
+    if old_candidates and not hd_live:
+        raise RuntimeError("safety stop: fast validation returned zero candidates; preserving previous registry/playlist state")
+
     REGISTRY_FILE.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     CANDIDATES_FILE.write_text(json.dumps(hd_live, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if changes:
@@ -302,11 +317,11 @@ def main() -> int:
 
     REPORT_FILE.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "# Korea fast 720p+ stream check", "", f"Checked: {checked_at}",
+        "# Korea loose/fast 720p+ stream check", "", f"Checked: {checked_at}",
         f"Unique URLs after URL dedupe: {len(registry)}",
-        f"Playable 720p+ TV URLs before channel dedupe: {len(eligible)}",
-        f"Collected unique playable 720p+ TV channels: {len(hd_live)}",
-        f"Mode: manifest <= {HTTP_TIMEOUT:g}s + first decoded video frame <= {PROBE_TIMEOUT:g}s, workers={WORKERS}", "",
+        f"Eligible 720p+ TV URLs before channel dedupe: {len(eligible)}",
+        f"Collected unique 720p+ TV channels: {len(hd_live)}",
+        f"Mode: manifest <= {HTTP_TIMEOUT:g}s + optional first-frame probe <= {PROBE_TIMEOUT:g}s, workers={WORKERS}", "",
         "| Channel | Status | HTTP | Resolution | Sources |", "|---|---|---:|---:|---|",
     ]
     for r in registry:
@@ -318,9 +333,10 @@ def main() -> int:
         lines.append(f"| {s['id']} | {'yes' if s['fresh'] else 'no'} | {s['last_changed'] or '-'} |")
     REPORT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    print(f"deduped_urls={len(registry)} playable_hd_urls={len(eligible)} unique_playable_hd_channels={len(hd_live)} changes={len(changes)}")
+    print(f"deduped_urls={len(registry)} eligible_hd_urls={len(eligible)} unique_hd_channels={len(hd_live)} changes={len(changes)}")
     for r in hd_live:
-        print(f"LIVE\t{r['height']}p\t{r['channel']}\t{r['url']}")
+        prefix = "LIVE" if r["status"] == "live-hd" else "MANIFEST"
+        print(f"{prefix}\t{r['height']}p\t{r['channel']}\t{r['url']}")
     return 0
 
 
