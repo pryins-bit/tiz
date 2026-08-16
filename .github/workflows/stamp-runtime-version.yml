@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'app/brand-runtime.js'
       - 'app/main.js'
       - 'app/numeric-remote.js'
       - 'app/remote-input.js'
@@ -31,7 +32,7 @@ jobs:
           path = Path('app/runtime-version.json')
           data = json.loads(path.read_text(encoding='utf-8'))
           data['version'] = os.environ['GITHUB_SHA']
-          data['files'] = ['remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css']
+          data['files'] = ['brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css']
           path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           print('runtime version:', data['version'])
           PY

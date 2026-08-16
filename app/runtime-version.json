@@ -1,6 +1,7 @@
 {
   "version": "a843626c97e0097348b6527d570cc7eee95d19f6",
   "files": [
+    "brand-runtime.js",
     "remote-input.js",
     "numeric-remote.js",
     "avplay-adapter.js",
