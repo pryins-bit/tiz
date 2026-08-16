@@ -6,6 +6,47 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>수니TV</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .suni-word { font-weight:900; letter-spacing:-2px; }
+    .suni-tv { margin-left:9px; font-size:.72em; font-weight:800; opacity:.9; letter-spacing:1px; }
+    .mom-weather-panel { margin-top:18px; padding:18px; border:1px solid rgba(255,255,255,.12); border-radius:18px; background:rgba(255,255,255,.055); }
+    .mom-weather-title { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; font-size:25px; font-weight:800; }
+    .mom-weather-title small { font-size:15px; font-weight:500; opacity:.55; }
+    .mom-weather-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .mom-weather-card { min-width:0; padding:14px 15px; border-radius:14px; background:rgba(255,255,255,.08); }
+    .weather-place { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+    .weather-place b { font-size:21px; }
+    .weather-place small { font-size:13px; opacity:.55; }
+    .weather-main { display:flex; align-items:center; gap:8px; margin:8px 0 5px; }
+    .weather-main strong { font-size:34px; }
+    .weather-main > span:last-child { font-size:15px; opacity:.78; }
+    .weather-icon { font-size:28px; }
+    .weather-meta,.weather-tomorrow { font-size:14px; line-height:1.5; opacity:.72; }
+    .weather-tomorrow { opacity:.55; }
+    .weather-error,.mom-weather-card.loading { opacity:.65; }
+
+    .mom-home.pip-active { left:1240px !important; top:0 !important; right:0 !important; bottom:0 !important; width:auto !important; padding:26px 28px 24px !important; border-left:1px solid rgba(255,255,255,.14) !important; background:rgba(10,16,26,.985) !important; box-shadow:-18px 0 50px rgba(0,0,0,.25) !important; }
+    .mom-home.pip-active .mom-head { gap:18px; padding-bottom:13px; }
+    .mom-home.pip-active .mom-title { font-size:34px; }
+    .mom-home.pip-active .mom-clock { margin-top:5px; font-size:18px; }
+    .mom-home.pip-active .mom-state { max-width:210px; font-size:15px; }
+    .mom-home.pip-active .mom-actions { margin-top:12px; gap:8px; }
+    .mom-home.pip-active .mom-tv-button { min-width:0; padding:10px 13px; border-radius:10px; font-size:17px; }
+    .mom-home.pip-active .mom-weather-panel { margin-top:12px; padding:13px; }
+    .mom-home.pip-active .mom-weather-title { margin-bottom:9px; font-size:20px; }
+    .mom-home.pip-active .mom-weather-card { padding:11px; }
+    .mom-home.pip-active .weather-place b { font-size:18px; }
+    .mom-home.pip-active .weather-main strong { font-size:28px; }
+    .mom-home.pip-active .weather-icon { font-size:23px; }
+    .mom-home.pip-active .weather-meta,.mom-home.pip-active .weather-tomorrow { font-size:12px; }
+    .mom-home.pip-active .mom-content { margin-top:12px; display:grid; grid-template-columns:1fr; gap:12px; height:auto; max-height:420px; overflow:hidden; }
+    .mom-home.pip-active .mom-column { padding:13px; border-radius:13px; }
+    .mom-home.pip-active .mom-section-title { margin-bottom:8px; font-size:19px; }
+    .mom-home.pip-active .mom-card,.mom-home.pip-active .stock-row { padding:10px 11px; border-radius:9px; }
+    .mom-home.pip-active .mom-card-title,.mom-home.pip-active .stock-name { font-size:17px; }
+    .mom-home.pip-active .mom-card-body,.mom-home.pip-active .stock-price,.mom-home.pip-active .stock-change { font-size:14px; }
+    #video.mom-html5-pip { left:0 !important; top:0 !important; right:auto !important; bottom:auto !important; width:64.583333% !important; height:100% !important; object-fit:contain !important; }
+  </style>
   <script type="text/javascript" src="$WEBAPIS/webapis/webapis.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
   <script defer src="bootstrap.js"></script>
@@ -93,5 +134,23 @@
     <div id="channelMeta" class="channel-meta"></div>
   </div>
   <div id="help" class="help hidden">숫자키: 채널번호 · 채널 위/+ : 번호 증가 · 채널 아래/- : 번호 감소 · 빨강: 홈 · 초록: 즐겨찾기 · 노랑: 검색 · 파랑: 카테고리 · 확인: 정보</div>
+
+  <script>
+    (function () {
+      function installPipDimGuard() {
+        var mom = document.getElementById('momHome');
+        var dim = document.getElementById('dim');
+        if (!mom || !dim || typeof MutationObserver === 'undefined') return;
+        function sync() {
+          if (mom.classList.contains('pip-active')) dim.classList.add('hidden');
+        }
+        var observer = new MutationObserver(sync);
+        observer.observe(mom, { attributes: true, attributeFilter: ['class'] });
+        sync();
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installPipDimGuard);
+      else installPipDimGuard();
+    }());
+  </script>
 </body>
 </html>
