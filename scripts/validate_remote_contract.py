@@ -11,7 +11,7 @@ REQUIRED_KEYS = {
     'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
     'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop',
 }
-RUNTIME_FILES = {'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'}
+RUNTIME_FILES = {'brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'}
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
 
     index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
     assert 'src="bootstrap.js"' in index, 'app/index.html must launch through bootstrap.js'
-    for script in ('main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js'):
+    for script in ('brand-runtime.js', 'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js'):
         assert f'src="{script}"' not in index, (
             f'app/index.html must not bypass the updater by loading {script} directly'
         )
@@ -54,6 +54,9 @@ def main():
     assert 'runPackaged' in bootstrap, 'bootstrap needs packaged offline fallback'
     for name in RUNTIME_FILES:
         assert name in bootstrap, f'bootstrap missing runtime file {name}'
+    assert bootstrap.index("injectScript('brand-runtime.js'") < bootstrap.index("injectScript('remote-input.js'"), (
+        'branding runtime must execute before input/player UI runtime'
+    )
     assert bootstrap.index("injectScript('avplay-adapter.js'") < bootstrap.index("injectScript('main.js'"), (
         'AVPlay adapter must execute before main.js'
     )
@@ -144,10 +147,10 @@ def main():
     assert runtime_test.exists(), 'deterministic Samsung remote runtime simulation missing'
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
-    for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js', 'avplay-adapter.js'):
+    for name in ('bootstrap.js', 'runtime-version.json', 'brand-runtime.js', 'remote-input.js', 'avplay-adapter.js'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote + Mom OS startup + AVPlay + launch updater contract OK')
+    print('Samsung remote + Mom OS startup + AVPlay + branding + launch updater contract OK')
 
 
 if __name__ == '__main__':
