@@ -19,6 +19,9 @@ def is_direct_hls(url: str) -> bool:
 
 
 def clean_name(name: str) -> str:
+    # Some FAST source playlists prefix display channel numbers (e.g. "261 Genie 중국드라마").
+    # They are source-local positions, not stable channel identities, so omit them from Korea TV.
+    name = re.sub(r"^\s*\d{2,4}\s+", "", name)
     name = re.sub(r"\s*\[(?:Not 24/7|Geo-blocked)\]\s*", " ", name, flags=re.I)
     name = re.sub(r"\s*\(\d{3,4}p\)\s*$", "", name, flags=re.I)
     return re.sub(r"\s+", " ", name).strip()
@@ -80,14 +83,14 @@ def category_for(row: dict) -> str:
 
     news_finance = (
         "news", "뉴스", "ytn", "yonhap", "연합뉴스", "한국경제", "hankyung",
-        "매일경제", "mk ", "mtn", "머니투데이", "경제tv", "economy",
+        "매일경제", "mk ", "mtn", "머니투데이", "경제tv", "economy", "bloomberg",
         "tbs seoul", "national assembly", "국회", "ktv", "korea tv",
     )
     if any(k in hay for k in news_finance):
         return "뉴스·경제"
 
     drama_movie = (
-        "drama", "movie", "cinema", "film", "드라마", "영화", "kbs world",
+        "drama", "movie", "movies", "cinema", "film", "드라마", "영화", "kbs world",
         "jtbc2", "jtbc4", "ocn", "catch on",
     )
     if any(k in hay for k in drama_movie):
