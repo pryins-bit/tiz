@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Korea TV</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+  <script defer src="main.js"></script>
+</head>
+<body>
+  <video id="video" autoplay playsinline></video>
+  <div id="status" class="status">최신 채널 목록을 불러오는 중…</div>
+  <div id="banner" class="banner hidden">
+    <div id="channelName" class="channel-name"></div>
+    <div id="channelUrl" class="channel-url"></div>
+  </div>
+  <div id="help" class="help hidden">↑/↓ 또는 채널 +/- : 채널 변경 · 확인 : 배너 · 재생/일시정지 지원</div>
+</body>
+</html>

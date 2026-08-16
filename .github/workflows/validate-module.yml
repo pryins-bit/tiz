@@ -1,0 +1,32 @@
+name: Validate TizenBrew module
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "app/**"
+      - "THIRD_PARTY_NOTICES.md"
+      - ".github/workflows/validate-module.yml"
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "app/**"
+      - "THIRD_PARTY_NOTICES.md"
+      - ".github/workflows/validate-module.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate manifest and entrypoint
+        run: |
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); if(p.packageType!=='app') throw new Error('packageType must be app'); if(!p.appName) throw new Error('appName missing'); if(!p.appPath || !fs.existsSync(p.appPath)) throw new Error('appPath missing');"
+      - name: Check JavaScript syntax
+        run: node --check app/main.js
+      - name: Verify fixed playlist contract
+        run: grep -F "https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u" app/main.js
