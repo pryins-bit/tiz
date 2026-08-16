@@ -50,9 +50,17 @@ assert.equal(player.isActive(), true);
 assert.equal(state, 'PLAYING');
 assert(calls.some((x) => x[0] === 'open' && x[1].endsWith('.m3u8')));
 assert(calls.some((x) => x[0] === 'setListener'));
-assert(calls.some((x) => x[0] === 'setDisplayRect' && x[3] === 1920 && x[4] === 1080));
+assert(calls.some((x) => x[0] === 'setDisplayRect' && x[1] === 0 && x[2] === 0 && x[3] === 1920 && x[4] === 1080));
 assert(calls.some((x) => x[0] === 'prepareAsync'));
 assert(calls.some((x) => x[0] === 'play'));
+
+assert.equal(player.setMomPip(), true);
+assert(calls.some((x) => x[0] === 'setDisplayRect' && x[1] === 0 && x[2] === 0 && x[3] === 1240 && x[4] === 1080), 'Mom OS PIP must keep one live stream in the left 1240px');
+assert.equal(windowObject.KoreaTVAVPlayDiagnostics.momPip, true);
+
+assert.equal(player.setFullscreen(), true);
+assert.equal(windowObject.KoreaTVAVPlayDiagnostics.momPip, false);
+assert.deepEqual(windowObject.KoreaTVAVPlayDiagnostics.displayRect, { x: 0, y: 0, width: 1920, height: 1080 });
 
 listener.onbufferingstart();
 listener.onbufferingcomplete();
@@ -72,4 +80,10 @@ assert(calls.some((x) => x[0] === 'stop'));
 assert(calls.some((x) => x[0] === 'close'));
 assert.deepEqual(errors, []);
 
-console.log('Samsung AVPlay adapter simulation OK');
+assert(source.includes('서울 강남'));
+assert(source.includes('대구 대명동'));
+assert(source.includes('api.open-meteo.com'));
+assert(source.includes('37.5172,35.8482'));
+assert(source.includes('127.0473,128.5771'));
+
+console.log('Samsung AVPlay + Mom PIP + dual-weather simulation OK');
