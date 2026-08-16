@@ -8,12 +8,16 @@ on:
     branches:
       - main
     paths:
+      - "scripts/approve_current_candidates.py"
       - "scripts/update_playlist.py"
+      - "approved_channels.json"
       - "korea.m3u"
       - ".github/workflows/update-playlist.yml"
   pull_request:
     paths:
+      - "scripts/approve_current_candidates.py"
       - "scripts/update_playlist.py"
+      - "approved_channels.json"
       - "korea.m3u"
       - ".github/workflows/update-playlist.yml"
 
@@ -31,6 +35,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Initialize approved channel snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f approved_channels.json ]]; then
+            python scripts/approve_current_candidates.py
+          else
+            echo "approved_channels.json already exists; keeping reviewed promotion set"
+          fi
 
       - name: Generate playlist
         run: python scripts/update_playlist.py
@@ -53,12 +67,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- korea.m3u; then
+          git add approved_channels.json korea.m3u
+          if git diff --cached --quiet; then
             echo "Playlist is already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add korea.m3u
-          git commit -m "chore: refresh Korea IPTV playlist"
+          git commit -m "chore: refresh approved Korea IPTV playlist"
           git push
