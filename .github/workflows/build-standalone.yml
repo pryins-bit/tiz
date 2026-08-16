@@ -58,6 +58,7 @@ jobs:
       - name: Validate Tizen manifest and Installer parser contract
         run: |
           python - <<'PY'
+          import re
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
@@ -66,12 +67,20 @@ jobs:
           root = ET.parse(path).getroot()
           assert root.attrib.get('version')
           assert root.find('{http://www.w3.org/ns/widgets}content') is not None
+          app = root.find('{http://tizen.org/ns/widgets}application')
+          assert app is not None, 'tizen:application missing'
+          package_id = app.attrib.get('package', '')
+          application_id = app.attrib.get('id', '')
+          assert re.fullmatch(r'[A-Za-z0-9]{10}', package_id), f'invalid Tizen package id: {package_id!r}'
+          assert application_id.startswith(package_id + '.'), (
+              f'application id {application_id!r} must start with {package_id!r} + dot'
+          )
           assert '<widget ' in text or '<widget\n' in text
           assert '<tizen:application ' in text
           assert 'xmlns:tizen="http://tizen.org/ns/widgets"' in text
           assert '<ns0:widget' not in text
           assert '<ns1:application' not in text
-          print('config.xml OK for TizenBrew Installer xml2js parser')
+          print('config.xml OK for TizenBrew Installer xml2js parser and Tizen package-id contract')
           PY
       - name: Package project ZIP and WGT
         run: |
