@@ -1,102 +1,79 @@
 #!/usr/bin/env python3
-"""Generate the curated Korea TV playlist used by the TizenBrew module.
+"""Promote the reviewed 720p+ Korean stream candidates into korea.m3u.
 
-The default playlist is intentionally conservative: only channels with a recent
-independent HLS probe or equivalent recent verification are emitted. Discovery
-sources such as iptv-org/Free-TV remain useful for finding candidates, but are
-not merged automatically because stale public M3U entries can re-introduce dead
-or proxy streams.
+stream_candidates.json is produced by the separate collector/validator. This
+script does not discover new streams; it only converts the already filtered,
+deduplicated candidate snapshot into the stable playlist consumed by Korea TV.
 """
 
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+import json
+import re
 from pathlib import Path
-
-
-@dataclass(frozen=True)
-class Channel:
-    tvg_id: str
-    name: str
-    quality: str
-    url: str
-
-
-# Reviewed 2026-08-16. Keep this list small and evidence-driven.
-# If a stream fails on the real Samsung TV, remove/quarantine it before adding
-# more candidates. Prefer broadcaster/CDN URLs; raw IP is retained only where
-# it is the most recently independently verified direct HLS endpoint.
-CURATED_CHANNELS = [
-    Channel(
-        "KTV.kr",
-        "KTV 국민방송",
-        "1080p",
-        "https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8",
-    ),
-    Channel(
-        "GugakTV.kr",
-        "국악방송 GugakTV",
-        "1080p",
-        "https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8",
-    ),
-    Channel(
-        "MBCGyeongnamTV.kr",
-        "MBC 경남",
-        "1080p",
-        "https://624a79c87201d.streamlock.net/MBCTV/TV1.stream/playlist.m3u8",
-    ),
-    Channel(
-        "KBC.kr",
-        "KBC 광주방송 (SBS)",
-        "1080p",
-        "http://119.200.131.11:1935/KBCTV/tv/playlist.m3u8",
-    ),
-    Channel(
-        "HLCQDTV.kr",
-        "대전 MBC",
-        "720p",
-        "https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8",
-    ),
-    Channel(
-        "HLCTDTV.kr",
-        "대구 MBC",
-        "480p",
-        "https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8",
-    ),
-    Channel(
-        "HLKUDTV.kr",
-        "부산 MBC",
-        "360p",
-        "https://stream.bsmbc.com/livetv/BusanMBC_TV_onairstream/playlist.m3u8",
-    ),
-    Channel(
-        "EBS1TV.kr",
-        "EBS 1",
-        "400p",
-        "http://ebsonair.ebs.co.kr/groundwavefamilypc/familypc1m/playlist.m3u8",
-    ),
-]
 
 
 def is_direct_hls(url: str) -> bool:
     return url.split("?", 1)[0].lower().endswith(".m3u8") and url.startswith(("http://", "https://"))
 
 
-def generate(channels: list[Channel]) -> str:
+def clean_name(name: str) -> str:
+    name = re.sub(r"\s*\[(?:Not 24/7|Geo-blocked)\]\s*", " ", name, flags=re.I)
+    return re.sub(r"\s+", " ", name).strip()
+
+
+def channel_key(row: dict) -> str:
+    tvg_id = str(row.get("tvg_id") or "").strip()
+    if tvg_id:
+        return tvg_id.casefold()
+    name = clean_name(str(row.get("channel") or "Unknown"))
+    name = re.sub(r"\s*\(\d{3,4}p\)\s*$", "", name, flags=re.I)
+    return name.casefold()
+
+
+def rank(row: dict) -> tuple[int, int, int, str]:
+    url = str(row.get("url") or "")
+    host = re.sub(r"^https?://", "", url, flags=re.I).split("/", 1)[0].split(":", 1)[0]
+    raw_ip = 1 if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host) else 0
+    https_penalty = 0 if url.startswith("https://") else 1
+    live_penalty = 0 if row.get("status") == "live-hd" else 1
+    return (-int(row.get("height") or 0), live_penalty, https_penalty + raw_ip, url)
+
+
+def generate(rows: list[dict]) -> str:
+    eligible = [
+        r for r in rows
+        if int(r.get("height") or 0) >= 720
+        and r.get("status") in ("live-hd", "manifest-hd")
+        and is_direct_hls(str(r.get("url") or ""))
+    ]
+
+    # One best stream per logical channel. URL-level dedupe has already happened
+    # in the collector, but repeat it here defensively.
+    best_by_channel: dict[str, dict] = {}
+    for row in eligible:
+        key = channel_key(row)
+        current = best_by_channel.get(key)
+        if current is None or rank(row) < rank(current):
+            best_by_channel[key] = row
+
+    selected = sorted(best_by_channel.values(), key=lambda r: clean_name(str(r.get("channel") or "")).casefold())
     output = ["#EXTM3U"]
     seen_urls: set[str] = set()
-    for channel in channels:
-        if channel.url in seen_urls:
+    for row in selected:
+        url = str(row["url"])
+        canonical = str(row.get("canonical_url") or url)
+        if canonical in seen_urls:
             continue
-        if not is_direct_hls(channel.url):
-            raise ValueError(f"not a direct HLS URL: {channel.url}")
-        seen_urls.add(channel.url)
-        output.append(
-            f'#EXTINF:-1 tvg-id="{channel.tvg_id}" group-title="검증 채널",'
-            f'{channel.name} ({channel.quality})'
-        )
-        output.append(channel.url)
+        seen_urls.add(canonical)
+        name = clean_name(str(row.get("channel") or "Unknown"))
+        name = re.sub(r"\s*\(\d{3,4}p\)\s*$", "", name, flags=re.I)
+        height = int(row.get("height") or 0)
+        tvg_id = str(row.get("tvg_id") or "")
+        output.append(f'#EXTINF:-1 tvg-id="{tvg_id}" group-title="한국 720p+",{name} ({height}p)')
+        output.append(url)
+
     return "\n".join(output) + "\n"
 
 
@@ -106,27 +83,32 @@ def validate(text: str) -> None:
         raise ValueError("playlist must start with #EXTM3U")
     if len(lines) < 3:
         raise ValueError("playlist has no channel entries")
-
-    for index, line in enumerate(lines[1:], start=1):
-        if line.startswith("#EXTINF:"):
-            if index + 1 >= len(lines):
-                raise ValueError("dangling #EXTINF without URL")
-            url = lines[index + 1]
-            if not is_direct_hls(url):
-                raise ValueError(f"invalid HLS URL after EXTINF: {url}")
+    urls: set[str] = set()
+    for i, line in enumerate(lines[1:], start=1):
+        if not line.startswith("#EXTINF:"):
+            continue
+        if i + 1 >= len(lines):
+            raise ValueError("dangling #EXTINF without URL")
+        url = lines[i + 1]
+        if not is_direct_hls(url):
+            raise ValueError(f"invalid HLS URL after EXTINF: {url}")
+        if url in urls:
+            raise ValueError(f"duplicate URL in promoted playlist: {url}")
+        urls.add(url)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", default="korea.m3u", help="Output playlist path")
+    parser.add_argument("--input", default="stream_candidates.json")
+    parser.add_argument("--output", default="korea.m3u")
     args = parser.parse_args()
 
-    playlist = generate(CURATED_CHANNELS)
+    rows = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    playlist = generate(rows)
     validate(playlist)
     Path(args.output).write_text(playlist, encoding="utf-8", newline="\n")
-
-    channel_count = sum(1 for line in playlist.splitlines() if line.startswith("#EXTINF:"))
-    print(f"wrote {channel_count} curated channels to {args.output}")
+    count = sum(1 for line in playlist.splitlines() if line.startswith("#EXTINF:"))
+    print(f"promoted {count} unique 720p+ channels to {args.output}")
     return 0
 
 
