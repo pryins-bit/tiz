@@ -11,7 +11,7 @@ REQUIRED_KEYS = {
     'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
     'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop',
 }
-RUNTIME_FILES = {'remote-input.js', 'numeric-remote.js', 'main.js', 'style.css'}
+RUNTIME_FILES = {'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'}
 
 
 def main():
@@ -33,10 +33,13 @@ def main():
 
     index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
     assert 'src="bootstrap.js"' in index, 'app/index.html must launch through bootstrap.js'
-    for script in ('main.js', 'numeric-remote.js', 'remote-input.js'):
+    for script in ('main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js'):
         assert f'src="{script}"' not in index, (
             f'app/index.html must not bypass the updater by loading {script} directly'
         )
+    assert '$WEBAPIS/webapis/webapis.js' in index, 'Samsung AVPlay WebAPI library must load in the shell'
+    assert 'type="application/avplayer"' in index, 'Samsung AVPlay object missing from shell'
+    assert 'data-action="watch-tv"' in index, 'Mom OS home must expose a TV 보기 action'
 
     manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))
     assert manifest.get('version'), 'runtime-version.json missing version'
@@ -51,6 +54,9 @@ def main():
     assert 'runPackaged' in bootstrap, 'bootstrap needs packaged offline fallback'
     for name in RUNTIME_FILES:
         assert name in bootstrap, f'bootstrap missing runtime file {name}'
+    assert bootstrap.index("injectScript('avplay-adapter.js'") < bootstrap.index("injectScript('main.js'"), (
+        'AVPlay adapter must execute before main.js'
+    )
 
     remote = (ROOT / 'app' / 'remote-input.js').read_text(encoding='utf-8')
     assert 'registerKeyBatch' in remote and 'registerKey(' in remote, (
@@ -66,8 +72,6 @@ def main():
     for name in REQUIRED_KEYS:
         assert repr(name) in remote, f'remote-input.js missing requested key {name}'
 
-    # Samsung reference-app compatibility: PageUp/PageDown and XF86 aliases are
-    # observed alongside the documented semantic names/codes on TV web runtimes.
     for alias in (
         'PageUp', 'PageDown', 'XF86RaiseChannel', 'XF86LowerChannel',
         'XF86Red', 'XF86Green', 'XF86Yellow', 'XF86Blue',
@@ -76,8 +80,6 @@ def main():
     for fallback_code in ('33:', '34:', '403:', '406:', '427:', '428:'):
         assert fallback_code in remote, f'remote-input.js missing fallback code {fallback_code}'
 
-    # 447/448/449 are volume-up/down/mute in Samsung Tizen key maps. A previous
-    # workaround incorrectly treated them as old color codes.
     for bad_mapping in (
         "447: 'ColorF0Red'", "448: 'ColorF1Green'",
         "449: 'ColorF2Yellow'", "450: 'ColorF3Blue'",
@@ -93,6 +95,9 @@ def main():
     assert 'stopImmediatePropagation' in remote, (
         'remote gateway must own a handled physical zap before main.js sees it'
     )
+    assert "if (name === 'ChannelUp') return 1;" in remote, 'ChannelUp must increase channel number'
+    assert "if (name === 'ChannelDown') return -1;" in remote, 'ChannelDown must decrease channel number'
+    assert "name === 'ArrowUp' || name === 'ArrowRight'" in remote
     assert 'KoreaTVPlayer' in remote and 'tuneToNumber' in remote
     assert 'currentNumber' in remote and 'channelCount' in remote
     assert 'suppressedZaps' in remote and 'directZaps' in remote
@@ -106,6 +111,11 @@ def main():
         'numeric tuning must not loop through intermediate channels'
     )
 
+    avplay = (ROOT / 'app' / 'avplay-adapter.js').read_text(encoding='utf-8')
+    for token in ('webapis.avplay', 'av.open(', 'av.setListener(', 'av.setDisplayRect(', 'av.prepareAsync(', 'av.play()', 'av.stop()', 'av.close()'):
+        assert token in avplay, f'AVPlay adapter missing lifecycle token {token}'
+    assert 'KoreaTVAVPlayDiagnostics' in avplay and 'KoreaTVAVPlay' in avplay
+
     main_js = (ROOT / 'app' / 'main.js').read_text(encoding='utf-8')
     assert 'playbackGeneration' in main_js and 'samePlayback' in main_js, (
         'player callbacks must ignore stale source generations'
@@ -114,23 +124,30 @@ def main():
     assert 'ZAP_DEBOUNCE_MS' in main_js and 'event.repeat' in main_js, (
         'main.js fallback zapping must suppress key-repeat storms'
     )
+    assert 'window.KoreaTVAVPlay' in main_js and 'avplay.start(channel.url' in main_js, (
+        'main player must prefer Samsung AVPlay when available'
+    )
     assert "key === 'ArrowUp' || key === 'ChannelUp'" in main_js
-    assert 'requestChannelChange(-1, event)' in main_js, 'up/channel-up fallback must move to previous playlist item'
+    assert 'requestChannelChange(1, event)' in main_js, 'up/channel-up fallback must increase channel number'
     assert "key === 'ArrowDown' || key === 'ChannelDown'" in main_js
-    assert 'requestChannelChange(1, event)' in main_js, 'down/channel-down fallback must move to next playlist item'
+    assert 'requestChannelChange(-1, event)' in main_js, 'down/channel-down fallback must decrease channel number'
     for color_name in ('ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue'):
         assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
     assert 'window.KoreaTVPlayer' in main_js and 'tuneToNumber: tuneToNumber' in main_js
     assert 'playChannel(true)' in main_js, 'direct tuning must force the exact selected channel'
+    assert 'setTimeout(openMom, 40)' in main_js, 'standalone launch must open Mom OS first'
+    assert 'setTimeout(openHome, 900)' not in main_js, 'old Korea TV home autostart must not return'
+    assert "action === 'continue' || action === 'watch-tv'" in main_js, 'Mom OS TV 보기 must start live TV'
+    assert 'homeOpen || browserOpen || searchOpen || momOpen' in main_js, 'Mom OS arrows must stay panel navigation'
 
     runtime_test = ROOT / 'scripts' / 'test_remote_input_runtime.js'
     assert runtime_test.exists(), 'deterministic Samsung remote runtime simulation missing'
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
-    for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js'):
+    for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js', 'avplay-adapter.js'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote exact-once + race-safe player + launch updater contract OK')
+    print('Samsung remote + Mom OS startup + AVPlay + launch updater contract OK')
 
 
 if __name__ == '__main__':

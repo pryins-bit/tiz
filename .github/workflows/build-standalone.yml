@@ -10,6 +10,7 @@ on:
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
       - 'scripts/test_remote_input_runtime.js'
+      - 'scripts/test_avplay_adapter.js'
       - '.github/workflows/build-standalone.yml'
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
       - 'scripts/test_remote_input_runtime.js'
+      - 'scripts/test_avplay_adapter.js'
       - '.github/workflows/build-standalone.yml'
 
 permissions:
@@ -41,10 +43,15 @@ jobs:
           node --check app/main.js
           node --check app/numeric-remote.js
           node --check app/remote-input.js
+          node --check app/avplay-adapter.js
           node --check scripts/test_remote_input_runtime.js
+          node --check scripts/test_avplay_adapter.js
 
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
+
+      - name: Simulate Samsung AVPlay lifecycle
+        run: node scripts/test_avplay_adapter.js
 
       - name: Validate Samsung remote input and updater contract
         run: python scripts/validate_remote_contract.py
@@ -177,7 +184,7 @@ jobs:
               names = set(zf.namelist())
               required = {
                   'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
-                  'main.js', 'numeric-remote.js', 'remote-input.js', 'style.css',
+                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js', 'style.css',
                   'author-signature.xml', 'signature1.xml'
               }
               missing = sorted(required - names)
@@ -196,14 +203,24 @@ jobs:
               index = zf.read('index.html').decode('utf-8')
               assert 'src="bootstrap.js"' in index
               assert 'src="main.js"' not in index
+              assert '$WEBAPIS/webapis/webapis.js' in index
+              assert 'type="application/avplayer"' in index
+              assert 'data-action="watch-tv"' in index
               bootstrap = zf.read('bootstrap.js').decode('utf-8')
               assert 'CHECK_BUDGET_MS = 450' in bootstrap
               assert 'runtime-version.json' in bootstrap
+              assert 'avplay-adapter.js' in bootstrap
               remote = zf.read('remote-input.js').decode('utf-8')
               assert 'registerKeyBatch' in remote and 'ChannelUp' in remote and 'ColorF0Red' in remote
               assert 'CHANNEL_DUPLICATE_GUARD_MS' in remote
               assert 'XF86Red' in remote and 'PageUp' in remote
-          print('KoreaTV.wgt contains signatures, updater shell, exact-once remote runtime, and TV input privilege')
+              assert "if (name === 'ChannelUp') return 1;" in remote
+              avplay = zf.read('avplay-adapter.js').decode('utf-8')
+              assert 'webapis.avplay' in avplay and 'prepareAsync' in avplay and 'setDisplayRect' in avplay
+              main = zf.read('main.js').decode('utf-8')
+              assert 'setTimeout(openMom, 40)' in main
+              assert 'avplay.start(channel.url' in main
+          print('KoreaTV.wgt contains signatures, Mom OS entry, AVPlay runtime, exact-once remote input, and TV input privilege')
           PY
 
       - name: Package editable project ZIP
@@ -224,16 +241,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. On every launch it checks the GitHub runtime manifest for up to 450ms, loads a newer runtime when available, otherwise starts the cached/packaged runtime immediately. In TizenBrew Installer use: pryins-bit/tiz'
+          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. Mom OS opens first, Samsung AVPlay is preferred for live HLS A/V sync, and channel UP/+ increases the visible channel number. Runtime updates still use the 450ms launch check. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
-              --title 'Korea TV Standalone (auto-updating shell)' \
+              --title 'Korea TV Standalone (Mom OS + AVPlay)' \
               --notes "$NOTES" \
               --latest
           else
             gh release create standalone-latest \
               --target "$GITHUB_SHA" \
-              --title 'Korea TV Standalone (auto-updating shell)' \
+              --title 'Korea TV Standalone (Mom OS + AVPlay)' \
               --notes "$NOTES" \
               --latest
           fi

@@ -19,6 +19,7 @@ def main():
         'main.js',
         'numeric-remote.js',
         'remote-input.js',
+        'avplay-adapter.js',
         'style.css',
     ):
         shutil.copy2(SRC / name, DST / name)

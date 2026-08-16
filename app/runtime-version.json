@@ -3,6 +3,7 @@
   "files": [
     "remote-input.js",
     "numeric-remote.js",
+    "avplay-adapter.js",
     "main.js",
     "style.css"
   ]

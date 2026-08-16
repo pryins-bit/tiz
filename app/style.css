@@ -1,6 +1,8 @@
 html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#000; color:#fff; font-family:Arial,Helvetica,sans-serif; }
 button,input { font:inherit; }
-#video { width:100%; height:100%; object-fit:contain; background:#000; }
+#av-player { position:fixed; inset:0; width:100%; height:100%; z-index:0; background:#000; }
+#video { position:fixed; inset:0; width:100%; height:100%; object-fit:contain; background:#000; z-index:0; }
+#video.avplay-active { visibility:hidden; }
 .hidden { display:none !important; }
 .dim { position:fixed; inset:0; background:rgba(0,0,0,.56); z-index:25; }
 .status { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-size:36px; z-index:20; white-space:pre-line; text-align:center; }
@@ -58,21 +60,26 @@ button,input { font:inherit; }
 .search-help { margin-top:10px; font-size:17px; opacity:.56; }
 .search-results { margin-top:20px; max-height:570px; overflow:hidden; display:flex; flex-direction:column; gap:8px; }
 
-.mom-home { position:fixed; top:28px; right:28px; bottom:28px; width:620px; box-sizing:border-box; padding:28px; background:rgba(12,16,22,.96); border:1px solid rgba(255,255,255,.18); border-radius:22px; z-index:70; box-shadow:0 12px 50px rgba(0,0,0,.45); }
-.mom-head { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,.15); }
-.mom-title { font-size:42px; font-weight:700; }
-.mom-clock { margin-top:8px; font-size:24px; opacity:.8; }
-.mom-state { max-width:230px; padding-top:8px; font-size:20px; line-height:1.35; text-align:right; opacity:.85; }
-.approval { margin-top:40px; padding:32px 26px; text-align:center; background:rgba(255,255,255,.08); border-radius:18px; }
-.approval-label { font-size:26px; }
-.approval-code { margin:24px 0 18px; font-size:72px; font-weight:700; letter-spacing:12px; }
+.mom-home { position:fixed; inset:0; width:auto; box-sizing:border-box; padding:52px 64px 42px; background:linear-gradient(120deg,rgba(9,14,22,.995),rgba(17,24,35,.985) 55%,rgba(12,18,27,.99)); border:0; border-radius:0; z-index:70; box-shadow:none; }
+.mom-head { display:flex; justify-content:space-between; gap:40px; align-items:flex-start; padding-bottom:24px; border-bottom:1px solid rgba(255,255,255,.15); }
+.mom-title { font-size:54px; font-weight:800; letter-spacing:.5px; }
+.mom-clock { margin-top:8px; font-size:25px; opacity:.78; }
+.mom-state { max-width:440px; padding-top:10px; font-size:22px; line-height:1.35; text-align:right; opacity:.85; }
+.mom-actions { display:flex; gap:16px; margin-top:24px; }
+.mom-tv-button { min-width:230px; padding:18px 24px; border:1px solid rgba(255,255,255,.24); border-radius:16px; background:rgba(255,255,255,.14); color:#fff; font-size:25px; font-weight:800; outline:none; }
+.mom-tv-button.secondary { font-weight:650; background:rgba(255,255,255,.07); }
+.mom-tv-button:focus { transform:scale(1.035); border-color:#fff; background:rgba(255,255,255,.24); box-shadow:0 10px 34px rgba(0,0,0,.34); }
+.approval { margin-top:32px; max-width:760px; padding:34px 28px; text-align:center; background:rgba(255,255,255,.08); border-radius:20px; }
+.approval-label { font-size:28px; }
+.approval-code { margin:24px 0 18px; font-size:76px; font-weight:700; letter-spacing:12px; }
 .approval-help { font-size:20px; line-height:1.45; opacity:.72; }
-.mom-content { margin-top:26px; display:flex; flex-direction:column; gap:26px; height:calc(100% - 116px); overflow:hidden; }
-.mom-section-title { margin-bottom:12px; font-size:24px; font-weight:700; opacity:.9; }
-.mom-items,.mom-stocks { display:flex; flex-direction:column; gap:10px; }
-.mom-card,.stock-row { padding:15px 17px; background:rgba(255,255,255,.08); border-radius:13px; }
-.mom-card-title,.stock-name { font-size:24px; font-weight:700; }
-.mom-card-body { margin-top:6px; font-size:19px; line-height:1.35; opacity:.78; }
+.mom-content { margin-top:30px; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr); gap:30px; height:calc(100% - 210px); overflow:hidden; }
+.mom-column { min-width:0; padding:24px; border-radius:20px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); overflow:hidden; }
+.mom-section-title { margin-bottom:16px; font-size:29px; font-weight:800; opacity:.92; }
+.mom-items,.mom-stocks { display:flex; flex-direction:column; gap:12px; }
+.mom-card,.stock-row { padding:17px 19px; background:rgba(255,255,255,.08); border-radius:14px; }
+.mom-card-title,.stock-name { font-size:25px; font-weight:700; }
+.mom-card-body { margin-top:7px; font-size:20px; line-height:1.4; opacity:.78; }
 .stock-row { display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
-.stock-price { font-size:24px; }.stock-change { margin-left:12px; font-size:20px; opacity:.9; }
-.empty-row { padding:15px 4px; font-size:19px; opacity:.62; }
+.stock-price { font-size:25px; }.stock-change { margin-left:12px; font-size:20px; opacity:.9; }
+.empty-row { padding:15px 4px; font-size:20px; opacity:.62; }
