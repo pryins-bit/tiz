@@ -1,0 +1,15 @@
+[
+  {"channel":"KBS 1TV","url":"https://code.vthanhtivi.pw/getlink/kbs/11/playlist.m3u8","source":"https://github.com/hujingguang/ChinaIPTV/blob/main/southKorea.m3u8","source_checked":"2026-08-16"},
+  {"channel":"KBS 1TV (old IP fallback)","url":"http://202.60.106.14:21585/200/playlist.m3u8","source":"https://github.com/hujingguang/ChinaIPTV/blob/main/southKorea.m3u8","source_checked":"2026-08-16"},
+  {"channel":"KBS 2TV","url":"https://code.vthanhtivi.pw/getlink/kbs/12/playlist.m3u8","source":"https://github.com/hujingguang/ChinaIPTV/blob/main/southKorea.m3u8","source_checked":"2026-08-16"},
+  {"channel":"KTV 국민방송","url":"https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"국악방송 GugakTV","url":"https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"MBC 경남","url":"https://624a79c87201d.streamlock.net/MBCTV/TV1.stream/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"KBC 광주방송 (SBS)","url":"https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"KNN (SBS)","url":"https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"UBC (SBS)","url":"https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"대전 MBC","url":"https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"대구 MBC","url":"https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"부산 MBC","url":"https://stream.bsmbc.com/livetv/BusanMBC_TV_onairstream/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"},
+  {"channel":"EBS 1","url":"https://ebsonair.ebs.co.kr/groundwavefamilypc/familypc1m/playlist.m3u8","source":"https://github.com/iptv-org/iptv/blob/master/streams/kr.m3u","source_checked":"2026-08-16"}
+]

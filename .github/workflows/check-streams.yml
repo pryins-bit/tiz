@@ -1,0 +1,24 @@
+name: Check Korea TV streams
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "27 */6 * * *"
+  pull_request:
+    paths:
+      - "stream_candidates.json"
+      - "scripts/check_streams.sh"
+      - ".github/workflows/check-streams.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check HLS candidates
+        run: bash scripts/check_streams.sh
+      - name: Upload stream report
+        uses: actions/upload-artifact@v4
+        with:
+          name: korea-stream-check
+          path: stream-check/report.md
