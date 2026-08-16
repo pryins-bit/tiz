@@ -1,0 +1,21 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="KBS1TV.kr" group-title="Terrestrial",KBS 1TV
+http://202.60.106.14:21585/200/playlist.m3u8
+#EXTINF:-1 tvg-id="KBS2TV.kr" group-title="Terrestrial",KBS 2TV
+https://code.vthanhtivi.pw/getlink/kbs/12/playlist.m3u8
+#EXTINF:-1 tvg-id="EBS1TV.kr" group-title="Terrestrial",EBS 1TV
+https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="EBS2TV.kr" group-title="Terrestrial",EBS 2TV
+https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCTDTV.kr" group-title="MBC",MBC Daegu
+https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLKUDTV.kr" group-title="MBC",MBC Busan
+https://stream.bsmbc.com/livetv/BusanMBC_TV_onairstream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDGDTV.kr" group-title="SBS Affiliate",SBS KNN
+https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8
+#EXTINF:-1 tvg-id="HLDHDTV.kr" group-title="SBS Affiliate",SBS KBC
+https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDPDTV.kr" group-title="SBS Affiliate",SBS UBC
+https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8
+#EXTINF:-1 tvg-id="HLDEDTV.kr" group-title="SBS Affiliate",TBC Daegu-Gyeongbuk
+http://203.251.91.122:1935/on-air-Backup/tv/playlist.m3u8
