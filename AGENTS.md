@@ -8,13 +8,19 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 
 - `package.json` + `app/` define the TizenBrew application module named **Korea TV**.
 - On launch, Korea TV must fetch `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u` automatically with cache-busting.
+- The standalone WGT is a stable bootstrap shell. After this shell is installed once, ordinary changes to `app/main.js`, `app/numeric-remote.js`, `app/remote-input.js`, and `app/style.css` must not require reinstalling the WGT.
+- On every launch, `app/bootstrap.js` must check the fixed GitHub `app/runtime-version.json` endpoint with a 450 ms decision budget. If the manifest answers within budget and reports a newer runtime, download/cache that runtime before starting. If there is no newer version, start the cached/packaged runtime immediately. If GitHub is slow or offline past the 450 ms budget, start the last known-good cached/packaged runtime immediately and refresh in the background for the next launch.
+- Runtime update URLs are fixed to `https://raw.githubusercontent.com/pryins-bit/tiz/main/app/`; never accept an arbitrary remote code URL from user data, playlists, or external content.
+- `.github/workflows/stamp-runtime-version.yml` must automatically change `app/runtime-version.json` after runtime-source changes on `main`; future agents must not rely on a human remembering to bump the runtime version manually.
+- The installed shell must retain packaged copies of all runtime files as an offline/rollback fallback. Never change `index.html` back to directly loading `main.js`, `numeric-remote.js`, or `remote-input.js`; `bootstrap.js` is the sole runtime entry point.
+- Structural changes to the shell itself (`index.html`, `bootstrap.js`, `config.xml`, privileges, signing, packaged fallback file list) still require a new WGT. Ordinary player/UI/remote behavior changes should stay in the remotely refreshed runtime files whenever possible.
 - Do not depend on or reuse `tizenbrew-iptv` pairing/local-storage state. Stale playlists from that module must not affect Korea TV.
 - Keep the raw `korea.m3u` URL stable.
 - The primary real-device target is Samsung `KU50UA7050FXKR` running Tizen 6.0 and TizenBrew 2.0.5.
 - TizenBrew Installer only performs its local package re-sign path on Tizen 7 or newer. Therefore the target Tizen 6.0 TV requires a standalone WGT that is already signed before GitHub/USB installation.
 - A standalone release named `KoreaTV.wgt` must contain both `author-signature.xml` and `signature1.xml`; never publish a plain ZIP renamed to `.wgt` as an installable release asset.
 - The standalone Tizen Web App manifest must use a 10-character alphanumeric `tizen:application` package ID, and the application ID must begin with that package ID followed by a dot. CI must reject invalid identifiers before publishing `KoreaTV.wgt`.
-- The current CI fallback creates an ephemeral author certificate and uses the Tizen Studio public old-Tizen distributor signer. This is intended to make a first installation possible on the Tizen 6 target, but a later binary update signed by a different ephemeral author key may require uninstall/reinstall. A persistent author key may be configured later, but it must be stored only as an encrypted repository secret and must never be committed.
+- The current CI fallback creates an ephemeral author certificate and uses the Tizen Studio public old-Tizen distributor signer. This is acceptable because the auto-updating shell is intended to avoid repeated WGT binary updates. If the shell itself must later be replaced, uninstall/reinstall may be required unless a persistent author key has been configured as an encrypted repository secret. Never commit a signing private key.
 - Remote-control behavior is part of the real-device contract. Channel +/- , digits 0-9, red/green/yellow/blue, and media keys are device-dependent Tizen TVInputDevice keys and must be explicitly registered. The standalone manifest must include `http://tizen.org/privilege/tv.inputdevice`; the runtime must call `tizen.tvinputdevice.registerKeyBatch()` with individual `registerKey()` fallback.
 - `package.json.keys` is the TizenBrew-module registration contract and must include digits 0-9, ChannelUp/ChannelDown, the four color keys, and the media keys used by the app. Do not assume this package-level registration applies to the separately installed standalone WGT.
 - Do not register VolumeUp/VolumeDown/VolumeMute, Home, or Power for app handling. Volume must retain Samsung's platform-default behavior.
@@ -58,12 +64,15 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 ## Architecture
 
 - `package.json`: TizenBrew application-module manifest and module-level remote key registration list.
-- `app/index.html`: TV player shell and optional Mom TV Home overlay shell.
-- `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote actions, failed-channel skip, and device-approved Mom TV Home client.
-- `app/remote-input.js`: standalone/runtime TVInputDevice key registration plus old-Tizen arrow-key normalization. It deliberately leaves volume/home/power to Samsung's platform behavior.
-- `app/numeric-remote.js`: numeric channel buffer and channel-number tuning helper; it must not discard digits merely because a panel is open.
-- `app/style.css`: 1920x1080 TV/player/overlay UI.
-- `korea.m3u`: stable approved 720p+ playlist consumed by the module.
+- `app/index.html`: stable installed TV shell. It loads `bootstrap.js`, not the runtime scripts directly.
+- `app/bootstrap.js`: launch-time updater. It checks `runtime-version.json` for up to 450 ms, uses cached/packaged fallback immediately on slow/offline launches, downloads newer runtime files when a new version is confirmed, and executes exactly one runtime.
+- `app/runtime-version.json`: tiny runtime update manifest. Its version is automatically stamped after runtime-source changes on `main`.
+- `app/main.js`: remotely refreshable player runtime: playlist fetch, HLS playback, panels, remote actions, failed-channel skip, and Mom TV Home client.
+- `app/remote-input.js`: remotely refreshable TVInputDevice registration plus old-Tizen arrow-key normalization. It deliberately leaves volume/home/power to Samsung's platform behavior.
+- `app/numeric-remote.js`: remotely refreshable numeric channel buffer and channel-number tuning helper.
+- `app/style.css`: remotely refreshable 1920x1080 TV/player/overlay UI.
+- `.github/workflows/stamp-runtime-version.yml`: stamps the source commit into `runtime-version.json` whenever a runtime file changes on `main`.
+- `korea.m3u`: stable approved 720p+ playlist consumed by the runtime.
 - `stream_sources.json`: recent GitHub Korean IPTV discovery sources and freshness limits.
 - `scripts/collect_hd_korean_streams.py`: source freshness check, M3U parsing, URL dedupe, HLS/ffprobe validation, 720p filtering and registry/history generation.
 - `stream_candidates.json`: only currently observed 720p-or-higher Korean HLS candidates, deduplicated by canonical URL and logical channel.
@@ -74,9 +83,9 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `.github/workflows/check-streams.yml`: scheduled/manual collection and validation; refreshes the playlist only from the already approved set.
 - `scripts/update_playlist.py`: selects the best current 720p+ URL for each approved channel and emits `korea.m3u`.
 - `.github/workflows/update-playlist.yml`: scheduled/manual approved-playlist regeneration and structure validation.
-- `.github/workflows/validate-module.yml`: static module and Samsung remote-input contract validation.
-- `scripts/validate_remote_contract.py`: checks module keys, standalone privilege, runtime registration, numeric-panel behavior, and standalone sync coverage.
-- `.github/workflows/build-standalone.yml`: builds the standalone app, creates an old-Tizen-compatible signed WGT, verifies signature files, and publishes the rolling `standalone-latest` release.
+- `.github/workflows/validate-module.yml`: static module and Samsung remote/update contract validation.
+- `scripts/validate_remote_contract.py`: checks module keys, standalone privilege, runtime registration, numeric-panel behavior, updater entry point, 450 ms launch budget, manifest, and standalone sync coverage.
+- `.github/workflows/build-standalone.yml`: builds the stable bootstrap shell, creates an old-Tizen-compatible signed WGT, verifies signature/updater/remote files, and publishes the rolling `standalone-latest` release.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
 - Supabase backend: private tables for approved TV devices, dashboard items and stock quotes, exposed only through the custom-token-validated `mom-tv` Edge Function.
 
@@ -94,21 +103,31 @@ The physical Samsung TV accepted the standalone WGT and volume still worked, but
 
 Rejected: repeatedly adding more numeric keyCode cases without first granting the privilege and registering keys. A handler cannot process an event that Tizen never delivers. Also rejected: registering volume/home/power merely to prove key capture, because that can suppress their normal platform functions.
 
+### 2026-08-16 repeated manual reinstall problem
+
+The initial standalone design baked all player JavaScript/CSS into every WGT. That made every normal bug fix require a new signed package and another TV install, which contradicted the owner's requirement that installation be essentially one-time.
+
+Resolution: treat the signed WGT as a stable local bootstrap shell. The shell performs a bounded launch-time version check against this repository, runs the last known-good code within 450 ms when the network is slow, and caches a confirmed newer runtime. Normal player/UI/remote fixes now update through GitHub runtime files rather than WGT replacement. Only shell/manifest privilege/signing changes require another package install.
+
+Rejected: trying to self-install a new WGT from application code on every launch. That would reintroduce certificate/update policy problems and is unnecessary for JavaScript/CSS runtime fixes. Also rejected: converting the whole app into a hosted application because Samsung documents that hosted applications do not support Tizen APIs; the local shell retains the Tizen application context while fetching trusted runtime source text from the fixed repository URL.
+
 ## Validation
 
-For module changes:
+For module/shell changes:
 
-1. Parse `package.json` as JSON.
-2. Run `node --check app/main.js`, `node --check app/numeric-remote.js`, and `node --check app/remote-input.js`.
+1. Parse `package.json` and `app/runtime-version.json` as JSON.
+2. Run `node --check app/bootstrap.js`, `node --check app/main.js`, `node --check app/numeric-remote.js`, and `node --check app/remote-input.js`.
 3. Run `python scripts/validate_remote_contract.py`.
-4. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
-5. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
-6. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml` before publishing.
-7. Verify the standalone WGT contains `remote-input.js` and its `config.xml` contains `http://tizen.org/privilege/tv.inputdevice`.
-8. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
-9. Inspect GitHub Actions conclusion after merge.
-10. Report TV remote behavior separately; CI success is not Samsung/Tizen real-device confirmation.
-11. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
+4. Verify `index.html` loads `bootstrap.js` and does not directly load the runtime scripts.
+5. Verify the updater check budget remains 450 ms, fixed to `raw.githubusercontent.com/pryins-bit/tiz/main/app/`, with cached and packaged fallbacks.
+6. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
+7. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
+8. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml`.
+9. Verify the WGT contains `bootstrap.js`, `runtime-version.json`, all packaged fallback runtime files, and `tv.inputdevice` privilege.
+10. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
+11. Inspect GitHub Actions conclusions after merge, including runtime-version stamping when runtime files changed.
+12. Report TV launch/update/remote behavior separately; CI success is not Samsung/Tizen real-device confirmation.
+13. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
 
 For stream collection/updater changes:
 
@@ -122,4 +141,4 @@ For stream collection/updater changes:
 
 ## Rollback
 
-Revert the latest module/updater commit or reset to the previous known-good commit. Never alter protected backup branches.
+Revert the latest module/updater commit or reset to the previous known-good commit. Never alter protected backup branches. If a remotely refreshed runtime is bad, publish a corrected runtime with a new stamped version; installed TVs keep the last cached bundle until the new bundle is successfully downloaded.

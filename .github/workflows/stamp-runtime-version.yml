@@ -1,0 +1,47 @@
+name: Stamp runtime version
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/main.js'
+      - 'app/numeric-remote.js'
+      - 'app/remote-input.js'
+      - 'app/style.css'
+
+permissions:
+  contents: write
+
+jobs:
+  stamp:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Stamp runtime manifest with source commit
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path('app/runtime-version.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          data['version'] = os.environ['GITHUB_SHA']
+          data['files'] = ['remote-input.js', 'numeric-remote.js', 'main.js', 'style.css']
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('runtime version:', data['version'])
+          PY
+      - name: Commit runtime version stamp
+        run: |
+          if git diff --quiet -- app/runtime-version.json; then
+            echo 'No runtime version change required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/runtime-version.json
+          git commit -m 'chore: stamp runtime version'
+          git push

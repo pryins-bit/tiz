@@ -11,6 +11,7 @@ REQUIRED_KEYS = {
     'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
     'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop',
 }
+RUNTIME_FILES = {'remote-input.js', 'numeric-remote.js', 'main.js', 'style.css'}
 
 
 def main():
@@ -31,8 +32,25 @@ def main():
     )
 
     index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
+    assert 'src="bootstrap.js"' in index, 'app/index.html must launch through bootstrap.js'
     for script in ('main.js', 'numeric-remote.js', 'remote-input.js'):
-        assert f'src="{script}"' in index, f'app/index.html missing {script}'
+        assert f'src="{script}"' not in index, (
+            f'app/index.html must not bypass the updater by loading {script} directly'
+        )
+
+    manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))
+    assert manifest.get('version'), 'runtime-version.json missing version'
+    assert set(manifest.get('files', [])) == RUNTIME_FILES, 'runtime manifest file set mismatch'
+
+    bootstrap = (ROOT / 'app' / 'bootstrap.js').read_text(encoding='utf-8')
+    assert 'CHECK_BUDGET_MS = 450' in bootstrap, 'launch update check must keep 450ms budget'
+    assert 'runtime-version.json' in bootstrap
+    assert 'raw.githubusercontent.com/pryins-bit/tiz/main/app/' in bootstrap
+    assert 'Promise.race' in bootstrap, 'bootstrap must race update check against launch budget'
+    assert 'refreshForNextLaunch' in bootstrap, 'slow-network updates must be cached for next launch'
+    assert 'runPackaged' in bootstrap, 'bootstrap needs packaged offline fallback'
+    for name in RUNTIME_FILES:
+        assert name in bootstrap, f'bootstrap missing runtime file {name}'
 
     remote = (ROOT / 'app' / 'remote-input.js').read_text(encoding='utf-8')
     assert 'registerKeyBatch' in remote and 'registerKey(' in remote, (
@@ -54,9 +72,10 @@ def main():
     )
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
-    assert "'remote-input.js'" in sync, 'standalone sync must include remote-input.js'
+    for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js'):
+        assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote input contract OK')
+    print('Samsung remote input + launch updater contract OK')
 
 
 if __name__ == '__main__':

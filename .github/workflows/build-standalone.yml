@@ -35,11 +35,12 @@ jobs:
 
       - name: Validate shared JavaScript
         run: |
+          node --check app/bootstrap.js
           node --check app/main.js
           node --check app/numeric-remote.js
           node --check app/remote-input.js
 
-      - name: Validate Samsung remote input contract
+      - name: Validate Samsung remote input and updater contract
         run: python scripts/validate_remote_contract.py
 
       - name: Build standalone project
@@ -55,7 +56,7 @@ jobs:
           path = Path('tizen-standalone/build/config.xml')
           text = path.read_text(encoding='utf-8')
           run_number = int(os.environ['GITHUB_RUN_NUMBER'])
-          version = f'0.4.{run_number}'
+          version = f'0.5.{run_number}'
           updated, count = re.subn(
               r'(<widget\b[^>]*\bversion=")[^"]+("[^>]*>)',
               rf'\g<1>{version}\g<2>',
@@ -120,9 +121,6 @@ jobs:
           PROFILE_DIR="${DATA}/profile"
           mkdir -p "$AUTHOR_DIR" "$PROFILE_DIR"
 
-          # This password and private key live only for this CI run. The signed WGT is
-          # installable on the target old-Tizen TV; a future app-binary update may need
-          # uninstall/reinstall unless a persistent author key is configured later.
           AUTHOR_PW="Ktv$(openssl rand -hex 16)Aa1"
           echo "AUTHOR_PW=$AUTHOR_PW" >> "$GITHUB_ENV"
 
@@ -172,7 +170,8 @@ jobs:
           with zipfile.ZipFile('KoreaTV.wgt') as zf:
               names = set(zf.namelist())
               required = {
-                  'config.xml', 'index.html', 'main.js', 'numeric-remote.js', 'remote-input.js',
+                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
+                  'main.js', 'numeric-remote.js', 'remote-input.js', 'style.css',
                   'author-signature.xml', 'signature1.xml'
               }
               missing = sorted(required - names)
@@ -188,9 +187,15 @@ jobs:
                   for node in root.findall('{http://tizen.org/ns/widgets}privilege')
               }
               assert 'http://tizen.org/privilege/tv.inputdevice' in privileges
+              index = zf.read('index.html').decode('utf-8')
+              assert 'src="bootstrap.js"' in index
+              assert 'src="main.js"' not in index
+              bootstrap = zf.read('bootstrap.js').decode('utf-8')
+              assert 'CHECK_BUDGET_MS = 450' in bootstrap
+              assert 'runtime-version.json' in bootstrap
               remote = zf.read('remote-input.js').decode('utf-8')
               assert 'registerKeyBatch' in remote and 'ChannelUp' in remote and 'ColorF0Red' in remote
-          print('KoreaTV.wgt contains signatures, remote runtime, and TV input privilege')
+          print('KoreaTV.wgt contains signatures, updater shell, remote runtime, and TV input privilege')
           PY
 
       - name: Package editable project ZIP
@@ -211,16 +216,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES='Signed standalone WGT for Samsung Tizen 6 with TVInputDevice remote-key registration. In TizenBrew Installer use: pryins-bit/tiz'
+          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. On every launch it checks the GitHub runtime manifest for up to 450ms, loads a newer runtime when available, otherwise starts the cached/packaged runtime immediately. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
-              --title 'Korea TV Standalone (signed latest)' \
+              --title 'Korea TV Standalone (auto-updating shell)' \
               --notes "$NOTES" \
               --latest
           else
             gh release create standalone-latest \
               --target "$GITHUB_SHA" \
-              --title 'Korea TV Standalone (signed latest)' \
+              --title 'Korea TV Standalone (auto-updating shell)' \
               --notes "$NOTES" \
               --latest
           fi
