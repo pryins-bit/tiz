@@ -17,7 +17,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8",
@@ -37,7 +37,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8",
@@ -57,7 +57,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8",
@@ -77,7 +77,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8",
@@ -97,7 +97,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8",
@@ -117,7 +117,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8",
@@ -137,7 +137,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8",
@@ -157,7 +157,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8",
@@ -177,27 +177,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
-  },
-  {
-    "canonical_url": "http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8",
-    "url": "http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8",
-    "channel": "Gugbang TV (1080p) [Not 24/7]",
-    "tvg_id": "GugbangTV.kr@SD",
-    "sources": [
-      {
-        "id": "iptv-org-kr",
-        "repo": "iptv-org/iptv",
-        "path": "streams/kr.m3u"
-      }
-    ],
-    "http": 200,
-    "status": "manifest-hd",
-    "width": 1920,
-    "height": 1080,
-    "codec": "",
-    "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8",
@@ -217,7 +197,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://stream8.cinerama.uz/1448/playlist.m3u8",
@@ -237,7 +217,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://119.77.96.184:1935/chn05/chn05/playlist.m3u8",
@@ -257,7 +237,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8",
@@ -277,7 +257,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8",
@@ -297,7 +277,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8",
@@ -317,7 +297,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8",
@@ -337,7 +317,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8",
@@ -357,7 +337,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8",
@@ -377,7 +357,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8",
@@ -397,7 +377,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8",
@@ -417,7 +397,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8",
@@ -437,7 +417,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8",
@@ -457,7 +437,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8",
@@ -477,7 +457,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://nonghyup.flive.skcdn.com/nonghyup/_definst_/nhlive/playlist.m3u8",
@@ -497,7 +477,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8",
@@ -517,7 +497,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8",
@@ -537,7 +517,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://1.222.207.80:1935/live/cjbtv/playlist.m3u8",
@@ -562,7 +542,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8",
@@ -582,7 +562,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8",
@@ -602,7 +582,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://allanf181.github.io/adaptive-streams/streams/kr/SBSTV.m3u8",
@@ -622,7 +602,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8",
@@ -642,7 +622,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://liveout.catenoid.net/live-02-shinsegaetvshopping/shinsegaetvshopping_720p/playlist.m3u8",
@@ -662,7 +642,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://live.shoppingntmall.com/live/10011.m3u8",
@@ -682,7 +662,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8",
@@ -702,7 +682,7 @@
     "height": 1080,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8",
@@ -722,7 +702,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8",
@@ -742,7 +722,7 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   },
   {
     "canonical_url": "https://liveout.catenoid.net/live-05-wshopping/wshopping_1500k/playlist.m3u8",
@@ -762,6 +742,6 @@
     "height": 720,
     "codec": "",
     "first_seen": "2026-08-16T08:29:43Z",
-    "last_checked": "2026-08-16T08:29:43Z"
+    "last_checked": "2026-08-16T08:38:02Z"
   }
 ]
