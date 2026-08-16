@@ -3,15 +3,23 @@
 
   var BASE = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/app/';
   var MANIFEST_URL = BASE + 'runtime-version.json';
-  var PACKAGED_VERSION = '2026.08.16.1';
+  var PACKAGED_VERSION = '2026.08.17.2';
   var CHECK_BUDGET_MS = 450;
-  var CACHE_KEY = 'korea_tv_runtime_cache_v1';
-  var CACHE_VERSION_KEY = 'korea_tv_runtime_version_v1';
-  var DEFAULT_FILES = ['remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'];
+  var CACHE_KEY = 'korea_tv_runtime_cache_v2';
+  var CACHE_VERSION_KEY = 'korea_tv_runtime_version_v2';
+  var DEFAULT_FILES = ['brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'];
   var started = false;
 
   function safeJson(text, fallback) {
     try { return JSON.parse(text); } catch (e) { return fallback; }
+  }
+
+  function hasRequiredFiles(files) {
+    if (!files) return false;
+    for (var i = 0; i < DEFAULT_FILES.length; i += 1) {
+      if (!files[DEFAULT_FILES[i]]) return false;
+    }
+    return true;
   }
 
   function readCachedBundle() {
@@ -19,7 +27,7 @@
       var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       var parsed = safeJson(raw, null);
-      if (!parsed || !parsed.version || !parsed.files) return null;
+      if (!parsed || !parsed.version || !hasRequiredFiles(parsed.files)) return null;
       return parsed;
     } catch (e) {
       return null;
@@ -97,6 +105,7 @@
     started = true;
     try {
       injectStyle(bundle.files['style.css']);
+      injectScript('brand-runtime.js', bundle.files['brand-runtime.js']);
       injectScript('remote-input.js', bundle.files['remote-input.js']);
       injectScript('numeric-remote.js', bundle.files['numeric-remote.js']);
       injectScript('avplay-adapter.js', bundle.files['avplay-adapter.js']);
@@ -110,7 +119,7 @@
   function runPackaged() {
     if (started) return;
     started = true;
-    var names = ['remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js'];
+    var names = ['brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js'];
     names.forEach(function (name) {
       var script = document.createElement('script');
       script.src = name;
