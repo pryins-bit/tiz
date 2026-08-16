@@ -1,8 +1,8 @@
 {
   "name": "tiz-korea-tv",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "One-click Korea IPTV player for TizenBrew with optional Mom TV dashboard",
+  "description": "One-click Korea IPTV player and remote-friendly TV home for TizenBrew with optional Mom TV dashboard",
   "packageType": "app",
   "appName": "Korea TV",
   "appPath": "app/index.html",
@@ -13,7 +13,10 @@
     "MediaStop",
     "ChannelUp",
     "ChannelDown",
-    "ColorF1Green"
+    "ColorF0Red",
+    "ColorF1Green",
+    "ColorF2Yellow",
+    "ColorF3Blue"
   ],
   "evaluateScriptOnDocumentStart": false,
   "files": [
