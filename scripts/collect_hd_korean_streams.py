@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import concurrent.futures
 import datetime as dt
 import json
 import os
 import re
 import subprocess
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -16,8 +18,9 @@ REGISTRY_FILE = ROOT / "stream_registry.json"
 CANDIDATES_FILE = ROOT / "stream_candidates.json"
 HISTORY_FILE = ROOT / "stream_history.jsonl"
 REPORT_FILE = ROOT / "stream-check" / "report.md"
-USER_AGENT = "Mozilla/5.0 Korea-TV-HD-Collector/1.0"
-TIMEOUT = 20
+USER_AGENT = "Mozilla/5.0 Korea-TV-HD-Collector/1.1"
+TIMEOUT = 18
+WORKERS = 10
 
 
 def now_utc() -> dt.datetime:
@@ -94,7 +97,6 @@ def parse_m3u(text: str, source: dict) -> list[dict]:
             "source": source["id"],
             "source_repo": source["repo"],
             "source_path": source["path"],
-            "source_extinf": pending,
         })
         pending = None
     return out
@@ -108,7 +110,6 @@ def canonical_url(url: str) -> str:
     if port and not ((p.scheme == "http" and port == 80) or (p.scheme == "https" and port == 443)):
         netloc = f"{host}:{port}"
     path = re.sub(r"/{2,}", "/", p.path or "/")
-    # Query strings can be required tokens, so keep them. Remove only fragments.
     return urllib.parse.urlunsplit((p.scheme.lower(), netloc, path, p.query, ""))
 
 
@@ -123,8 +124,8 @@ def parse_master_resolution(manifest: str) -> tuple[int, int] | None:
 
 def ffprobe_resolution(url: str) -> tuple[int, int, str] | None:
     cmd = [
-        "ffprobe", "-v", "error", "-rw_timeout", "12000000",
-        "-analyzeduration", "5000000", "-probesize", "5000000",
+        "ffprobe", "-v", "error", "-rw_timeout", "10000000",
+        "-analyzeduration", "4000000", "-probesize", "4000000",
         "-select_streams", "v:0", "-show_entries", "stream=codec_name,width,height",
         "-of", "json", url,
     ]
@@ -143,6 +144,27 @@ def ffprobe_resolution(url: str) -> tuple[int, int, str] | None:
         return w, h, str(s.get("codec_name") or "")
     except Exception:
         return None
+
+
+def validate_one(row: dict) -> dict:
+    code, manifest = request_text(row["url"], timeout=10)
+    status = "dead"
+    width = height = 0
+    codec = ""
+    if code in (401, 403, 451):
+        status = "geo-or-access"
+    elif code == 200 and manifest.lstrip().startswith("#EXTM3U"):
+        status = "manifest-ok"
+        master = parse_master_resolution(manifest)
+        if master:
+            width, height = master
+        probe = ffprobe_resolution(row["url"])
+        if probe:
+            width, height, codec = probe
+            status = "live-hd" if height >= 720 else "live-below-720p"
+        elif master:
+            status = "manifest-hd" if height >= 720 else "manifest-below-720p"
+    return {**row, "http": code, "status": status, "width": width, "height": height, "codec": codec}
 
 
 def load_old_registry() -> dict[str, dict]:
@@ -169,7 +191,6 @@ def main() -> int:
             continue
         raw_candidates.extend(parse_m3u(text, source))
 
-    # Exact stream de-duplication. Preserve all discovery sources for provenance.
     merged: dict[str, dict] = {}
     for row in raw_candidates:
         key = canonical_url(row["url"])
@@ -186,68 +207,38 @@ def main() -> int:
             merged[key]["sources"].append(src)
 
     old = load_old_registry()
+    rows = [merged[k] for k in sorted(merged)]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        validated = list(pool.map(validate_one, rows))
+
     registry: list[dict] = []
     hd_live: list[dict] = []
     changes: list[dict] = []
 
-    for key in sorted(merged):
-        row = merged[key]
-        code, manifest = request_text(row["url"], timeout=12)
-        status = "dead"
-        width = height = 0
-        codec = ""
-        if code in (401, 403, 451):
-            status = "geo-or-access"
-        elif code == 200 and manifest.lstrip().startswith("#EXTM3U"):
-            status = "manifest-ok"
-            probe = ffprobe_resolution(row["url"])
-            if probe:
-                width, height, codec = probe
-                status = "live-hd" if height >= 720 else "live-below-720p"
-            else:
-                master = parse_master_resolution(manifest)
-                if master:
-                    width, height = master
-                    status = "manifest-hd" if height >= 720 else "manifest-below-720p"
-
+    for row in validated:
+        key = row["canonical_url"]
         previous = old.get(key, {})
-        first_seen = previous.get("first_seen") or checked_at
         current = {
             **row,
-            "http": code,
-            "status": status,
-            "width": width,
-            "height": height,
-            "codec": codec,
-            "first_seen": first_seen,
+            "first_seen": previous.get("first_seen") or checked_at,
             "last_checked": checked_at,
         }
         registry.append(current)
-
-        # Final collection: only Korean-source candidates with observed >=720p.
-        if status in ("live-hd", "manifest-hd") and height >= 720:
+        if row["status"] in ("live-hd", "manifest-hd") and row["height"] >= 720:
             hd_live.append(current)
 
         signature = (previous.get("status"), previous.get("width"), previous.get("height"))
-        new_signature = (status, width, height)
-        if previous and signature != new_signature:
+        new_signature = (row["status"], row["width"], row["height"])
+        if not previous or signature != new_signature:
             changes.append({
                 "checked_at": checked_at,
                 "canonical_url": key,
                 "channel": row["channel"],
-                "from": {"status": signature[0], "width": signature[1], "height": signature[2]},
-                "to": {"status": status, "width": width, "height": height},
-            })
-        elif not previous:
-            changes.append({
-                "checked_at": checked_at,
-                "canonical_url": key,
-                "channel": row["channel"],
-                "from": None,
-                "to": {"status": status, "width": width, "height": height},
+                "from": None if not previous else {"status": signature[0], "width": signature[1], "height": signature[2]},
+                "to": {"status": row["status"], "width": row["width"], "height": row["height"]},
             })
 
-    # Stable order and one URL only once. Different URLs for the same channel remain as fallbacks.
+    registry.sort(key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
     hd_live.sort(key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
     REGISTRY_FILE.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     CANDIDATES_FILE.write_text(json.dumps(hd_live, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -258,14 +249,9 @@ def main() -> int:
 
     REPORT_FILE.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "# Korea 720p+ stream check",
-        "",
-        f"Checked: {checked_at}",
-        f"Unique URLs after dedupe: {len(registry)}",
-        f"Collected 720p+: {len(hd_live)}",
-        "",
-        "| Channel | Status | HTTP | Resolution | Sources |",
-        "|---|---|---:|---:|---|",
+        "# Korea 720p+ stream check", "", f"Checked: {checked_at}",
+        f"Unique URLs after dedupe: {len(registry)}", f"Collected 720p+: {len(hd_live)}", "",
+        "| Channel | Status | HTTP | Resolution | Sources |", "|---|---|---:|---:|---|",
     ]
     for r in registry:
         res = f"{r['width']}x{r['height']}" if r["height"] else "-"
