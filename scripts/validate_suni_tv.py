@@ -58,13 +58,21 @@ def main():
     assert 'query1.finance.yahoo.com/v8/finance/chart/' in market_updater
     assert "('삼성전자', '005930.KS')" in market_updater
     assert "('SK하이닉스', '000660.KS')" in market_updater
-    assert (ROOT / '.github' / 'workflows' / 'refresh-market.yml').exists(), 'market refresh workflow missing'
+
+    workflow_path = ROOT / '.github' / 'workflows' / 'refresh-market.yml'
+    assert workflow_path.exists(), 'market refresh workflow missing'
+    workflow = workflow_path.read_text(encoding='utf-8')
+    assert 'concurrency:' in workflow and 'mom-os-market-refresh' in workflow, 'market jobs must not overlap each other'
+    assert 'git fetch origin main' in workflow, 'market publish must refresh remote main before push'
+    assert 'git rebase origin/main' in workflow, 'market publish must rebase over concurrent main writes'
+    assert 'for attempt in 1 2 3' in workflow, 'market publish must retry transient push races'
+    assert 'git push origin HEAD:main' in workflow, 'market publish must explicitly target main after rebase'
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
     assert "ICON = ROOT / 'icon.png'" in sync
     assert "shutil.copy2(ICON, DST / 'icon.png')" in sync
 
-    print('Suni TV branding + launcher icon + Mom PIP + dual weather + GitHub stock cache contract OK')
+    print('Suni TV branding + launcher icon + Mom PIP + dual weather + race-safe GitHub stock cache contract OK')
 
 
 if __name__ == '__main__':
