@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'app'
 DST = ROOT / 'tizen-standalone' / 'build'
 CONFIG = ROOT / 'tizen-standalone' / 'config.xml'
+ICON = ROOT / 'icon.png'
 
 
 def main():
@@ -24,6 +25,7 @@ def main():
     ):
         shutil.copy2(SRC / name, DST / name)
     shutil.copy2(CONFIG, DST / 'config.xml')
+    shutil.copy2(ICON, DST / 'icon.png')
     print(f'prepared standalone Tizen project at {DST}')
 
 
