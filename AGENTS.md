@@ -15,7 +15,9 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - Automated collection must keep only Korean HLS streams with observed resolution of at least 720p. Lower-resolution streams remain only in the registry/history as excluded records, not in `stream_candidates.json`.
 - Deduplicate exact streams by canonicalized URL. If the same URL appears in multiple source lists, keep one stream record and merge its source provenance. Different URLs for the same channel may remain as fallbacks.
 - Persist latest validation state in `stream_registry.json` and append status/resolution changes to `stream_history.jsonl` so dead/recovered/quality changes are auditable.
-- Discovery playlists must never be copied wholesale into `korea.m3u`. Promotion to the TV playlist remains a separate reviewed step.
+- Discovery playlists must never be copied wholesale into `korea.m3u`. Promotion to the TV playlist remains a separate reviewed step represented by `approved_channels.json`.
+- `korea.m3u` may contain only approved channels that are still currently present in `stream_candidates.json` at 720p or higher. Newly discovered channels are not auto-promoted merely because validation succeeds.
+- For an approved channel with multiple live URLs, select one best current URL by observed resolution, live probe confidence, HTTPS preference, and non-raw-IP preference.
 - Prefer direct HLS `.m3u8` links. Prefer broadcaster/CDN HTTPS endpoints; retain HTTP/raw-IP direct-HLS only when it is the best recently verified fallback.
 - If a stream fails on the target Samsung TV, remove or quarantine it before adding more candidates. Real-TV success has higher priority than list size.
 - The player should auto-start, allow remote channel switching, and skip failed channels during the current session.
@@ -36,15 +38,17 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `app/index.html`: TV player shell and optional Mom TV Home overlay shell.
 - `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip, and device-approved Mom TV Home client.
 - `app/style.css`: 1920x1080 TV/player/overlay UI.
-- `korea.m3u`: stable curated playlist consumed by the module.
+- `korea.m3u`: stable approved 720p+ playlist consumed by the module.
 - `stream_sources.json`: recent GitHub Korean IPTV discovery sources and freshness limits.
 - `scripts/collect_hd_korean_streams.py`: source freshness check, M3U parsing, URL dedupe, HLS/ffprobe validation, 720p filtering and registry/history generation.
-- `stream_candidates.json`: only currently observed 720p-or-higher Korean HLS candidates, deduplicated by canonical URL.
+- `stream_candidates.json`: only currently observed 720p-or-higher Korean HLS candidates, deduplicated by canonical URL and logical channel.
+- `approved_channels.json`: reviewed channel identities allowed to appear in `korea.m3u`.
+- `scripts/approve_current_candidates.py`: one-shot helper that snapshots the current 720p+ candidate set into `approved_channels.json`; do not rerun automatically once the approval file exists.
 - `stream_registry.json`: latest result for every unique discovered URL, including failures and sub-720p results.
 - `stream_history.jsonl`: append-only status/resolution-change log.
-- `.github/workflows/check-streams.yml`: scheduled/manual collection and validation.
-- `scripts/update_playlist.py`: emits the reviewed curated Korean HLS set and validates direct-HLS structure; broad discovery sources are not auto-merged.
-- `.github/workflows/update-playlist.yml`: scheduled/manual playlist regeneration and structure validation.
+- `.github/workflows/check-streams.yml`: scheduled/manual collection and validation; refreshes the playlist only from the already approved set.
+- `scripts/update_playlist.py`: selects the best current 720p+ URL for each approved channel and emits `korea.m3u`.
+- `.github/workflows/update-playlist.yml`: scheduled/manual approved-playlist regeneration and structure validation.
 - `.github/workflows/validate-module.yml`: static module validation.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
 - Supabase backend: private tables for approved TV devices, dashboard items and stock quotes, exposed only through the custom-token-validated `mom-tv` Edge Function.
@@ -68,7 +72,8 @@ For stream collection/updater changes:
 3. Require a valid HLS manifest and observed video resolution >=720p for `stream_candidates.json`.
 4. Keep excluded/dead/geo-ambiguous results in `stream_registry.json` rather than silently forgetting them.
 5. Record status or resolution transitions in `stream_history.jsonl`.
-6. Inspect GitHub Actions conclusion and report the exact 720p+ count.
+6. Require membership in `approved_channels.json` before emitting a channel into `korea.m3u`.
+7. Inspect GitHub Actions conclusion and report the exact candidate and promoted counts.
 
 ## Rollback
 

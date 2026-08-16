@@ -9,6 +9,9 @@ on:
     paths:
       - "stream_sources.json"
       - "scripts/collect_hd_korean_streams.py"
+      - "scripts/approve_current_candidates.py"
+      - "scripts/update_playlist.py"
+      - "approved_channels.json"
       - ".github/workflows/check-streams.yml"
   pull_request:
     paths:
@@ -17,6 +20,9 @@ on:
       - "stream_registry.json"
       - "stream_history.jsonl"
       - "scripts/collect_hd_korean_streams.py"
+      - "scripts/approve_current_candidates.py"
+      - "scripts/update_playlist.py"
+      - "approved_channels.json"
       - ".github/workflows/check-streams.yml"
 
 permissions:
@@ -33,6 +39,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 scripts/collect_hd_korean_streams.py
 
+      - name: Initialize approved channel snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f approved_channels.json ]]; then
+            python3 scripts/approve_current_candidates.py
+          else
+            echo "approved_channels.json already exists; keeping reviewed promotion set"
+          fi
+
+      - name: Promote approved channels to Korea TV
+        run: python3 scripts/update_playlist.py
+
       - name: Upload stream report
         uses: actions/upload-artifact@v4
         with:
@@ -42,18 +61,20 @@ jobs:
             stream_candidates.json
             stream_registry.json
             stream_history.jsonl
+            approved_channels.json
+            korea.m3u
 
-      - name: Commit registry changes
+      - name: Commit registry and promoted playlist
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
-          git add stream_candidates.json stream_registry.json stream_history.jsonl
+          git add stream_candidates.json stream_registry.json stream_history.jsonl approved_channels.json korea.m3u
           if git diff --cached --quiet; then
-            echo "No stream registry changes."
+            echo "No stream registry or playlist changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: refresh Korean 720p stream registry"
+          git commit -m "chore: refresh Korean 720p stream registry and promoted playlist"
           git push
