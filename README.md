@@ -16,23 +16,37 @@ The player starts the first available channel automatically, supports remote cha
 
 This module path is distinct from the separate **TizenBrew Installer** screen that shows `Update TizenBrew`, `Install from USB`, and `Install from GitHub`.
 
-## Standalone WGT / TizenBrew Installer
+## Standalone WGT / one-time bootstrap install
 
 The target TV is Samsung `KU50UA7050FXKR` on Tizen 6.0. TizenBrew Installer only performs its local package re-sign flow on Tizen 7 or newer, so a raw ZIP renamed to `.wgt` is not sufficient on this TV and fails with certificate errors such as `118, -12`.
 
-`.github/workflows/build-standalone.yml` packages `KoreaTV.wgt` with Tizen Studio and verifies that both `author-signature.xml` and `signature1.xml` are present before publication. The rolling GitHub Release remains tagged `standalone-latest`.
+`.github/workflows/build-standalone.yml` packages a signed `KoreaTV.wgt` bootstrap shell and verifies that both `author-signature.xml` and `signature1.xml` are present before publication. The rolling GitHub Release remains tagged `standalone-latest`.
 
 In TizenBrew Installer, **Install from GitHub** should use:
 
 `pryins-bit/tiz`
 
-The CI signing path follows the old-Tizen Tizen packaging model: an author signature plus the Tizen Studio public distributor signer. The CI-generated author key is currently ephemeral, so a future standalone binary update may require uninstall/reinstall unless a persistent author key is later configured as an encrypted repository secret. Never commit a signing private key.
+The intended operating model is now **install the bootstrap shell once, then stop reinstalling for normal fixes**.
+
+On every app launch:
+
+1. `bootstrap.js` checks the fixed GitHub `runtime-version.json` endpoint.
+2. The update decision is given a **450 ms budget**.
+3. If GitHub answers within that budget and there is no newer runtime, Korea TV starts immediately from the cached or packaged runtime.
+4. If a newer runtime is confirmed, the small runtime bundle (`main.js`, `remote-input.js`, `numeric-remote.js`, `style.css`) is downloaded and cached before startup.
+5. If GitHub is slow/offline past 450 ms, Korea TV starts immediately from the last known-good cached/packaged runtime, while any newer runtime is prepared in the background for the next launch.
+
+`.github/workflows/stamp-runtime-version.yml` automatically changes the runtime version after player/UI/remote runtime files change on `main`, so future ordinary fixes do not depend on manually editing a version number.
+
+Only changes to the **installed shell itself**—for example `index.html`, `bootstrap.js`, `config.xml`, privileges, signing, or the packaged fallback structure—need another WGT installation. Normal player/UI/remote fixes are delivered from GitHub at launch.
+
+The CI signing path currently uses an ephemeral author certificate. Because normal future fixes no longer replace the WGT binary, this is much less intrusive. If the shell itself must eventually be replaced, uninstall/reinstall can still be required unless a persistent author key is configured as an encrypted repository secret. Never commit a signing private key.
 
 ## Samsung remote-control handling
 
 The standalone WGT and the TizenBrew module have different key-registration paths. `package.json.keys` covers the TizenBrew module loader, while the standalone WGT must grant the `tv.inputdevice` privilege and register device-dependent keys at runtime.
 
-`app/remote-input.js` now registers:
+`app/remote-input.js` registers:
 
 - digits `0` through `9`
 - `ChannelUp` / `ChannelDown`
@@ -81,4 +95,4 @@ This repository does not host, proxy, decrypt, or bypass access controls for vid
 
 ## Verification boundary
 
-Repository CI can verify JSON/JavaScript syntax, the TVInputDevice registration contract, manifest privileges, WGT signature files, and playlist structure. External HLS probes help remove obviously stale entries, but **real-device installation, remote-key delivery, and playback on the target Samsung TV remain the final checks** because device certificate policy, firmware key behavior, network policy, geo restrictions, and Tizen codec behavior can differ.
+Repository CI can verify JSON/JavaScript syntax, the launch-updater contract, TVInputDevice registration, manifest privileges, WGT signature files, and playlist structure. External HLS probes help remove obviously stale entries, but **real-device launch timing, remote-key delivery, and playback on the target Samsung TV remain the final checks** because firmware/network behavior can differ.
