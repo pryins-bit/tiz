@@ -1,0 +1,23 @@
+{
+  "name": "tiz-korea-tv",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "One-click Korea IPTV player for TizenBrew",
+  "packageType": "app",
+  "appName": "Korea TV",
+  "appPath": "app/index.html",
+  "keys": [
+    "MediaPlay",
+    "MediaPause",
+    "MediaPlayPause",
+    "MediaStop",
+    "ChannelUp",
+    "ChannelDown"
+  ],
+  "evaluateScriptOnDocumentStart": false,
+  "files": [
+    "app",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
+  ]
+}
