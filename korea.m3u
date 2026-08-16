@@ -1,21 +1,63 @@
 #EXTM3U
-#EXTINF:-1 tvg-id="KBS1TV.kr" group-title="Terrestrial",KBS 1TV
-http://202.60.106.14:21585/200/playlist.m3u8
-#EXTINF:-1 tvg-id="KBS2TV.kr" group-title="Terrestrial",KBS 2TV
-https://code.vthanhtivi.pw/getlink/kbs/12/playlist.m3u8
-#EXTINF:-1 tvg-id="EBS1TV.kr" group-title="Terrestrial",EBS 1TV
+#EXTINF:-1 tvg-id="EBS1TV.kr@SD",EBS 1 (400p) [Not 24/7]
 https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8
-#EXTINF:-1 tvg-id="EBS2TV.kr" group-title="Terrestrial",EBS 2TV
+#EXTINF:-1 tvg-id="EBS1TV.kr@SD",EBS 1 (400p) [Not 24/7]
+https://ebsonair.ebs.co.kr/groundwavefamilypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="EBS2TV.kr@SD",EBS 2 (400p) [Not 24/7]
 https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8
-#EXTINF:-1 tvg-id="HLCTDTV.kr" group-title="MBC",MBC Daegu
-https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8
-#EXTINF:-1 tvg-id="HLKUDTV.kr" group-title="MBC",MBC Busan
+#EXTINF:-1 tvg-id="EBSEnglish.kr@SD",EBS E (400p) [Not 24/7]
+https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="EBSKids.kr@SD",EBS kids (400p) [Not 24/7]
+https://ebsonair.ebs.co.kr/ebsufamilypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="EBSPlus1.kr@SD",EBS+ 1 (400p)
+https://ebsonair.ebs.co.kr/plus1familypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="EBSPlus2.kr@SD",EBS+ 2 (400p)
+https://ebsonair.ebs.co.kr/plus2familypc/familypc1m/playlist.m3u8
+#EXTINF:-1 tvg-id="KBSWorld.kr@SD",KBS World
+https://liveh12.vtvprime.vn/hls/KBS/03.m3u8
+#EXTINF:-1 tvg-id="KBSWorld.kr@SD",KBS World (720p)
+https://stream8.cinerama.uz/1448/playlist.m3u8
+#EXTINF:-1 tvg-id="HLKUDTV.kr@SD",MBC Busan (부산MBC) (360p) [Not 24/7]
 https://stream.bsmbc.com/livetv/BusanMBC_TV_onairstream/playlist.m3u8
-#EXTINF:-1 tvg-id="HLDGDTV.kr" group-title="SBS Affiliate",SBS KNN
-https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8
-#EXTINF:-1 tvg-id="HLDHDTV.kr" group-title="SBS Affiliate",SBS KBC
+#EXTINF:-1 tvg-id="HLANDTV.kr@SD",MBC Chuncheon (춘천 MBC) (480p) [Not 24/7]
+https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCTDTV.kr@SD",MBC Daegu (대구 MBC) (480p) [Not 24/7]
+https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCQDTV.kr@SD",MBC Daejeon (대전 MBC) (720p) [Not 24/7]
+https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCNDTV.kr@SD",MBC Gwangju (광주 MBC) (1080p) [Geo-blocked] [Not 24/7]
+https://media.kjmbc.co.kr/hls/live/stream/playlist.m3u8
+#EXTINF:-1 tvg-id="MBCGyeongnamTV.kr@SD",MBC Gyeongnam (경남 MBC) (1080p) [Not 24/7]
+https://624a79c87201d.streamlock.net/MBCTV/TV1.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAJDTV.kr@SD",MBC Jeju (제주 MBC) (352p) [Not 24/7]
+https://wowza.jejumbc.com/live/tv_jejumbc/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCXDTV.kr@SD",MBC Jeonju (450p)
+https://5ee9633b25727.streamlock.net/jmbc_tv/_definst_/jmbc_tv.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLATDTV.kr@SD",MBC Yeosu (여수 MBC) (1080p) [Not 24/7]
+https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDHDTV.kr@SD",SBS KBC (1080p) [Not 24/7]
 https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8
-#EXTINF:-1 tvg-id="HLDPDTV.kr" group-title="SBS Affiliate",SBS UBC
+#EXTINF:-1 tvg-id="HLDGDTV.kr@SD",SBS KNN (1080p) [Not 24/7]
+https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8
+#EXTINF:-1 tvg-id="HLDPDTV.kr@SD",SBS UBC (540p) [Not 24/7]
 https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8
-#EXTINF:-1 tvg-id="HLDEDTV.kr" group-title="SBS Affiliate",TBC Daegu-Gyeongbuk
+#EXTINF:-1 tvg-id="KBSWorld.kr@SD",KBS World (576p)
+http://31.148.48.15/KBS_World/index.m3u8
+#EXTINF:-1 tvg-id="HLAWDTV.kr@SD",MBC Andong (안동 MBC) (360p) [Not 24/7]
+http://andong.webcasting.co.kr/live/mbc/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAODTV.kr@SD",MBC Chungbuk (MBC 충북) (720p) [Not 24/7]
+http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAQDTV.kr@SD",MBC Gangwon (MBC 강원영동) (1080p) [Not 24/7]
+http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAMDTV.kr@SD",MBC Mokpo (목포 MBC) (720p) [Not 24/7]
+http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDRDTV.kr@SD",SBS CJB (540p) [Not 24/7]
+http://1.222.207.80:1935/live/cjbtv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCGDTV.kr@SD",SBS G1 (360p) [Not 24/7]
+http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLKJDTV.kr@SD",SBS JIBS (720p) [Not 24/7]
+http://123.140.197.22/stream/1/play.m3u8
+#EXTINF:-1 tvg-id="HLDQDTV.kr@SD",SBS JTV (406p) [Not 24/7]
+http://61.85.197.53:1935/jtv_live/myStream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDEDTV.kr@SD",SBS TBC (540p) [Geo-blocked] [Not 24/7]
 http://203.251.91.122:1935/on-air-Backup/tv/playlist.m3u8
