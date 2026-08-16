@@ -24,6 +24,8 @@ html, body {
   background: #000;
   font-size: 36px;
   z-index: 20;
+  white-space: pre-line;
+  text-align: center;
 }
 
 .banner {
@@ -61,6 +63,149 @@ html, body {
   border-radius: 8px;
   font-size: 20px;
   z-index: 31;
+}
+
+.mom-home {
+  position: fixed;
+  top: 28px;
+  right: 28px;
+  bottom: 28px;
+  width: 620px;
+  box-sizing: border-box;
+  padding: 28px;
+  background: rgba(12, 16, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  z-index: 40;
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.45);
+}
+
+.mom-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.mom-title {
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.mom-clock {
+  margin-top: 8px;
+  font-size: 24px;
+  opacity: 0.8;
+}
+
+.mom-state {
+  max-width: 230px;
+  padding-top: 8px;
+  font-size: 20px;
+  line-height: 1.35;
+  text-align: right;
+  opacity: 0.85;
+}
+
+.approval {
+  margin-top: 40px;
+  padding: 32px 26px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+}
+
+.approval-label {
+  font-size: 26px;
+}
+
+.approval-code {
+  margin: 24px 0 18px;
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 12px;
+}
+
+.approval-help {
+  font-size: 20px;
+  line-height: 1.45;
+  opacity: 0.72;
+}
+
+.mom-content {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  height: calc(100% - 116px);
+  overflow: hidden;
+}
+
+.mom-column {
+  min-height: 0;
+}
+
+.mom-section-title {
+  margin-bottom: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.mom-items,
+.mom-stocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mom-card,
+.stock-row {
+  padding: 15px 17px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 13px;
+}
+
+.mom-card-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mom-card-body {
+  margin-top: 6px;
+  font-size: 19px;
+  line-height: 1.35;
+  opacity: 0.78;
+}
+
+.stock-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.stock-name {
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.stock-price {
+  font-size: 24px;
+}
+
+.stock-change {
+  margin-left: 12px;
+  font-size: 20px;
+  opacity: 0.9;
+}
+
+.empty-row {
+  padding: 15px 4px;
+  font-size: 19px;
+  opacity: 0.62;
 }
 
 .hidden { display: none !important; }

@@ -14,6 +14,14 @@ After that, open **Korea TV** from TizenBrew. No QR pairing and no manual M3U UR
 
 The player starts the first available channel automatically, supports remote channel switching, and skips channels that fail during the current session.
 
+## Mom TV Home overlay
+
+Press the **green remote button** while Korea TV is running to open the optional Mom TV Home overlay.
+
+On the first use, the TV registers itself with the private Supabase backend and displays a six-digit approval code. Until that device is approved, no private dashboard data are returned. After approval, the TV stores only its device token in local storage and reconnects automatically.
+
+Private items such as medication, appointments, family notices and stock quotes are not stored in this public repository. The public module contains only the client UI and the public Edge Function endpoint. Supabase service-role credentials remain server-side.
+
 ## Why this avoids the old IPTV Player state
 
 The previous `tizenbrew-iptv` module stored its own playlist/pairing state. This repository does not read or reuse that state. It fetches `korea.m3u` fresh on every launch with cache-busting, so stale channels from the removed module are irrelevant to **Korea TV**.
@@ -31,8 +39,9 @@ This repository does not host, proxy, decrypt, or bypass access controls for vid
 - Up / Right / Channel +: next channel
 - Down / Left / Channel -: previous channel
 - Enter: show current channel banner
+- Green: toggle Mom TV Home overlay
 - Play / Pause: media playback control
-- Back: leave the module
+- Back: close Mom TV Home first, then leave the module
 
 ## Verification boundary
 
