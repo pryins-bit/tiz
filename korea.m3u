@@ -1,75 +1,75 @@
 #EXTM3U
-#EXTINF:-1 tvg-id="ArirangTV.kr@SD" group-title="한국 720p+",Arirang TV (1080p)
-https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8
-#EXTINF:-1 tvg-id="ArirangUN.kr@SD" group-title="한국 720p+",Arirang TV UN (1080p)
-https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8
-#EXTINF:-1 tvg-id="BBSTV.kr@SD" group-title="한국 720p+",BBS Buddhist Broadcasting (1080p)
-http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8
-#EXTINF:-1 tvg-id="BTNTV.kr@SD" group-title="한국 720p+",BTN TV (1080p)
-https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8
-#EXTINF:-1 tvg-id="FGTV.kr@SD" group-title="한국 720p+",FGTV (720p)
-https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8
-#EXTINF:-1 tvg-id="GoodTV.kr@SD" group-title="한국 720p+",GoodTV (1080p)
-http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8
-#EXTINF:-1 tvg-id="GSMyShop.kr@SD" group-title="한국 720p+",GS My Shop (720p)
-https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="GSShop.kr@SD" group-title="한국 720p+",GS Shop (720p)
-https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="GugakTV.kr@SD" group-title="한국 720p+",GugakTV 국악방송 (1080p)
-https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="HyundaiHomeShopping.kr@SD" group-title="한국 720p+",Hyundai Home Shopping (720p)
-https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8
-#EXTINF:-1 tvg-id="KBSWorld.kr@SD" group-title="한국 720p+",KBS World (720p)
-https://stream8.cinerama.uz/1448/playlist.m3u8
-#EXTINF:-1 tvg-id="KCTV.kr@SD" group-title="한국 720p+",KCTV 광주 CH05 (720p)
-http://119.77.96.184:1935/chn05/chn05/playlist.m3u8
-#EXTINF:-1 tvg-id="KTV.kr@SD" group-title="한국 720p+",Korea TV (1080p)
-https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="LotteHomeShopping.kr@SD" group-title="한국 720p+",Lotte Home Shopping (720p)
-https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8
-#EXTINF:-1 tvg-id="LotteOneTV.kr@SD" group-title="한국 720p+",Lotte OneTV (720p)
-https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8
-#EXTINF:-1 tvg-id="HLANDTV.kr@SD" group-title="한국 720p+",MBC Chuncheon (춘천 MBC) (1080p)
-https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8
-#EXTINF:-1 tvg-id="HLAODTV.kr@SD" group-title="한국 720p+",MBC Chungbuk (MBC 충북) (720p)
-http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8
-#EXTINF:-1 tvg-id="HLCQDTV.kr@SD" group-title="한국 720p+",MBC Daejeon (대전 MBC) (720p)
-https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8
-#EXTINF:-1 tvg-id="HLAQDTV.kr@SD" group-title="한국 720p+",MBC Gangwon (MBC 강원영동) (1080p)
-http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8
-#EXTINF:-1 tvg-id="HLAMDTV.kr@SD" group-title="한국 720p+",MBC Mokpo (목포 MBC) (720p)
-http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8
-#EXTINF:-1 tvg-id="HLATDTV.kr@SD" group-title="한국 720p+",MBC Yeosu (여수 MBC) (1080p)
-https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8
-#EXTINF:-1 tvg-id="NationalAssemblyTV.kr@SD" group-title="한국 720p+",National Assembly TV (720p)
-https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8
-#EXTINF:-1 tvg-id="NBS.kr@SD" group-title="한국 720p+",NBS Korea Agricultural Broadcasting (720p)
-https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8
-#EXTINF:-1 tvg-id="NHTV.kr@SD" group-title="한국 720p+",NHTV (720p)
-http://nonghyup.flive.skcdn.com/nonghyup/_definst_/nhlive/playlist.m3u8
-#EXTINF:-1 tvg-id="OBSGyeonginTV.kr" group-title="한국 720p+",OBS TV (1080p)
-https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8
-#EXTINF:-1 tvg-id="RUTCTV.kr@SD" group-title="한국 720p+",RUTC TV (720p)
-http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="HLDRDTV.kr@SD" group-title="한국 720p+",SBS CJB (720p)
-http://1.222.207.80:1935/live/cjbtv/playlist.m3u8
-#EXTINF:-1 tvg-id="HLCGDTV.kr@SD" group-title="한국 720p+",SBS G1 (720p)
-http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8
-#EXTINF:-1 tvg-id="HLDHDTV.kr@SD" group-title="한국 720p+",SBS KBC (720p)
-https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8
-#EXTINF:-1 tvg-id="SBSTV.kr" group-title="한국 720p+",SBS TV (1080p)
+#EXTINF:-1 tvg-id="SBSTV.kr" group-title="공중파",SBS TV (1080p)
 https://allanf181.github.io/adaptive-streams/streams/kr/SBSTV.m3u8
-#EXTINF:-1 tvg-id="HLDPDTV.kr@SD" group-title="한국 720p+",SBS UBC (720p)
+#EXTINF:-1 tvg-id="HLANDTV.kr@SD" group-title="공중파",MBC Chuncheon (춘천 MBC) (1080p)
+https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAODTV.kr@SD" group-title="공중파",MBC Chungbuk (MBC 충북) (720p)
+http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCQDTV.kr@SD" group-title="공중파",MBC Daejeon (대전 MBC) (720p)
+https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAQDTV.kr@SD" group-title="공중파",MBC Gangwon (MBC 강원영동) (1080p)
+http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8
+#EXTINF:-1 tvg-id="HLAMDTV.kr@SD" group-title="공중파",MBC Mokpo (목포 MBC) (720p)
+http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLATDTV.kr@SD" group-title="공중파",MBC Yeosu (여수 MBC) (1080p)
+https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDRDTV.kr@SD" group-title="공중파",SBS CJB (720p)
+http://1.222.207.80:1935/live/cjbtv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLCGDTV.kr@SD" group-title="공중파",SBS G1 (720p)
+http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDHDTV.kr@SD" group-title="공중파",SBS KBC (720p)
+https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8
+#EXTINF:-1 tvg-id="HLDPDTV.kr@SD" group-title="공중파",SBS UBC (720p)
 https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8
-#EXTINF:-1 tvg-id="ShinsegaeTVShopping.kr@SD" group-title="한국 720p+",Shinsegae Shopping TV (720p)
+#EXTINF:-1 tvg-id="OBSGyeonginTV.kr" group-title="공중파",OBS TV (1080p)
+https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8
+#EXTINF:-1 tvg-id="GSMyShop.kr@SD" group-title="쇼핑",GS My Shop (720p)
+https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="GSShop.kr@SD" group-title="쇼핑",GS Shop (720p)
+https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="HyundaiHomeShopping.kr@SD" group-title="쇼핑",Hyundai Home Shopping (720p)
+https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8
+#EXTINF:-1 tvg-id="LotteHomeShopping.kr@SD" group-title="쇼핑",Lotte Home Shopping (720p)
+https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8
+#EXTINF:-1 tvg-id="LotteOneTV.kr@SD" group-title="쇼핑",Lotte OneTV (720p)
+https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8
+#EXTINF:-1 tvg-id="ShinsegaeTVShopping.kr@SD" group-title="쇼핑",Shinsegae Shopping TV (720p)
 https://liveout.catenoid.net/live-02-shinsegaetvshopping/shinsegaetvshopping_720p/playlist.m3u8
-#EXTINF:-1 tvg-id="ShoppingNT.kr@SD" group-title="한국 720p+",Shopping NT (720p)
+#EXTINF:-1 tvg-id="ShoppingNT.kr@SD" group-title="쇼핑",Shopping NT (720p)
 https://live.shoppingntmall.com/live/10011.m3u8
-#EXTINF:-1 tvg-id="TBSTV.kr@SD" group-title="한국 720p+",TBS Seoul (1080p)
-https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8
-#EXTINF:-1 tvg-id="TVChosun.kr@SD" group-title="한국 720p+",TV Chosun (720p)
-http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8
-#EXTINF:-1 tvg-id="TVChosun2.kr@SD" group-title="한국 720p+",TV Chosun 2 (720p)
-http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8
-#EXTINF:-1 tvg-id="WShopping.kr@SD" group-title="한국 720p+",W Shopping (720p)
+#EXTINF:-1 tvg-id="WShopping.kr@SD" group-title="쇼핑",W Shopping (720p)
 https://liveout.catenoid.net/live-05-wshopping/wshopping_1500k/playlist.m3u8
+#EXTINF:-1 tvg-id="KBSWorld.kr@SD" group-title="드라마·영화",KBS World (720p)
+https://stream8.cinerama.uz/1448/playlist.m3u8
+#EXTINF:-1 tvg-id="ArirangTV.kr@SD" group-title="케이블·일반",Arirang TV (1080p)
+https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8
+#EXTINF:-1 tvg-id="ArirangUN.kr@SD" group-title="케이블·일반",Arirang TV UN (1080p)
+https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8
+#EXTINF:-1 tvg-id="GugakTV.kr@SD" group-title="케이블·일반",GugakTV 국악방송 (1080p)
+https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="KCTV.kr@SD" group-title="케이블·일반",KCTV 광주 CH05 (720p)
+http://119.77.96.184:1935/chn05/chn05/playlist.m3u8
+#EXTINF:-1 tvg-id="NBS.kr@SD" group-title="케이블·일반",NBS Korea Agricultural Broadcasting (720p)
+https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8
+#EXTINF:-1 tvg-id="NHTV.kr@SD" group-title="케이블·일반",NHTV (720p)
+http://nonghyup.flive.skcdn.com/nonghyup/_definst_/nhlive/playlist.m3u8
+#EXTINF:-1 tvg-id="TVChosun.kr@SD" group-title="케이블·일반",TV Chosun (720p)
+http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8
+#EXTINF:-1 tvg-id="TVChosun2.kr@SD" group-title="케이블·일반",TV Chosun 2 (720p)
+http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8
+#EXTINF:-1 tvg-id="KTV.kr@SD" group-title="뉴스·경제",Korea TV (1080p)
+https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8
+#EXTINF:-1 tvg-id="NationalAssemblyTV.kr@SD" group-title="뉴스·경제",National Assembly TV (720p)
+https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8
+#EXTINF:-1 tvg-id="TBSTV.kr@SD" group-title="뉴스·경제",TBS Seoul (1080p)
+https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8
+#EXTINF:-1 tvg-id="BBSTV.kr@SD" group-title="종교",BBS Buddhist Broadcasting (1080p)
+http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8
+#EXTINF:-1 tvg-id="BTNTV.kr@SD" group-title="종교",BTN TV (1080p)
+https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8
+#EXTINF:-1 tvg-id="FGTV.kr@SD" group-title="종교",FGTV (720p)
+https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8
+#EXTINF:-1 tvg-id="GoodTV.kr@SD" group-title="종교",GoodTV (1080p)
+http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="RUTCTV.kr@SD" group-title="종교",RUTC TV (720p)
+http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8
