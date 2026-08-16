@@ -11,11 +11,39 @@
 </head>
 <body>
   <video id="video" autoplay playsinline></video>
+
+  <section id="momHome" class="mom-home hidden" aria-live="polite">
+    <div class="mom-head">
+      <div>
+        <div class="mom-title">엄마 TV 홈</div>
+        <div id="momClock" class="mom-clock"></div>
+      </div>
+      <div id="momState" class="mom-state">연결 확인 중…</div>
+    </div>
+
+    <div id="momApproval" class="approval hidden">
+      <div class="approval-label">이 TV를 한 번만 승인하세요</div>
+      <div id="approvalCode" class="approval-code">------</div>
+      <div class="approval-help">승인 후에는 이 TV에 토큰이 저장되어 자동 연결됩니다.</div>
+    </div>
+
+    <div id="momContent" class="mom-content hidden">
+      <div class="mom-column">
+        <div class="mom-section-title">오늘</div>
+        <div id="momItems" class="mom-items"></div>
+      </div>
+      <div class="mom-column stocks-column">
+        <div class="mom-section-title">관심 시세</div>
+        <div id="momStocks" class="mom-stocks"></div>
+      </div>
+    </div>
+  </section>
+
   <div id="status" class="status">최신 채널 목록을 불러오는 중…</div>
   <div id="banner" class="banner hidden">
     <div id="channelName" class="channel-name"></div>
     <div id="channelUrl" class="channel-url"></div>
   </div>
-  <div id="help" class="help hidden">↑/↓ 또는 채널 +/- : 채널 변경 · 확인 : 배너 · 재생/일시정지 지원</div>
+  <div id="help" class="help hidden">↑/↓ 또는 채널 +/- : 채널 변경 · 확인 : 배너 · 초록색 : 엄마 TV 홈 · 재생/일시정지 지원</div>
 </body>
 </html>
