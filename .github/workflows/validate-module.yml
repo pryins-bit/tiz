@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - "package.json"
+      - "icon.png"
       - "app/**"
       - "tizen-standalone/config.xml"
       - "scripts/sync_tizen_standalone.py"
       - "scripts/validate_remote_contract.py"
+      - "scripts/validate_suni_tv.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
       - "THIRD_PARTY_NOTICES.md"
@@ -16,10 +18,12 @@ on:
     branches: [main]
     paths:
       - "package.json"
+      - "icon.png"
       - "app/**"
       - "tizen-standalone/config.xml"
       - "scripts/sync_tizen_standalone.py"
       - "scripts/validate_remote_contract.py"
+      - "scripts/validate_suni_tv.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
       - "THIRD_PARTY_NOTICES.md"
@@ -46,9 +50,11 @@ jobs:
           node --check scripts/test_avplay_adapter.js
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
-      - name: Simulate Samsung AVPlay lifecycle
+      - name: Simulate Samsung AVPlay and Mom PIP
         run: node scripts/test_avplay_adapter.js
       - name: Verify Samsung remote input contract
         run: python scripts/validate_remote_contract.py
+      - name: Verify Suni TV branding, PIP, and weather contract
+        run: python scripts/validate_suni_tv.py
       - name: Verify fixed playlist contract
         run: grep -F "https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u" app/main.js
