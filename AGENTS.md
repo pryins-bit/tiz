@@ -10,6 +10,7 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - On launch, Korea TV must fetch `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u` automatically with cache-busting.
 - Do not depend on or reuse `tizenbrew-iptv` pairing/local-storage state. Stale playlists from that module must not affect Korea TV.
 - Keep the raw `korea.m3u` URL stable.
+- The standalone Tizen Web App manifest must use a 10-character alphanumeric `tizen:application` package ID, and the application ID must begin with that package ID followed by a dot. CI must reject invalid identifiers before publishing `KoreaTV.wgt`.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
 - Discovery playlists may be searched for candidates, but only source files with a GitHub file update within the last 365 days are eligible for automated collection.
 - Automated collection must keep only Korean HLS streams with observed resolution of at least 720p. Lower-resolution streams remain only in the registry/history as excluded records, not in `stream_candidates.json`.
@@ -72,10 +73,11 @@ For module changes:
 1. Parse `package.json` as JSON.
 2. Run `node --check app/main.js`.
 3. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
-4. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
-5. Inspect GitHub Actions conclusion after merge.
-6. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
-7. Verify no Supabase service-role/secret key or personal dashboard data are committed.
+4. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
+5. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
+6. Inspect GitHub Actions conclusion after merge.
+7. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
+8. Verify no Supabase service-role/secret key or personal dashboard data are committed.
 
 For stream collection/updater changes:
 
