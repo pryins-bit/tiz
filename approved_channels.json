@@ -1,0 +1,230 @@
+[
+  {
+    "key": "arirangtv.kr@sd",
+    "tvg_id": "ArirangTV.kr@SD",
+    "channel": "Arirang TV",
+    "approved_from": "https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8"
+  },
+  {
+    "key": "arirangun.kr@sd",
+    "tvg_id": "ArirangUN.kr@SD",
+    "channel": "Arirang TV UN",
+    "approved_from": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8"
+  },
+  {
+    "key": "bbstv.kr@sd",
+    "tvg_id": "BBSTV.kr@SD",
+    "channel": "BBS Buddhist Broadcasting",
+    "approved_from": "http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8"
+  },
+  {
+    "key": "btntv.kr@sd",
+    "tvg_id": "BTNTV.kr@SD",
+    "channel": "BTN TV",
+    "approved_from": "https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8"
+  },
+  {
+    "key": "fgtv.kr@sd",
+    "tvg_id": "FGTV.kr@SD",
+    "channel": "FGTV",
+    "approved_from": "https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8"
+  },
+  {
+    "key": "goodtv.kr@sd",
+    "tvg_id": "GoodTV.kr@SD",
+    "channel": "GoodTV",
+    "approved_from": "http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8"
+  },
+  {
+    "key": "gsmyshop.kr@sd",
+    "tvg_id": "GSMyShop.kr@SD",
+    "channel": "GS My Shop",
+    "approved_from": "https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8"
+  },
+  {
+    "key": "gsshop.kr@sd",
+    "tvg_id": "GSShop.kr@SD",
+    "channel": "GS Shop",
+    "approved_from": "https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8"
+  },
+  {
+    "key": "gugaktv.kr@sd",
+    "tvg_id": "GugakTV.kr@SD",
+    "channel": "GugakTV 국악방송",
+    "approved_from": "https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8"
+  },
+  {
+    "key": "gugbangtv.kr@sd",
+    "tvg_id": "GugbangTV.kr@SD",
+    "channel": "Gugbang TV",
+    "approved_from": "http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8"
+  },
+  {
+    "key": "hyundaihomeshopping.kr@sd",
+    "tvg_id": "HyundaiHomeShopping.kr@SD",
+    "channel": "Hyundai Home Shopping",
+    "approved_from": "https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8"
+  },
+  {
+    "key": "kbsworld.kr@sd",
+    "tvg_id": "KBSWorld.kr@SD",
+    "channel": "KBS World",
+    "approved_from": "https://stream8.cinerama.uz/1448/playlist.m3u8"
+  },
+  {
+    "key": "kctv.kr@sd",
+    "tvg_id": "KCTV.kr@SD",
+    "channel": "KCTV 광주 CH05",
+    "approved_from": "http://119.77.96.184:1935/chn05/chn05/playlist.m3u8"
+  },
+  {
+    "key": "ktv.kr@sd",
+    "tvg_id": "KTV.kr@SD",
+    "channel": "Korea TV",
+    "approved_from": "https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8"
+  },
+  {
+    "key": "lottehomeshopping.kr@sd",
+    "tvg_id": "LotteHomeShopping.kr@SD",
+    "channel": "Lotte Home Shopping",
+    "approved_from": "https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8"
+  },
+  {
+    "key": "lotteonetv.kr@sd",
+    "tvg_id": "LotteOneTV.kr@SD",
+    "channel": "Lotte OneTV",
+    "approved_from": "https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8"
+  },
+  {
+    "key": "hlandtv.kr@sd",
+    "tvg_id": "HLANDTV.kr@SD",
+    "channel": "MBC Chuncheon (춘천 MBC)",
+    "approved_from": "https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8"
+  },
+  {
+    "key": "hlaodtv.kr@sd",
+    "tvg_id": "HLAODTV.kr@SD",
+    "channel": "MBC Chungbuk (MBC 충북)",
+    "approved_from": "http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8"
+  },
+  {
+    "key": "hlcqdtv.kr@sd",
+    "tvg_id": "HLCQDTV.kr@SD",
+    "channel": "MBC Daejeon (대전 MBC)",
+    "approved_from": "https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8"
+  },
+  {
+    "key": "hlaqdtv.kr@sd",
+    "tvg_id": "HLAQDTV.kr@SD",
+    "channel": "MBC Gangwon (MBC 강원영동)",
+    "approved_from": "http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8"
+  },
+  {
+    "key": "hlamdtv.kr@sd",
+    "tvg_id": "HLAMDTV.kr@SD",
+    "channel": "MBC Mokpo (목포 MBC)",
+    "approved_from": "http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8"
+  },
+  {
+    "key": "hlatdtv.kr@sd",
+    "tvg_id": "HLATDTV.kr@SD",
+    "channel": "MBC Yeosu (여수 MBC)",
+    "approved_from": "https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8"
+  },
+  {
+    "key": "nationalassemblytv.kr@sd",
+    "tvg_id": "NationalAssemblyTV.kr@SD",
+    "channel": "National Assembly TV",
+    "approved_from": "https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8"
+  },
+  {
+    "key": "nbs.kr@sd",
+    "tvg_id": "NBS.kr@SD",
+    "channel": "NBS Korea Agricultural Broadcasting",
+    "approved_from": "https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8"
+  },
+  {
+    "key": "nhtv.kr@sd",
+    "tvg_id": "NHTV.kr@SD",
+    "channel": "NHTV",
+    "approved_from": "http://nonghyup.flive.skcdn.com/nonghyup/_definst_/nhlive/playlist.m3u8"
+  },
+  {
+    "key": "obsgyeongintv.kr",
+    "tvg_id": "OBSGyeonginTV.kr",
+    "channel": "OBS TV",
+    "approved_from": "https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8"
+  },
+  {
+    "key": "rutctv.kr@sd",
+    "tvg_id": "RUTCTV.kr@SD",
+    "channel": "RUTC TV",
+    "approved_from": "http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8"
+  },
+  {
+    "key": "hldrdtv.kr@sd",
+    "tvg_id": "HLDRDTV.kr@SD",
+    "channel": "SBS CJB",
+    "approved_from": "http://1.222.207.80:1935/live/cjbtv/playlist.m3u8"
+  },
+  {
+    "key": "hlcgdtv.kr@sd",
+    "tvg_id": "HLCGDTV.kr@SD",
+    "channel": "SBS G1",
+    "approved_from": "http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8"
+  },
+  {
+    "key": "hldhdtv.kr@sd",
+    "tvg_id": "HLDHDTV.kr@SD",
+    "channel": "SBS KBC",
+    "approved_from": "https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8"
+  },
+  {
+    "key": "sbstv.kr",
+    "tvg_id": "SBSTV.kr",
+    "channel": "SBS TV",
+    "approved_from": "https://allanf181.github.io/adaptive-streams/streams/kr/SBSTV.m3u8"
+  },
+  {
+    "key": "hldpdtv.kr@sd",
+    "tvg_id": "HLDPDTV.kr@SD",
+    "channel": "SBS UBC",
+    "approved_from": "https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8"
+  },
+  {
+    "key": "shinsegaetvshopping.kr@sd",
+    "tvg_id": "ShinsegaeTVShopping.kr@SD",
+    "channel": "Shinsegae Shopping TV",
+    "approved_from": "https://liveout.catenoid.net/live-02-shinsegaetvshopping/shinsegaetvshopping_720p/playlist.m3u8"
+  },
+  {
+    "key": "shoppingnt.kr@sd",
+    "tvg_id": "ShoppingNT.kr@SD",
+    "channel": "Shopping NT",
+    "approved_from": "https://live.shoppingntmall.com/live/10011.m3u8"
+  },
+  {
+    "key": "tbstv.kr@sd",
+    "tvg_id": "TBSTV.kr@SD",
+    "channel": "TBS Seoul",
+    "approved_from": "https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8"
+  },
+  {
+    "key": "tvchosun.kr@sd",
+    "tvg_id": "TVChosun.kr@SD",
+    "channel": "TV Chosun",
+    "approved_from": "http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8"
+  },
+  {
+    "key": "tvchosun2.kr@sd",
+    "tvg_id": "TVChosun2.kr@SD",
+    "channel": "TV Chosun 2",
+    "approved_from": "http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8"
+  },
+  {
+    "key": "wshopping.kr@sd",
+    "tvg_id": "WShopping.kr@SD",
+    "channel": "W Shopping",
+    "approved_from": "https://liveout.catenoid.net/live-05-wshopping/wshopping_1500k/playlist.m3u8"
+  }
+]
