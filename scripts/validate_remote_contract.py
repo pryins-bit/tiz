@@ -56,26 +56,49 @@ def main():
     assert 'registerKeyBatch' in remote and 'registerKey(' in remote, (
         'remote-input.js must keep batch + individual registration fallback'
     )
+    assert 'getSupportedKeys' in remote and 'codeToName' in remote, (
+        'remote input must derive firmware-specific key codes dynamically'
+    )
     for name in REQUIRED_KEYS:
         assert repr(name) in remote, f'remote-input.js missing requested key {name}'
-    for platform_key in ('VolumeUp', 'VolumeDown', 'VolumeMute', 'Home', 'Power'):
-        assert repr(platform_key) not in remote, (
+    for fallback_code in ('403:', '406:', '447:', '450:', '427:', '428:'):
+        assert fallback_code in remote, f'remote-input.js missing fallback code {fallback_code}'
+    for platform_key in ('VolumeUp', 'VolumeDown', 'VolumeMute', "'Home'", "'Power'"):
+        assert platform_key not in remote, (
             f'remote-input.js must not register platform-default key {platform_key}'
         )
 
     numeric = (ROOT / 'app' / 'numeric-remote.js').read_text(encoding='utf-8')
-    assert 'closePanelsForTuning' in numeric, 'numeric tuning must work when TV panels are open'
-    assert "fireKey('ChannelUp', 427)" in numeric
-    assert "fireKey('ChannelDown', 428)" in numeric
-    assert 'if (panelsOpen()) return;' not in numeric, (
-        'numeric input must not be discarded merely because the startup TV home is open'
+    assert 'KoreaTVPlayer.tuneToNumber' in numeric, 'numeric tuning must call the direct player API once'
+    assert "fireKey('ChannelUp'" not in numeric and "fireKey('ChannelDown'" not in numeric, (
+        'numeric tuning must not synthesize repeated channel-zap key events'
     )
+    assert 'for (var i = 0; i < count;' not in numeric, (
+        'numeric tuning must not loop through intermediate channels'
+    )
+
+    main_js = (ROOT / 'app' / 'main.js').read_text(encoding='utf-8')
+    assert 'playbackGeneration' in main_js and 'samePlayback' in main_js, (
+        'player callbacks must ignore stale source generations'
+    )
+    assert 'clearVideoHandlers' in main_js, 'player teardown must detach old video handlers before source removal'
+    assert 'ZAP_DEBOUNCE_MS' in main_js and 'event.repeat' in main_js, (
+        'physical channel zapping must suppress key-repeat storms'
+    )
+    assert "key === 'ArrowUp' || key === 'ChannelUp'" in main_js
+    assert 'requestChannelChange(-1, event)' in main_js, 'up/channel-up must move to previous playlist item'
+    assert "key === 'ArrowDown' || key === 'ChannelDown'" in main_js
+    assert 'requestChannelChange(1, event)' in main_js, 'down/channel-down must move to next playlist item'
+    for color_name in ('ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue'):
+        assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
+    assert '447:' in main_js and '450:' in main_js, 'main.js needs old Samsung color-code fallback'
+    assert 'window.KoreaTVPlayer' in main_js and 'tuneToNumber: tuneToNumber' in main_js
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
     for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote input + launch updater contract OK')
+    print('Samsung remote + race-safe player + launch updater contract OK')
 
 
 if __name__ == '__main__':
