@@ -10,8 +10,11 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-DEFAULT_UPSTREAM = "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/kr.m3u"
-USER_AGENT = "Mozilla/5.0 (Tizen-Korea-Playlist-Updater/1.0)"
+DEFAULT_UPSTREAMS = [
+    "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/kr.m3u",
+    "https://raw.githubusercontent.com/hujingguang/ChinaIPTV/main/southKorea.m3u8",
+]
+USER_AGENT = "Mozilla/5.0 (Tizen-Korea-Playlist-Updater/1.1)"
 
 # Keep this intentionally narrow: terrestrial/public broadcasters and regional affiliates.
 KEEP_PATTERNS = [
@@ -138,17 +141,35 @@ def validate(text: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", default=DEFAULT_UPSTREAM, help="Upstream M3U URL or local file")
+    parser.add_argument(
+        "--input",
+        action="append",
+        dest="inputs",
+        help="Upstream M3U URL or local file. Repeat to merge multiple sources.",
+    )
     parser.add_argument("--output", default="korea.m3u", help="Output playlist path")
     args = parser.parse_args()
 
-    source = read_text(args.input)
-    playlist = generate(parse_entries(source))
+    sources = args.inputs or DEFAULT_UPSTREAMS
+    entries: list[Entry] = []
+    errors: list[str] = []
+    for source in sources:
+        try:
+            entries.extend(parse_entries(read_text(source)))
+        except Exception as exc:
+            errors.append(f"{source}: {exc}")
+
+    if not entries:
+        raise RuntimeError("all upstreams failed: " + "; ".join(errors))
+    for error in errors:
+        print(f"WARNING: upstream failed: {error}", file=sys.stderr)
+
+    playlist = generate(entries)
     validate(playlist)
     Path(args.output).write_text(playlist, encoding="utf-8", newline="\n")
 
     channel_count = sum(1 for line in playlist.splitlines() if line.startswith("#EXTINF:"))
-    print(f"wrote {channel_count} channels to {args.output}")
+    print(f"wrote {channel_count} channels from {len(sources)} upstream(s) to {args.output}")
     return 0
 
 
