@@ -11,7 +11,11 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - Do not depend on or reuse `tizenbrew-iptv` pairing/local-storage state. Stale playlists from that module must not affect Korea TV.
 - Keep the raw `korea.m3u` URL stable.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
-- Discovery playlists may be searched for candidates, but do not automatically merge broad public M3U sources into the default playlist. The default playlist should contain only a small curated set with recent independent HLS verification or real-TV confirmation.
+- Discovery playlists may be searched for candidates, but only source files with a GitHub file update within the last 365 days are eligible for automated collection.
+- Automated collection must keep only Korean HLS streams with observed resolution of at least 720p. Lower-resolution streams remain only in the registry/history as excluded records, not in `stream_candidates.json`.
+- Deduplicate exact streams by canonicalized URL. If the same URL appears in multiple source lists, keep one stream record and merge its source provenance. Different URLs for the same channel may remain as fallbacks.
+- Persist latest validation state in `stream_registry.json` and append status/resolution changes to `stream_history.jsonl` so dead/recovered/quality changes are auditable.
+- Discovery playlists must never be copied wholesale into `korea.m3u`. Promotion to the TV playlist remains a separate reviewed step.
 - Prefer direct HLS `.m3u8` links. Prefer broadcaster/CDN HTTPS endpoints; retain HTTP/raw-IP direct-HLS only when it is the best recently verified fallback.
 - If a stream fails on the target Samsung TV, remove or quarantine it before adding more candidates. Real-TV success has higher priority than list size.
 - The player should auto-start, allow remote channel switching, and skip failed channels during the current session.
@@ -33,6 +37,12 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `app/main.js`: fresh playlist fetch, M3U parsing, native-HLS/hls.js playback, remote controls, failed-channel skip, and device-approved Mom TV Home client.
 - `app/style.css`: 1920x1080 TV/player/overlay UI.
 - `korea.m3u`: stable curated playlist consumed by the module.
+- `stream_sources.json`: recent GitHub Korean IPTV discovery sources and freshness limits.
+- `scripts/collect_hd_korean_streams.py`: source freshness check, M3U parsing, URL dedupe, HLS/ffprobe validation, 720p filtering and registry/history generation.
+- `stream_candidates.json`: only currently observed 720p-or-higher Korean HLS candidates, deduplicated by canonical URL.
+- `stream_registry.json`: latest result for every unique discovered URL, including failures and sub-720p results.
+- `stream_history.jsonl`: append-only status/resolution-change log.
+- `.github/workflows/check-streams.yml`: scheduled/manual collection and validation.
 - `scripts/update_playlist.py`: emits the reviewed curated Korean HLS set and validates direct-HLS structure; broad discovery sources are not auto-merged.
 - `.github/workflows/update-playlist.yml`: scheduled/manual playlist regeneration and structure validation.
 - `.github/workflows/validate-module.yml`: static module validation.
@@ -51,12 +61,14 @@ For module changes:
 6. Report TV playback separately; CI success is not Samsung/Tizen real-device confirmation.
 7. Verify no Supabase service-role/secret key or personal dashboard data are committed.
 
-For updater changes:
+For stream collection/updater changes:
 
-1. Generate the playlist and verify the first line is `#EXTM3U`.
-2. Verify each emitted channel has `#EXTINF` followed by HTTP(S) direct-HLS `.m3u8`.
-3. Keep only channels backed by recent independent HLS verification or real-device confirmation; discovery-list presence alone is insufficient.
-4. Inspect GitHub Actions conclusion.
+1. Reject source files whose latest GitHub path commit is older than 365 days.
+2. Canonicalize and deduplicate URLs before probing.
+3. Require a valid HLS manifest and observed video resolution >=720p for `stream_candidates.json`.
+4. Keep excluded/dead/geo-ambiguous results in `stream_registry.json` rather than silently forgetting them.
+5. Record status or resolution transitions in `stream_history.jsonl`.
+6. Inspect GitHub Actions conclusion and report the exact 720p+ count.
 
 ## Rollback
 
