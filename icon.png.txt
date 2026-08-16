@@ -1,0 +1,1 @@
+Placeholder: TizenBrew can load the module without a custom binary icon. Add a real icon.png later if desired.
