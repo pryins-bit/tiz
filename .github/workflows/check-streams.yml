@@ -6,19 +6,48 @@ on:
     - cron: "27 */6 * * *"
   pull_request:
     paths:
+      - "stream_sources.json"
       - "stream_candidates.json"
-      - "scripts/check_streams.sh"
+      - "stream_registry.json"
+      - "stream_history.jsonl"
+      - "scripts/collect_hd_korean_streams.py"
       - ".github/workflows/check-streams.yml"
+
+permissions:
+  contents: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check HLS candidates
-        run: bash scripts/check_streams.sh
+
+      - name: Collect, dedupe and validate Korean 720p+ HLS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/collect_hd_korean_streams.py
+
       - name: Upload stream report
         uses: actions/upload-artifact@v4
         with:
           name: korea-stream-check
-          path: stream-check/report.md
+          path: |
+            stream-check/report.md
+            stream_candidates.json
+            stream_registry.json
+            stream_history.jsonl
+
+      - name: Commit registry changes
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add stream_candidates.json stream_registry.json stream_history.jsonl
+          if git diff --cached --quiet; then
+            echo "No stream registry changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: refresh Korean 720p stream registry"
+          git push
