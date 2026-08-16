@@ -19,6 +19,9 @@ on:
 permissions:
   contents: write
 
+env:
+  TIZEN_STUDIO_VER: '5.6'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,12 +30,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Validate shared JavaScript
         run: |
           node --check app/main.js
           node --check app/numeric-remote.js
+
       - name: Build standalone project
         run: python scripts/sync_tizen_standalone.py
+
       - name: Stamp rolling package version without rewriting XML namespaces
         run: |
           python - <<'PY'
@@ -43,7 +49,7 @@ jobs:
           path = Path('tizen-standalone/build/config.xml')
           text = path.read_text(encoding='utf-8')
           run_number = int(os.environ['GITHUB_RUN_NUMBER'])
-          version = f'0.3.{run_number}'
+          version = f'0.4.{run_number}'
           updated, count = re.subn(
               r'(<widget\b[^>]*\bversion=")[^"]+("[^>]*>)',
               rf'\g<1>{version}\g<2>',
@@ -55,6 +61,7 @@ jobs:
           path.write_text(updated, encoding='utf-8')
           print('WGT version:', version)
           PY
+
       - name: Validate Tizen manifest and Installer parser contract
         run: |
           python - <<'PY'
@@ -82,24 +89,91 @@ jobs:
           assert '<ns1:application' not in text
           print('config.xml OK for TizenBrew Installer xml2js parser and Tizen package-id contract')
           PY
-      - name: Package project ZIP and WGT
+
+      - name: Download Tizen Studio CLI
+        run: |
+          curl --fail --location --retry 3 \
+            -o tizen-installer \
+            "https://download.tizen.org/sdk/Installer/tizen-studio_${TIZEN_STUDIO_VER}/web-cli_Tizen_Studio_${TIZEN_STUDIO_VER}_ubuntu-64.bin"
+          chmod +x tizen-installer
+          ./tizen-installer --accept-license "${GITHUB_WORKSPACE}/tizen-studio"
+          rm tizen-installer
+
+      - name: Create ephemeral author certificate and old-Tizen signing profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          TIZEN="${GITHUB_WORKSPACE}/tizen-studio/tools/ide/bin/tizen"
+          DATA="${GITHUB_WORKSPACE}/tizen-studio-data"
+          AUTHOR_DIR="${DATA}/keystore/author"
+          PROFILE_DIR="${DATA}/profile"
+          mkdir -p "$AUTHOR_DIR" "$PROFILE_DIR"
+
+          # This password and private key live only for this CI run. The signed WGT is
+          # installable on the target old-Tizen TV; a future app-binary update may need
+          # uninstall/reinstall unless a persistent author key is configured later.
+          AUTHOR_PW="Ktv$(openssl rand -hex 16)Aa1"
+          echo "AUTHOR_PW=$AUTHOR_PW" >> "$GITHUB_ENV"
+
+          "$TIZEN" certificate \
+            -a KoreaTV \
+            -p "$AUTHOR_PW" \
+            -c KR \
+            -s Daegu \
+            -ct Daegu \
+            -o pryins-bit \
+            -u TV \
+            -n "Korea TV" \
+            -e "pryins-bit@users.noreply.github.com" \
+            -f koreatv-author \
+            -- "$AUTHOR_DIR"
+
+          cat > "$PROFILE_DIR/profiles.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+          <profiles active="KoreaTV-Old" version="3.1">
+            <profile name="KoreaTV-Old">
+              <profileitem ca="${GITHUB_WORKSPACE}/tizen-studio/tools/certificate-generator/certificates/developer/tizen-developer-ca.cer" distributor="0" key="${AUTHOR_DIR}/koreatv-author.p12" password="${AUTHOR_PW}" rootca=""/>
+              <profileitem ca="${GITHUB_WORKSPACE}/tizen-studio/tools/certificate-generator/certificates/distributor/sdk-public/tizen-distributor-ca.cer" distributor="1" key="${GITHUB_WORKSPACE}/tizen-studio/tools/certificate-generator/certificates/distributor/sdk-public/tizen-distributor-signer.p12" password="tizenpkcs12passfordsigner" rootca=""/>
+              <profileitem ca="" distributor="2" key="" password="" rootca=""/>
+            </profile>
+          </profiles>
+          EOF
+
+          "$TIZEN" cli-config "profiles.path=${PROFILE_DIR}/profiles.xml"
+
+      - name: Package signed WGT for old Tizen
+        shell: bash
+        run: |
+          set -euo pipefail
+          TIZEN="${GITHUB_WORKSPACE}/tizen-studio/tools/ide/bin/tizen"
+          mkdir -p signed-release
+          "$TIZEN" package -t wgt -o signed-release -s KoreaTV-Old -- tizen-standalone/build
+          WGT="$(find signed-release -maxdepth 1 -type f -name '*.wgt' -print -quit)"
+          test -n "$WGT"
+          mv "$WGT" KoreaTV.wgt
+
+      - name: Validate signed WGT contents
+        run: |
+          python - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile('KoreaTV.wgt') as zf:
+              names = set(zf.namelist())
+              required = {'config.xml', 'index.html', 'author-signature.xml', 'signature1.xml'}
+              missing = sorted(required - names)
+              assert not missing, f'KoreaTV.wgt missing signed-package files: {missing}'
+              config = zf.read('config.xml').decode('utf-8')
+              assert '<widget ' in config or '<widget\n' in config
+              assert '<tizen:application ' in config
+              assert 'PryinsTV01.KoreaTV' in config
+          print('KoreaTV.wgt contains author + distributor signatures and valid manifest files')
+          PY
+
+      - name: Package editable project ZIP
         run: |
           cd tizen-standalone/build
           zip -r ../../korea-tv-tizen-project.zip .
-          zip -r ../../KoreaTV.wgt .
-          cd ../..
-          python - <<'PY'
-          import zipfile
-          for name in ('korea-tv-tizen-project.zip', 'KoreaTV.wgt'):
-              with zipfile.ZipFile(name) as zf:
-                  names = set(zf.namelist())
-                  assert 'config.xml' in names, f'{name}: config.xml missing at package root'
-                  assert 'index.html' in names, f'{name}: index.html missing at package root'
-                  config = zf.read('config.xml').decode('utf-8')
-                  assert '<widget ' in config or '<widget\n' in config, f'{name}: widget prefix rewritten'
-                  assert '<tizen:application ' in config, f'{name}: tizen:application prefix missing'
-              print(name, 'OK')
-          PY
+
       - uses: actions/upload-artifact@v4
         with:
           name: korea-tv-tizen-project
@@ -107,21 +181,23 @@ jobs:
             korea-tv-tizen-project.zip
             KoreaTV.wgt
           if-no-files-found: error
+
       - name: Publish rolling GitHub release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          NOTES='Signed standalone WGT for Samsung TVs including the target Tizen 6.0 set. The package contains both author and public distributor signatures. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
-              --title 'Korea TV Standalone (latest)' \
-              --notes 'Automatically rebuilt from the latest main branch. In TizenBrew Installer use: pryins-bit/tiz' \
+              --title 'Korea TV Standalone (signed latest)' \
+              --notes "$NOTES" \
               --latest
           else
             gh release create standalone-latest \
               --target "$GITHUB_SHA" \
-              --title 'Korea TV Standalone (latest)' \
-              --notes 'Automatically rebuilt from the latest main branch. In TizenBrew Installer use: pryins-bit/tiz' \
+              --title 'Korea TV Standalone (signed latest)' \
+              --notes "$NOTES" \
               --latest
           fi
           gh release upload standalone-latest KoreaTV.wgt --clobber
