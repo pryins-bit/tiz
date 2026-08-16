@@ -1,0 +1,94 @@
+{
+  "source": "joaquinito2036-rgb/iptvfast:output/lgchannels_kr.m3u",
+  "promotion_batch": "2026-08-16-lg-korea-fast",
+  "policy": "Do not promote LG Channels entries already available through Samsung TV Plus on the target Samsung TV, or entries already present in korea.m3u from another approved source.",
+  "validated_lg_candidates_720p_plus": 127,
+  "excluded_count": 14,
+  "approved_new_count": 113,
+  "excluded": [
+    {
+      "channel": "JTBC",
+      "tvg_id": "19d56c1a45ff2679",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "JTBC NEWS",
+      "tvg_id": "113e952182b5120a",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "Samsung Newsroom 2026-01-29"
+    },
+    {
+      "channel": "K바둑",
+      "tvg_id": "0e165110350b3219",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "MBN",
+      "tvg_id": "0152a4c7347cd62f",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "MBN 뉴스",
+      "tvg_id": "a3ee97a9bf399631",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "Samsung Newsroom 2026-01-29"
+    },
+    {
+      "channel": "MTN 머니투데이방송",
+      "tvg_id": "ecd8ba4fa1c46c45",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "TV조선",
+      "tvg_id": "05f68da886351d47",
+      "reason": "existing-korea-m3u",
+      "evidence": "TV Chosun already approved from another source"
+    },
+    {
+      "channel": "YTN",
+      "tvg_id": "697e3cd493a562b9",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "Samsung Newsroom 2026-01-29"
+    },
+    {
+      "channel": "매일경제TV",
+      "tvg_id": "82c1095d85e018df",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "Samsung Newsroom 2026-01-29"
+    },
+    {
+      "channel": "아리랑TV",
+      "tvg_id": "e38f3c7460611bda",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "연합뉴스TV",
+      "tvg_id": "fd35dd128612d210",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "Samsung Newsroom 2026-01-29"
+    },
+    {
+      "channel": "연합뉴스경제",
+      "tvg_id": "e29349c12f12b773",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "캐리tv",
+      "tvg_id": "ab8ec5f1e7cec49a",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "LG U+ newsroom 2025-09"
+    },
+    {
+      "channel": "한국경제TV",
+      "tvg_id": "a148d8556389b761",
+      "reason": "samsung-tv-plus-overlap",
+      "evidence": "Samsung Newsroom 2026-01-29"
+    }
+  ]
+}
