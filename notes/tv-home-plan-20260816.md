@@ -1,0 +1,1 @@
+TV Home upgrade implementation branch marker. Features: favorites, recent channels, category browser, search, local failure memory, dedicated TV home, remote-friendly navigation, and Mom TV shortcut. No extra media apps are bundled.
