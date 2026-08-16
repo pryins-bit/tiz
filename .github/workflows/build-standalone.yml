@@ -1,0 +1,42 @@
+name: Build standalone Tizen app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'tizen-standalone/**'
+      - 'scripts/sync_tizen_standalone.py'
+      - '.github/workflows/build-standalone.yml'
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'tizen-standalone/**'
+      - 'scripts/sync_tizen_standalone.py'
+      - '.github/workflows/build-standalone.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate shared JavaScript
+        run: |
+          node --check app/main.js
+          node --check app/numeric-remote.js
+      - name: Build standalone project
+        run: python scripts/sync_tizen_standalone.py
+      - name: Validate Tizen manifest
+        run: |
+          python -c "import xml.etree.ElementTree as ET; root=ET.parse('tizen-standalone/build/config.xml').getroot(); assert root.attrib.get('version'); assert root.find('{http://www.w3.org/ns/widgets}content') is not None; print('config.xml OK')"
+      - name: Package project files
+        run: cd tizen-standalone/build && zip -r ../../korea-tv-tizen-project.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korea-tv-tizen-project
+          path: korea-tv-tizen-project.zip
+          if-no-files-found: error
