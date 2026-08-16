@@ -2,5 +2,6 @@
   {"id":"iptv-org-kr","repo":"iptv-org/iptv","path":"streams/kr.m3u","url":"https://raw.githubusercontent.com/iptv-org/iptv/master/streams/kr.m3u","max_age_days":365},
   {"id":"free-tv-korea","repo":"Free-TV/IPTV","path":"playlists/playlist_korea.m3u8","url":"https://raw.githubusercontent.com/Free-TV/IPTV/master/playlists/playlist_korea.m3u8","max_age_days":365},
   {"id":"chinaiptv-korea","repo":"hujingguang/ChinaIPTV","path":"southKorea.m3u8","url":"https://raw.githubusercontent.com/hujingguang/ChinaIPTV/main/southKorea.m3u8","max_age_days":365},
-  {"id":"lgchannels-kr-iptvfast","repo":"joaquinito2036-rgb/iptvfast","path":"output/lgchannels_kr.m3u","url":"https://raw.githubusercontent.com/joaquinito2036-rgb/iptvfast/main/output/lgchannels_kr.m3u","max_age_days":365}
+  {"id":"lgchannels-kr-iptvfast","repo":"joaquinito2036-rgb/iptvfast","path":"output/lgchannels_kr.m3u","url":"https://raw.githubusercontent.com/joaquinito2036-rgb/iptvfast/main/output/lgchannels_kr.m3u","max_age_days":365},
+  {"id":"whaletvplus-kr-iptvfast","repo":"joaquinito2036-rgb/iptvfast","path":"output/whaletvplus_kr.m3u","url":"https://raw.githubusercontent.com/joaquinito2036-rgb/iptvfast/main/output/whaletvplus_kr.m3u","max_age_days":365}
 ]
