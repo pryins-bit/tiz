@@ -9,6 +9,7 @@ on:
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
+      - 'scripts/test_remote_input_runtime.js'
       - '.github/workflows/build-standalone.yml'
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
+      - 'scripts/test_remote_input_runtime.js'
       - '.github/workflows/build-standalone.yml'
 
 permissions:
@@ -39,6 +41,10 @@ jobs:
           node --check app/main.js
           node --check app/numeric-remote.js
           node --check app/remote-input.js
+          node --check scripts/test_remote_input_runtime.js
+
+      - name: Simulate Samsung remote regressions
+        run: node scripts/test_remote_input_runtime.js
 
       - name: Validate Samsung remote input and updater contract
         run: python scripts/validate_remote_contract.py
@@ -195,7 +201,9 @@ jobs:
               assert 'runtime-version.json' in bootstrap
               remote = zf.read('remote-input.js').decode('utf-8')
               assert 'registerKeyBatch' in remote and 'ChannelUp' in remote and 'ColorF0Red' in remote
-          print('KoreaTV.wgt contains signatures, updater shell, remote runtime, and TV input privilege')
+              assert 'CHANNEL_DUPLICATE_GUARD_MS' in remote
+              assert 'XF86Red' in remote and 'PageUp' in remote
+          print('KoreaTV.wgt contains signatures, updater shell, exact-once remote runtime, and TV input privilege')
           PY
 
       - name: Package editable project ZIP
