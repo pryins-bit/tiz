@@ -1,0 +1,1947 @@
+[
+  {
+    "canonical_url": "https://vod2.abn.co.kr/IPHONE/abn.m3u8",
+    "url": "https://vod2.abn.co.kr/IPHONE/abn.m3u8",
+    "channel": "ABN TV (720p)",
+    "tvg_id": "ABN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive-ch01.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "url": "http://amdlive-ch01.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "channel": "Arirang Radio (720p)",
+    "tvg_id": "ArirangRadio.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive-ch02.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "url": "http://amdlive-ch02.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "channel": "Arirang Radio (720p)",
+    "tvg_id": "ArirangRadio.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive-ch03.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "url": "http://amdlive-ch03.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "channel": "Arirang Radio (720p)",
+    "tvg_id": "ArirangRadio.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "url": "http://amdlive.ctnd.com.edgesuite.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "channel": "Arirang Radio (720p)",
+    "tvg_id": "ArirangRadio.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_3ch/smil:arirang_3ch.smil/playlist.m3u8",
+    "channel": "Arirang Radio (720p)",
+    "tvg_id": "ArirangRadio.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://202.80.222.20/cdn/iptv/Tvod/001/channel2000034/1024.m3u8",
+    "url": "http://202.80.222.20/cdn/iptv/Tvod/001/channel2000034/1024.m3u8",
+    "channel": "Arirang TV",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://liveh12.vtvprime.vn/hls/ARIRANG/03.m3u8",
+    "url": "https://liveh12.vtvprime.vn/hls/ARIRANG/03.m3u8",
+    "channel": "Arirang TV",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 403,
+    "status": "geo-or-access",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive-ch01.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "http://amdlive-ch01.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (1080p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive-ch02.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "http://amdlive-ch02.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (720p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive-ch03.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "http://amdlive-ch03.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (720p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://amdlive.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "http://amdlive.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (720p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (720p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (720p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://amdlive-ch03-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "url": "https://amdlive-ch03-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8",
+    "channel": "Arirang TV (720p)",
+    "tvg_id": "ArirangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://45.162.64.114/ARIRANG/index.m3u8",
+    "url": "http://45.162.64.114/ARIRANG/index.m3u8",
+    "channel": "Arirang TV HD (720p)",
+    "tvg_id": "ArirangTV.kr@HD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 720,
+    "height": 540,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8",
+    "url": "https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8",
+    "channel": "Arirang TV UN (1080p)",
+    "tvg_id": "ArirangUN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8",
+    "url": "http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8",
+    "channel": "BBS Buddhist Broadcasting (1080p)",
+    "tvg_id": "BBSTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8",
+    "url": "https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8",
+    "channel": "BTN TV (1080p)",
+    "tvg_id": "BTNTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://channelalive.ktcdn.co.kr/chalivepc/_definst_/atv2/playlist.m3u8",
+    "url": "http://channelalive.ktcdn.co.kr/chalivepc/_definst_/atv2/playlist.m3u8",
+    "channel": "Channel A [Geo-blocked]",
+    "tvg_id": "ChannelA.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 403,
+    "status": "geo-or-access",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://live-ch1.cjonstyle.net/cjmalllive/stream2/playlist.m3u8",
+    "url": "https://live-ch1.cjonstyle.net/cjmalllive/stream2/playlist.m3u8",
+    "channel": "CJ OnStyle (540p)",
+    "tvg_id": "CJOnStyle.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 960,
+    "height": 540,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://live-ch2.cjonstyle.net/cjosplus/live2/playlist.m3u8",
+    "url": "https://live-ch2.cjonstyle.net/cjosplus/live2/playlist.m3u8",
+    "channel": "CJ OnStyle Plus (540p)",
+    "tvg_id": "CJOnStylePlus.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 720,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8",
+    "channel": "EBS 1 (400p) [Not 24/7]",
+    "tvg_id": "EBS1TV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/groundwavefamilypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/groundwavefamilypc/familypc1m/playlist.m3u8",
+    "channel": "EBS 1 (400p) [Not 24/7]",
+    "tvg_id": "EBS1TV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8",
+    "channel": "EBS 2 (400p) [Not 24/7]",
+    "tvg_id": "EBS2TV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8",
+    "channel": "EBS E (400p) [Not 24/7]",
+    "tvg_id": "EBSEnglish.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/ebsufamilypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/ebsufamilypc/familypc1m/playlist.m3u8",
+    "channel": "EBS kids (400p) [Not 24/7]",
+    "tvg_id": "EBSKids.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/plus1familypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/plus1familypc/familypc1m/playlist.m3u8",
+    "channel": "EBS+ 1 (400p)",
+    "tvg_id": "EBSPlus1.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ebsonair.ebs.co.kr/plus2familypc/familypc1m/playlist.m3u8",
+    "url": "https://ebsonair.ebs.co.kr/plus2familypc/familypc1m/playlist.m3u8",
+    "channel": "EBS+ 2 (400p)",
+    "tvg_id": "EBSPlus2.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 711,
+    "height": 400,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8",
+    "url": "https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8",
+    "channel": "FGTV (720p)",
+    "tvg_id": "FGTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://liveko24-manminglobal3.ktcdn.co.kr/liveko24/gcnko_1300k.stream/playlist.m3u8",
+    "url": "http://liveko24-manminglobal3.ktcdn.co.kr/liveko24/gcnko_1300k.stream/playlist.m3u8",
+    "channel": "GCN24 Korean (720p)",
+    "tvg_id": "GCN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://etv.publichs.com/live5.stream/playlist.m3u8",
+    "url": "https://etv.publichs.com/live5.stream/playlist.m3u8",
+    "channel": "Gongyoung Shopping (720p)",
+    "tvg_id": "GongyoungHomeShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8",
+    "url": "http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8",
+    "channel": "GoodTV (1080p)",
+    "tvg_id": "GoodTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8",
+    "url": "https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8",
+    "channel": "GS My Shop (1080p)",
+    "tvg_id": "GSMyShop.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8",
+    "url": "https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8",
+    "channel": "GS Shop (1080p)",
+    "tvg_id": "GSShop.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8",
+    "url": "https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8",
+    "channel": "GugakTV 국악방송 (1080p)",
+    "tvg_id": "GugakTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8",
+    "url": "http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8",
+    "channel": "Gugbang TV (1080p) [Not 24/7]",
+    "tvg_id": "GugbangTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://s28.qtcdn.co.kr/media/liveM3U8/idx/518045142/enc/1860408350/playlist.m3u8",
+    "url": "https://s28.qtcdn.co.kr/media/liveM3U8/idx/518045142/enc/1860408350/playlist.m3u8",
+    "channel": "Home & Shopping (720p)",
+    "tvg_id": "HomeShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8",
+    "url": "https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8",
+    "channel": "Hyundai Home Shopping (720p)",
+    "tvg_id": "HyundaiHomeShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://dtvstreaming.hyundaihmall.com/newcjp3/_definst_/newcjpstream.smil/playlist.m3u8",
+    "url": "https://dtvstreaming.hyundaihmall.com/newcjp3/_definst_/newcjpstream.smil/playlist.m3u8",
+    "channel": "Hyundai Home Shopping Plus (720p)",
+    "tvg_id": "HyundaiHomeShoppingPlusShop.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://61ff3340258d2.streamlock.net/jtv_live/myStream/playlist.m3u8",
+    "url": "https://61ff3340258d2.streamlock.net/jtv_live/myStream/playlist.m3u8",
+    "channel": "JTV TV",
+    "tvg_id": "JTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://119.200.131.11:1935/KBCTV/tv/playlist.m3u8",
+    "url": "http://119.200.131.11:1935/KBCTV/tv/playlist.m3u8",
+    "channel": "KBC TV",
+    "tvg_id": "KBCTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://liveh12.vtvprime.vn/hls/KBS/03.m3u8",
+    "url": "https://liveh12.vtvprime.vn/hls/KBS/03.m3u8",
+    "channel": "KBS World",
+    "tvg_id": "KBSWorld.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 403,
+    "status": "geo-or-access",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://31.148.48.15/KBS_World/index.m3u8",
+    "url": "http://31.148.48.15/KBS_World/index.m3u8",
+    "channel": "KBS World (576p)",
+    "tvg_id": "KBSWorld.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://stream8.cinerama.uz/1448/playlist.m3u8",
+    "url": "https://stream8.cinerama.uz/1448/playlist.m3u8",
+    "channel": "KBS World (720p)",
+    "tvg_id": "KBSWorld.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://119.77.96.184:1935/chn05/chn05/playlist.m3u8",
+    "url": "http://119.77.96.184:1935/chn05/chn05/playlist.m3u8",
+    "channel": "KCTV 광주 CH05 (720p) [Not 24/7]",
+    "tvg_id": "KCTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://211.220.195.200:1935/live/mp4:KnnTV.sdp/playlist.m3u8",
+    "url": "http://211.220.195.200:1935/live/mp4:KnnTV.sdp/playlist.m3u8",
+    "channel": "KNN TV",
+    "tvg_id": "KNNTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8",
+    "url": "https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8",
+    "channel": "Korea TV (1080p)",
+    "tvg_id": "KTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://fhs8036.bd-61.ktcdn.co.kr/klive/smil:klive.smil/playlist.m3u8",
+    "url": "https://fhs8036.bd-61.ktcdn.co.kr/klive/smil:klive.smil/playlist.m3u8",
+    "channel": "KShopping (1080p)",
+    "tvg_id": "KShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8",
+    "url": "https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8",
+    "channel": "Lotte Home Shopping (720p)",
+    "tvg_id": "LotteHomeShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8",
+    "url": "https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8",
+    "channel": "Lotte OneTV (720p)",
+    "tvg_id": "LotteOneTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://andong.webcasting.co.kr/live/mbc/playlist.m3u8",
+    "url": "http://andong.webcasting.co.kr/live/mbc/playlist.m3u8",
+    "channel": "MBC Andong (안동 MBC) (360p) [Not 24/7]",
+    "tvg_id": "HLAWDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://stream.bsmbc.com/livetv/BusanMBC_TV_onairstream/playlist.m3u8",
+    "url": "https://stream.bsmbc.com/livetv/BusanMBC_TV_onairstream/playlist.m3u8",
+    "channel": "MBC Busan (부산MBC) (360p) [Not 24/7]",
+    "tvg_id": "HLKUDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8",
+    "url": "https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8",
+    "channel": "MBC Chuncheon (춘천 MBC) (480p) [Not 24/7]",
+    "tvg_id": "HLANDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8",
+    "url": "http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8",
+    "channel": "MBC Chungbuk (MBC 충북) (720p) [Not 24/7]",
+    "tvg_id": "HLAODTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8",
+    "url": "https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8",
+    "channel": "MBC Daegu (대구 MBC) (480p) [Not 24/7]",
+    "tvg_id": "HLCTDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 854,
+    "height": 480,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8",
+    "url": "https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8",
+    "channel": "MBC Daejeon (대전 MBC) (720p) [Not 24/7]",
+    "tvg_id": "HLCQDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8",
+    "url": "http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8",
+    "channel": "MBC Gangwon (MBC 강원영동) (1080p) [Not 24/7]",
+    "tvg_id": "HLAQDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://media.kjmbc.co.kr/hls/live/stream/playlist.m3u8",
+    "url": "https://media.kjmbc.co.kr/hls/live/stream/playlist.m3u8",
+    "channel": "MBC Gwangju (광주 MBC) (1080p) [Geo-blocked] [Not 24/7]",
+    "tvg_id": "HLCNDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://624a79c87201d.streamlock.net/MBCTV/TV1.stream/playlist.m3u8",
+    "url": "https://624a79c87201d.streamlock.net/MBCTV/TV1.stream/playlist.m3u8",
+    "channel": "MBC Gyeongnam (경남 MBC) (1080p) [Not 24/7]",
+    "tvg_id": "MBCGyeongnamTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://wowza.jejumbc.com/live/tv_jejumbc/playlist.m3u8",
+    "url": "https://wowza.jejumbc.com/live/tv_jejumbc/playlist.m3u8",
+    "channel": "MBC Jeju (제주 MBC) (352p) [Not 24/7]",
+    "tvg_id": "HLAJDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-below-720p",
+    "width": 640,
+    "height": 352,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://5ee9633b25727.streamlock.net/jmbc_tv/_definst_/jmbc_tv.stream/playlist.m3u8",
+    "url": "https://5ee9633b25727.streamlock.net/jmbc_tv/_definst_/jmbc_tv.stream/playlist.m3u8",
+    "channel": "MBC Jeonju (450p)",
+    "tvg_id": "HLCXDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8",
+    "url": "http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8",
+    "channel": "MBC Mokpo (목포 MBC) (720p) [Not 24/7]",
+    "tvg_id": "HLAMDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://123.254.72.24:1935/tvlive/livestream2/playlist.m3u8",
+    "url": "http://123.254.72.24:1935/tvlive/livestream2/playlist.m3u8",
+    "channel": "MBC TV",
+    "tvg_id": "MBCTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 404,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8",
+    "url": "https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8",
+    "channel": "MBC Yeosu (여수 MBC) (1080p) [Not 24/7]",
+    "tvg_id": "HLATDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://183.110.27.87/mtnlive/720/playlist.m3u8",
+    "url": "http://183.110.27.87/mtnlive/720/playlist.m3u8",
+    "channel": "MTN (720p)",
+    "tvg_id": "MTN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8",
+    "url": "https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8",
+    "channel": "National Assembly TV (720p)",
+    "tvg_id": "NationalAssemblyTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8",
+    "url": "https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8",
+    "channel": "NBS Korea Agricultural Broadcasting (720p)",
+    "tvg_id": "NBS.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://nonghyup.flive.skcdn.com/nonghyup/_definst_/nhlive/playlist.m3u8",
+    "url": "http://nonghyup.flive.skcdn.com/nonghyup/_definst_/nhlive/playlist.m3u8",
+    "channel": "NHTV (720p)",
+    "tvg_id": "NHTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://livestream.nsmall.com/IPHONE/nsmallMobile.m3u8",
+    "url": "https://livestream.nsmall.com/IPHONE/nsmallMobile.m3u8",
+    "channel": "NS Home Shopping (720p)",
+    "tvg_id": "NSHomeShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://shoppstream.nsmall.com/IPHONE/mobile.m3u8",
+    "url": "https://shoppstream.nsmall.com/IPHONE/mobile.m3u8",
+    "channel": "NS Shop Plus (720p)",
+    "tvg_id": "NSShopPlus.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://vod.obs.co.kr:444/live/obsstream1/tv.stream/playlist.m3u8",
+    "url": "https://vod.obs.co.kr:444/live/obsstream1/tv.stream/playlist.m3u8",
+    "channel": "OBS Gyeongin TV (OBS경인TV) (540p) [Not 24/7]",
+    "tvg_id": "HLQSDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8",
+    "url": "https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8",
+    "channel": "OBS TV",
+    "tvg_id": "OBSGyeonginTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://live.knou.ac.kr/knou1/live1/playlist.m3u8",
+    "url": "https://live.knou.ac.kr/knou1/live1/playlist.m3u8",
+    "channel": "OUN (1080p)",
+    "tvg_id": "OUN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://rtv-stream2.a04f922e9e85c8d25ebfeae3dfd22a67.com/rtv/rtv.m3u8",
+    "url": "https://rtv-stream2.a04f922e9e85c8d25ebfeae3dfd22a67.com/rtv/rtv.m3u8",
+    "channel": "RTV (720p)",
+    "tvg_id": "RTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8",
+    "url": "http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8",
+    "channel": "RUTC TV (720p)",
+    "tvg_id": "RUTCTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://1.222.207.80:1935/live/cjbtv/playlist.m3u8",
+    "url": "http://1.222.207.80:1935/live/cjbtv/playlist.m3u8",
+    "channel": "SBS CJB (540p) [Not 24/7]",
+    "tvg_id": "HLDRDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8",
+    "url": "http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8",
+    "channel": "SBS G1 (360p) [Not 24/7]",
+    "tvg_id": "HLCGDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://123.140.197.22/stream/1/play.m3u8",
+    "url": "http://123.140.197.22/stream/1/play.m3u8",
+    "channel": "SBS JIBS (720p) [Not 24/7]",
+    "tvg_id": "HLKJDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      },
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-ok",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://61.85.197.53:1935/jtv_live/myStream/playlist.m3u8",
+    "url": "http://61.85.197.53:1935/jtv_live/myStream/playlist.m3u8",
+    "channel": "SBS JTV (406p) [Not 24/7]",
+    "tvg_id": "HLDQDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 404,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8",
+    "url": "https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8",
+    "channel": "SBS KBC (1080p) [Not 24/7]",
+    "tvg_id": "HLDHDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8",
+    "url": "https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8",
+    "channel": "SBS KNN (1080p) [Not 24/7]",
+    "tvg_id": "HLDGDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 403,
+    "status": "geo-or-access",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://203.251.91.122:1935/on-air-Backup/tv/playlist.m3u8",
+    "url": "http://203.251.91.122:1935/on-air-Backup/tv/playlist.m3u8",
+    "channel": "SBS TBC (540p) [Geo-blocked] [Not 24/7]",
+    "tvg_id": "HLDEDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://allanf181.github.io/adaptive-streams/streams/kr/SBSTV.m3u8",
+    "url": "https://allanf181.github.io/adaptive-streams/streams/kr/SBSTV.m3u8",
+    "channel": "SBS TV",
+    "tvg_id": "SBSTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8",
+    "url": "https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8",
+    "channel": "SBS UBC (540p) [Not 24/7]",
+    "tvg_id": "HLDPDTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://liveout.catenoid.net/live-02-shinsegaetvshopping/shinsegaetvshopping_720p/playlist.m3u8",
+    "url": "https://liveout.catenoid.net/live-02-shinsegaetvshopping/shinsegaetvshopping_720p/playlist.m3u8",
+    "channel": "Shinsegae Shopping TV (720p)",
+    "tvg_id": "ShinsegaeTVShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://live.shoppingntmall.com/live/10011.m3u8",
+    "url": "https://live.shoppingntmall.com/live/10011.m3u8",
+    "channel": "Shopping NT (720p)",
+    "tvg_id": "ShoppingNT.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8",
+    "url": "https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8",
+    "channel": "TBS Seoul (720p)",
+    "tvg_id": "TBSTV.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1920,
+    "height": 1080,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://1.245.74.5:1935/live/tv/.m3u8",
+    "url": "http://1.245.74.5:1935/live/tv/.m3u8",
+    "channel": "TJB TV",
+    "tvg_id": "TJBTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8",
+    "url": "http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8",
+    "channel": "TV Chosun (720p)",
+    "tvg_id": "TVChosun.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8",
+    "url": "http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8",
+    "channel": "TV Chosun 2 (720p)",
+    "tvg_id": "TVChosun2.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://59.23.231.102:1935/live/UBCstream/playlist.m3u8",
+    "url": "http://59.23.231.102:1935/live/UBCstream/playlist.m3u8",
+    "channel": "UBC TV",
+    "tvg_id": "UBCTV.kr",
+    "sources": [
+      {
+        "id": "free-tv-korea",
+        "repo": "Free-TV/IPTV",
+        "path": "playlists/playlist_korea.m3u8"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "https://liveout.catenoid.net/live-05-wshopping/wshopping_1500k/playlist.m3u8",
+    "url": "https://liveout.catenoid.net/live-05-wshopping/wshopping_1500k/playlist.m3u8",
+    "channel": "W Shopping (720p)",
+    "tvg_id": "WShopping.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 200,
+    "status": "manifest-hd",
+    "width": 1280,
+    "height": 720,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://202.60.106.14:21585/214/playlist.m3u8",
+    "url": "http://202.60.106.14:21585/214/playlist.m3u8",
+    "channel": "YTN (720p)",
+    "tvg_id": "YTN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  },
+  {
+    "canonical_url": "http://202.60.106.14:8080/214/playlist.m3u8",
+    "url": "http://202.60.106.14:8080/214/playlist.m3u8",
+    "channel": "YTN (720p)",
+    "tvg_id": "YTN.kr@SD",
+    "sources": [
+      {
+        "id": "iptv-org-kr",
+        "repo": "iptv-org/iptv",
+        "path": "streams/kr.m3u"
+      }
+    ],
+    "http": 0,
+    "status": "dead",
+    "width": 0,
+    "height": 0,
+    "codec": "",
+    "first_seen": "2026-08-16T08:29:43Z",
+    "last_checked": "2026-08-16T08:29:43Z"
+  }
+]
