@@ -18,7 +18,7 @@ REGISTRY_FILE = ROOT / "stream_registry.json"
 CANDIDATES_FILE = ROOT / "stream_candidates.json"
 HISTORY_FILE = ROOT / "stream_history.jsonl"
 REPORT_FILE = ROOT / "stream-check" / "report.md"
-USER_AGENT = "Mozilla/5.0 Korea-TV-HD-Collector/1.1"
+USER_AGENT = "Mozilla/5.0 Korea-TV-HD-Collector/1.2"
 TIMEOUT = 18
 WORKERS = 10
 
@@ -113,6 +113,22 @@ def canonical_url(url: str) -> str:
     return urllib.parse.urlunsplit((p.scheme.lower(), netloc, path, p.query, ""))
 
 
+def channel_key(row: dict) -> str:
+    tvg = (row.get("tvg_id") or "").strip().lower()
+    if tvg:
+        return tvg
+    name = row.get("channel", "").lower()
+    name = re.sub(r"\([^)]*(?:\d{3,4}p|not 24/7|geo-blocked)[^)]*\)", "", name, flags=re.I)
+    name = re.sub(r"\[[^]]*\]", "", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+def is_tv_channel(row: dict) -> bool:
+    text = f"{row.get('channel','')} {row.get('tvg_id','')}".lower()
+    return "radio" not in text
+
+
 def parse_master_resolution(manifest: str) -> tuple[int, int] | None:
     best = (0, 0)
     for m in re.finditer(r"RESOLUTION=(\d+)x(\d+)", manifest, flags=re.I):
@@ -175,6 +191,14 @@ def load_old_registry() -> dict[str, dict]:
         return {}
 
 
+def candidate_score(row: dict) -> tuple:
+    live_score = 2 if row["status"] == "live-hd" else 1
+    https_score = 1 if row["url"].startswith("https://") else 0
+    host = urllib.parse.urlsplit(row["url"]).hostname or ""
+    raw_ip_penalty = 0 if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", host) else 1
+    return (live_score, row["height"], row["width"], https_score, raw_ip_penalty)
+
+
 def main() -> int:
     checked_at = iso_now()
     sources = json.loads(SOURCES_FILE.read_text(encoding="utf-8"))
@@ -212,7 +236,7 @@ def main() -> int:
         validated = list(pool.map(validate_one, rows))
 
     registry: list[dict] = []
-    hd_live: list[dict] = []
+    eligible: list[dict] = []
     changes: list[dict] = []
 
     for row in validated:
@@ -224,8 +248,8 @@ def main() -> int:
             "last_checked": checked_at,
         }
         registry.append(current)
-        if row["status"] in ("live-hd", "manifest-hd") and row["height"] >= 720:
-            hd_live.append(current)
+        if is_tv_channel(row) and row["status"] in ("live-hd", "manifest-hd") and row["height"] >= 720:
+            eligible.append(current)
 
         signature = (previous.get("status"), previous.get("width"), previous.get("height"))
         new_signature = (row["status"], row["width"], row["height"])
@@ -238,8 +262,17 @@ def main() -> int:
                 "to": {"status": row["status"], "width": row["width"], "height": row["height"]},
             })
 
+    # One visible candidate per logical channel. All alternate URLs remain in registry as fallbacks/history.
+    by_channel: dict[str, dict] = {}
+    for row in eligible:
+        key = channel_key(row)
+        if not key:
+            continue
+        if key not in by_channel or candidate_score(row) > candidate_score(by_channel[key]):
+            by_channel[key] = row
+    hd_live = sorted(by_channel.values(), key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
     registry.sort(key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
-    hd_live.sort(key=lambda r: (r["channel"].casefold(), r["canonical_url"]))
+
     REGISTRY_FILE.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     CANDIDATES_FILE.write_text(json.dumps(hd_live, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if changes:
@@ -250,7 +283,9 @@ def main() -> int:
     REPORT_FILE.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         "# Korea 720p+ stream check", "", f"Checked: {checked_at}",
-        f"Unique URLs after dedupe: {len(registry)}", f"Collected 720p+: {len(hd_live)}", "",
+        f"Unique URLs after URL dedupe: {len(registry)}",
+        f"Eligible 720p+ TV URLs before channel dedupe: {len(eligible)}",
+        f"Collected unique 720p+ TV channels: {len(hd_live)}", "",
         "| Channel | Status | HTTP | Resolution | Sources |", "|---|---|---:|---:|---|",
     ]
     for r in registry:
@@ -262,7 +297,7 @@ def main() -> int:
         lines.append(f"| {s['id']} | {'yes' if s['fresh'] else 'no'} | {s['last_changed'] or '-'} |")
     REPORT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    print(f"deduped={len(registry)} hd720plus={len(hd_live)} changes={len(changes)}")
+    print(f"deduped_urls={len(registry)} eligible_hd_urls={len(eligible)} unique_hd_channels={len(hd_live)} changes={len(changes)}")
     for r in hd_live:
         print(f"HD\t{r['height']}p\t{r['channel']}\t{r['url']}")
     return 0
