@@ -61,11 +61,9 @@
     Escape: 'Back'
   };
 
-  // A few Samsung remotes emit two different-looking keydown events for one
-  // physical rocker press (for example ChannelDown followed by ArrowDown or
-  // PageDown). Main.js cannot safely distinguish those after the fact, so the
-  // remote gateway owns full-screen zapping and suppresses same-direction
-  // duplicates before they reach the player.
+  // Some Samsung remotes emit two different-looking keydown events for one
+  // physical rocker press. The remote gateway owns full-screen zapping and
+  // suppresses same-direction duplicates before they reach the player.
   var CHANNEL_DUPLICATE_GUARD_MS = 700;
   var lastZapDirection = 0;
   var lastZapAt = 0;
@@ -198,12 +196,15 @@
     return false;
   }
 
+  // Channel-number semantics for this app are explicit: moving the rocker UP
+  // increases the visible channel number (3 -> 4); moving DOWN decreases it.
+  // Right/left retain next/previous semantics when no panel is open.
   function zapDirection(name) {
-    if (name === 'ChannelUp') return -1;
-    if (name === 'ChannelDown') return 1;
+    if (name === 'ChannelUp') return 1;
+    if (name === 'ChannelDown') return -1;
     if (panelsOpen()) return 0;
-    if (name === 'ArrowUp' || name === 'ArrowLeft') return -1;
-    if (name === 'ArrowDown' || name === 'ArrowRight') return 1;
+    if (name === 'ArrowUp' || name === 'ArrowRight') return 1;
+    if (name === 'ArrowDown' || name === 'ArrowLeft') return -1;
     return 0;
   }
 
