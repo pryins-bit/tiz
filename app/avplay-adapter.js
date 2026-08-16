@@ -12,6 +12,7 @@
   var FULL_RECT = { x: 0, y: 0, width: 1920, height: 1080 };
   var MOM_PIP_RECT = { x: 0, y: 0, width: 1240, height: 1080 };
   var WEATHER_REFRESH_MS = 10 * 60 * 1000;
+  var MARKET_REFRESH_MS = 5 * 60 * 1000;
   var WEATHER_URL = 'https://api.open-meteo.com/v1/forecast' +
     '?latitude=37.5172,35.8482' +
     '&longitude=127.0473,128.5771' +
@@ -19,6 +20,7 @@
     '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
     '&timezone=Asia%2FSeoul,Asia%2FSeoul' +
     '&forecast_days=2';
+  var MARKET_URL = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/market.json';
 
   var WEATHER_LOCATIONS = [
     { name: '서울 강남', sub: '강남구' },
@@ -33,6 +35,11 @@
   var weatherLastLoadedAt = 0;
   var weatherLoading = false;
   var weatherTimer = null;
+  var marketLastLoadedAt = 0;
+  var marketLoading = false;
+  var marketPayload = null;
+  var marketTimer = null;
+  var marketRenderTimer = null;
 
   var diagnostics = {
     available: false,
@@ -46,7 +53,9 @@
     displayRect: FULL_RECT,
     momPip: false,
     weatherLastLoadedAt: 0,
-    weatherLastError: ''
+    weatherLastError: '',
+    marketLastLoadedAt: 0,
+    marketLastError: ''
   };
 
   window.KoreaTVAVPlayDiagnostics = diagnostics;
@@ -383,6 +392,68 @@
       .then(function () { weatherLoading = false; });
   }
 
+  function renderMarketPayload(payload) {
+    marketPayload = payload || marketPayload;
+    if (!marketPayload || typeof document === 'undefined') return;
+    var host = document.getElementById('momStocks');
+    if (!host) return;
+    var stocks = marketPayload.stocks || [];
+    host.innerHTML = '';
+    if (!stocks.length) {
+      host.innerHTML = '<div class="empty-row">시세 데이터 없음</div>';
+      return;
+    }
+    stocks.slice(0, 8).forEach(function (stock) {
+      var row = document.createElement('div');
+      row.className = 'stock-row';
+      var left = document.createElement('div');
+      left.className = 'stock-name';
+      left.textContent = String(stock.name || stock.symbol || '');
+      var right = document.createElement('div');
+      var price = document.createElement('span');
+      price.className = 'stock-price';
+      price.textContent = stock.price == null ? '갱신 대기' : Math.round(Number(stock.price)).toLocaleString() + '원';
+      var change = document.createElement('span');
+      change.className = 'stock-change';
+      if (stock.change_percent != null) {
+        var pct = Number(stock.change_percent);
+        change.textContent = (pct > 0 ? ' ▲ ' : pct < 0 ? ' ▼ ' : ' ') + Math.abs(pct).toFixed(2) + '%';
+      }
+      right.appendChild(price);
+      right.appendChild(change);
+      row.appendChild(left);
+      row.appendChild(right);
+      host.appendChild(row);
+    });
+  }
+
+  function loadMarket(force) {
+    if (typeof fetch !== 'function' || marketLoading) return;
+    var now = Date.now();
+    if (!force && marketPayload && now - marketLastLoadedAt < MARKET_REFRESH_MS) {
+      renderMarketPayload(marketPayload);
+      return;
+    }
+    marketLoading = true;
+    fetch(MARKET_URL + '?t=' + now, { cache: 'no-store' })
+      .then(function (response) {
+        if (!response.ok) throw new Error('market HTTP ' + response.status);
+        return response.json();
+      })
+      .then(function (payload) {
+        marketPayload = payload;
+        marketLastLoadedAt = Date.now();
+        diagnostics.marketLastLoadedAt = marketLastLoadedAt;
+        diagnostics.marketLastError = '';
+        renderMarketPayload(payload);
+      })
+      .catch(function (error) {
+        diagnostics.marketLastError = String(error && (error.message || error.name) || error);
+        if (marketPayload) renderMarketPayload(marketPayload);
+      })
+      .then(function () { marketLoading = false; });
+  }
+
   function setHtmlVideoPip(enabled) {
     if (typeof document === 'undefined') return;
     var video = document.getElementById('video');
@@ -430,11 +501,22 @@
     if (!home) return;
     ensureWeatherPanel();
     loadWeather(true);
+    loadMarket(true);
 
     function sync() {
       var visible = !home.classList.contains('hidden');
       applyMomLayout(visible);
-      if (visible) loadWeather(false);
+      if (visible) {
+        loadWeather(false);
+        loadMarket(false);
+        clearTimeout(marketRenderTimer);
+        marketRenderTimer = setTimeout(function () {
+          if (!home.classList.contains('hidden')) {
+            if (marketPayload) renderMarketPayload(marketPayload);
+            else loadMarket(true);
+          }
+        }, 1200);
+      }
     }
 
     if (typeof MutationObserver !== 'undefined') {
@@ -446,6 +528,10 @@
     weatherTimer = setInterval(function () {
       if (!home.classList.contains('hidden')) loadWeather(false);
     }, WEATHER_REFRESH_MS);
+    clearInterval(marketTimer);
+    marketTimer = setInterval(function () {
+      if (!home.classList.contains('hidden')) loadMarket(false);
+    }, MARKET_REFRESH_MS);
   }
 
   window.KoreaTVAVPlay = {
