@@ -40,31 +40,46 @@
     return m ? { current: Number(m[1]), total: Number(m[2]) } : null;
   }
 
-  function fireArrowUp() {
+  function makeKeyEvent(key, code) {
+    var event;
     try {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', keyCode: 38, which: 38, bubbles: true }));
+      event = new KeyboardEvent('keydown', { key: key, keyCode: code, which: code, bubbles: true, cancelable: true });
     } catch (e) {
-      var evt = document.createEvent('Event');
-      evt.initEvent('keydown', true, true);
-      evt.key = 'ArrowUp';
-      evt.keyCode = 38;
-      evt.which = 38;
-      document.dispatchEvent(evt);
+      event = document.createEvent('Event');
+      event.initEvent('keydown', true, true);
+      event.key = key;
+      event.keyCode = code;
+      event.which = code;
+    }
+    try { event.__koreaTVNumericSynthetic = true; } catch (e2) {}
+    return event;
+  }
+
+  function fireKey(key, code) {
+    document.dispatchEvent(makeKeyEvent(key, code));
+  }
+
+  function closePanelsForTuning() {
+    // The TV home opens automatically after startup. The old implementation
+    // ignored every numeric key while any panel was open, making channel-number
+    // entry appear completely broken. Close the current panel through the same
+    // public UI/key paths that main.js already uses, keeping its internal state
+    // consistent.
+    for (var attempts = 0; attempts < 4 && panelsOpen(); attempts += 1) {
+      var home = document.getElementById('tvHome');
+      if (home && !home.classList.contains('hidden')) {
+        var continueButton = home.querySelector('[data-action="continue"]');
+        if (continueButton && typeof continueButton.click === 'function') {
+          continueButton.click();
+          continue;
+        }
+      }
+      fireKey('Back', 10009);
     }
   }
 
-  function fireArrowDown() {
-    try {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 40, which: 40, bubbles: true }));
-    } catch (e) {
-      var evt = document.createEvent('Event');
-      evt.initEvent('keydown', true, true);
-      evt.key = 'ArrowDown';
-      evt.keyCode = 40;
-      evt.which = 40;
-      document.dispatchEvent(evt);
-    }
-  }
+  function fireChannelUp() { fireKey('ChannelUp', 427); }
+  function fireChannelDown() { fireKey('ChannelDown', 428); }
 
   function commit() {
     clearTimeout(timer);
@@ -75,18 +90,23 @@
     var info = currentInfo();
     if (!info || !target || target > info.total || target === info.current) return;
 
+    closePanelsForTuning();
+
+    // Channel +/- is handled by main.js using the documented Samsung keyCodes
+    // 427/428 even when event.key is absent. Use those codes rather than arrow
+    // events so panel focus logic cannot accidentally consume numeric tuning.
     var forward = (target - info.current + info.total) % info.total;
     var backward = (info.current - target + info.total) % info.total;
     var useForward = forward <= backward;
     var count = useForward ? forward : backward;
     for (var i = 0; i < count; i += 1) {
-      if (useForward) fireArrowUp(); else fireArrowDown();
+      if (useForward) fireChannelUp(); else fireChannelDown();
     }
   }
 
   document.addEventListener('keydown', function (event) {
+    if (event.__koreaTVNumericSynthetic) return;
     if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-    if (panelsOpen()) return;
 
     var key = event.key || '';
     var code = event.keyCode || event.which;
