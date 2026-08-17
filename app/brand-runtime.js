@@ -5,8 +5,10 @@
   var MOM_API_URL = 'https://inzopchhmvljprbpvzcs.supabase.co/functions/v1/mom-tv';
   var MOM_TOKEN_KEY = 'mom_tv_token_v1';
   var MOM_REFRESH_MS = 10000;
+  var MOM_FAST_RETRY_MS = 900;
   var DEFAULT_NAME = '수니TV';
   var DEFAULT_ICON = 'icon.png';
+  var DEFAULT_TICKER = '오늘도 식사 잘 챙기시고, 편안한 하루 보내세요.';
   var DEFAULT_QUOTES = [
     '오늘은 오늘의 속도로 가도 괜찮아요.',
     '식사 잘 챙기고, 몸이 보내는 신호를 천천히 살펴보세요.',
@@ -16,8 +18,11 @@
     '잘 쉬는 것도 오늘 해야 할 중요한 일 중 하나예요.',
     '지금까지 해온 것만으로도 오늘을 시작할 힘은 충분해요.'
   ];
+
   var momTimer = null;
   var momObserver = null;
+  var activationTimer = null;
+  var activationAttempts = 0;
   var diagnostics = {
     loaded: false,
     source: 'packaged',
@@ -28,7 +33,9 @@
     momLoaded: false,
     quoteSource: 'fallback',
     tickerCount: 0,
-    lastMomError: ''
+    lastMomError: '',
+    authState: 'starting',
+    activationAttempts: 0
   };
 
   window.SuniTVBrandDiagnostics = diagnostics;
@@ -65,6 +72,10 @@
       '.mom-daily-quote-text{margin-top:7px;font-size:29px;font-weight:750;line-height:1.35;word-break:keep-all}' +
       '.mom-daily-quote-by{margin-top:7px;font-size:16px;opacity:.55}' +
       '.mom-home.mom-extras-active .mom-content{margin-top:18px;height:calc(100% - 330px)}' +
+      '.mom-fallback-grid{margin-top:18px;display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px}' +
+      '.mom-fallback-card{min-height:94px;padding:17px 20px;box-sizing:border-box;border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.055)}' +
+      '.mom-fallback-label{font-size:15px;font-weight:800;letter-spacing:1px;opacity:.55}' +
+      '.mom-fallback-value{margin-top:8px;font-size:22px;font-weight:750;line-height:1.25}' +
       '.mom-ticker{position:absolute;left:64px;right:64px;bottom:22px;height:48px;overflow:hidden;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(5,9,15,.94);display:flex;align-items:center;z-index:4}' +
       '.mom-ticker-badge{flex:0 0 auto;height:100%;display:flex;align-items:center;padding:0 17px;font-size:17px;font-weight:900;background:rgba(255,255,255,.12);letter-spacing:.5px}' +
       '.mom-ticker-window{min-width:0;flex:1;overflow:hidden;white-space:nowrap}' +
@@ -74,6 +85,10 @@
       '.mom-home.pip-active .mom-daily-quote-label{font-size:12px}' +
       '.mom-home.pip-active .mom-daily-quote-text{margin-top:4px;font-size:18px;line-height:1.28}' +
       '.mom-home.pip-active .mom-daily-quote-by{margin-top:4px;font-size:11px}' +
+      '.mom-home.pip-active .mom-fallback-grid{margin-top:9px;grid-template-columns:1fr;gap:8px}' +
+      '.mom-home.pip-active .mom-fallback-card{min-height:0;padding:10px 12px;border-radius:11px}' +
+      '.mom-home.pip-active .mom-fallback-label{font-size:11px}' +
+      '.mom-home.pip-active .mom-fallback-value{margin-top:4px;font-size:15px}' +
       '.mom-home.pip-active.mom-extras-active .mom-content{margin-top:9px!important;max-height:300px!important}' +
       '.mom-home.pip-active .mom-ticker{left:28px;right:28px;bottom:14px;height:38px;border-radius:9px}' +
       '.mom-home.pip-active .mom-ticker-badge{padding:0 10px;font-size:12px}' +
@@ -138,6 +153,12 @@
     return String(y) + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
   }
 
+  function friendlyDate() {
+    var now = new Date();
+    var days = ['일', '월', '화', '수', '목', '금', '토'];
+    return (now.getMonth() + 1) + '월 ' + now.getDate() + '일 ' + days[now.getDay()] + '요일';
+  }
+
   function stringHash(value) {
     var text = String(value || '');
     var hash = 0;
@@ -150,6 +171,43 @@
     return { title: '오늘의 한마디', text: DEFAULT_QUOTES[at], attribution: '', source: 'fallback' };
   }
 
+  function staticNode(tag, className, text) {
+    var node = document.createElement(tag);
+    node.className = className || '';
+    if (text != null) node.textContent = String(text);
+    return node;
+  }
+
+  function ensureFallbackGrid(mom, content) {
+    var grid = document.getElementById('momFallbackGrid');
+    if (grid) return grid;
+    grid = staticNode('div', 'mom-fallback-grid');
+    grid.id = 'momFallbackGrid';
+
+    var dateCard = staticNode('div', 'mom-fallback-card');
+    dateCard.appendChild(staticNode('div', 'mom-fallback-label', '오늘'));
+    var dateValue = staticNode('div', 'mom-fallback-value', friendlyDate());
+    dateValue.id = 'momFallbackDate';
+    dateCard.appendChild(dateValue);
+
+    var tvCard = staticNode('div', 'mom-fallback-card');
+    tvCard.appendChild(staticNode('div', 'mom-fallback-label', 'TV'));
+    tvCard.appendChild(staticNode('div', 'mom-fallback-value', 'TV 보기 버튼으로 바로 시청'));
+
+    var stateCard = staticNode('div', 'mom-fallback-card');
+    stateCard.appendChild(staticNode('div', 'mom-fallback-label', '연결 상태'));
+    var stateValue = staticNode('div', 'mom-fallback-value', '엄마 홈 연결 중…');
+    stateValue.id = 'momFallbackState';
+    stateCard.appendChild(stateValue);
+
+    grid.appendChild(dateCard);
+    grid.appendChild(tvCard);
+    grid.appendChild(stateCard);
+    if (content && content.parentNode) content.parentNode.insertBefore(grid, content);
+    else mom.appendChild(grid);
+    return grid;
+  }
+
   function ensureMomExtrasUi() {
     ensureStyle();
     var mom = document.getElementById('momHome');
@@ -158,18 +216,14 @@
 
     var quote = document.getElementById('momDailyQuote');
     if (!quote) {
-      quote = document.createElement('div');
+      quote = staticNode('div', 'mom-daily-quote hidden');
       quote.id = 'momDailyQuote';
-      quote.className = 'mom-daily-quote hidden';
-      var qLabel = document.createElement('div');
+      var qLabel = staticNode('div', 'mom-daily-quote-label');
       qLabel.id = 'momDailyQuoteLabel';
-      qLabel.className = 'mom-daily-quote-label';
-      var qText = document.createElement('div');
+      var qText = staticNode('div', 'mom-daily-quote-text');
       qText.id = 'momDailyQuoteText';
-      qText.className = 'mom-daily-quote-text';
-      var qBy = document.createElement('div');
+      var qBy = staticNode('div', 'mom-daily-quote-by hidden');
       qBy.id = 'momDailyQuoteBy';
-      qBy.className = 'mom-daily-quote-by hidden';
       quote.appendChild(qLabel);
       quote.appendChild(qText);
       quote.appendChild(qBy);
@@ -178,29 +232,56 @@
 
     var ticker = document.getElementById('momTicker');
     if (!ticker) {
-      ticker = document.createElement('div');
+      ticker = staticNode('div', 'mom-ticker hidden');
       ticker.id = 'momTicker';
-      ticker.className = 'mom-ticker hidden';
-      var badge = document.createElement('div');
-      badge.className = 'mom-ticker-badge';
-      badge.textContent = '메시지';
-      var windowEl = document.createElement('div');
-      windowEl.className = 'mom-ticker-window';
-      var track = document.createElement('div');
+      var badge = staticNode('div', 'mom-ticker-badge', '메시지');
+      var windowEl = staticNode('div', 'mom-ticker-window');
+      var track = staticNode('div', 'mom-ticker-track');
       track.id = 'momTickerTrack';
-      track.className = 'mom-ticker-track';
       windowEl.appendChild(track);
       ticker.appendChild(badge);
       ticker.appendChild(windowEl);
       mom.appendChild(ticker);
     }
 
-    return { mom: mom, content: content, quote: quote, ticker: ticker };
+    var fallbackGrid = ensureFallbackGrid(mom, content);
+    return {
+      mom: mom,
+      content: content,
+      approval: document.getElementById('momApproval'),
+      approvalCode: document.getElementById('approvalCode'),
+      state: document.getElementById('momState'),
+      items: document.getElementById('momItems'),
+      stocks: document.getElementById('momStocks'),
+      quote: quote,
+      ticker: ticker,
+      fallbackGrid: fallbackGrid
+    };
   }
 
-  function isMomApprovedVisible(ui) {
-    if (!ui || ui.mom.classList.contains('hidden')) return false;
-    return !ui.content.classList.contains('hidden');
+  function setFallbackState(text) {
+    var el = document.getElementById('momFallbackState');
+    if (el) el.textContent = String(text || '');
+    var date = document.getElementById('momFallbackDate');
+    if (date) date.textContent = friendlyDate();
+  }
+
+  function showFallbackHome(stateText) {
+    var ui = ensureMomExtrasUi();
+    if (!ui || ui.mom.classList.contains('hidden')) return;
+    var quote = fallbackQuote();
+    document.getElementById('momDailyQuoteLabel').textContent = quote.title;
+    document.getElementById('momDailyQuoteText').textContent = quote.text;
+    var by = document.getElementById('momDailyQuoteBy');
+    by.textContent = '';
+    by.classList.add('hidden');
+    ui.quote.classList.remove('hidden');
+    ui.mom.classList.add('mom-extras-active');
+    if (ui.fallbackGrid) ui.fallbackGrid.classList.remove('hidden');
+    setFallbackState(stateText || '엄마 홈 연결 중…');
+    var track = document.getElementById('momTickerTrack');
+    if (track) track.textContent = DEFAULT_TICKER + '      ·      ' + DEFAULT_TICKER;
+    ui.ticker.classList.remove('hidden');
   }
 
   function normalizedQuote(payload) {
@@ -227,7 +308,7 @@
   function renderMomExtras(data) {
     var ui = ensureMomExtrasUi();
     if (!ui) return;
-    if (!isMomApprovedVisible(ui)) {
+    if (ui.mom.classList.contains('hidden')) {
       ui.quote.classList.add('hidden');
       ui.ticker.classList.add('hidden');
       ui.mom.classList.remove('mom-extras-active');
@@ -265,6 +346,72 @@
     diagnostics.lastMomError = '';
   }
 
+  function renderItems(items, host) {
+    if (!host) return;
+    host.innerHTML = '';
+    items = Array.isArray(items) ? items : [];
+    if (!items.length) {
+      host.appendChild(staticNode('div', 'empty-row', '등록된 일정/공지 없음'));
+      return;
+    }
+    items.slice(0, 6).forEach(function (item) {
+      var card = staticNode('div', 'mom-card');
+      card.appendChild(staticNode('div', 'mom-card-title', String(item && item.title || '')));
+      if (item && item.body) card.appendChild(staticNode('div', 'mom-card-body', String(item.body)));
+      host.appendChild(card);
+    });
+  }
+
+  function renderStocks(stocks, host) {
+    if (!host) return;
+    host.innerHTML = '';
+    stocks = Array.isArray(stocks) ? stocks : [];
+    if (!stocks.length) {
+      host.appendChild(staticNode('div', 'empty-row', '관심 시세 불러오는 중…'));
+      return;
+    }
+    stocks.slice(0, 8).forEach(function (stock) {
+      var row = staticNode('div', 'stock-row');
+      row.appendChild(staticNode('div', 'stock-name', String(stock.display_name || stock.symbol || '')));
+      var right = staticNode('div', '');
+      var price = staticNode('span', 'stock-price', stock.price == null ? '-' : Number(stock.price).toLocaleString());
+      var change = staticNode('span', 'stock-change');
+      if (stock.change_percent != null) {
+        var pct = Number(stock.change_percent);
+        change.textContent = (pct > 0 ? ' ▲ ' : pct < 0 ? ' ▼ ' : ' ') + Math.abs(pct).toFixed(2) + '%';
+      }
+      right.appendChild(price);
+      right.appendChild(change);
+      row.appendChild(right);
+      host.appendChild(row);
+    });
+  }
+
+  function renderPrivateData(data) {
+    var ui = ensureMomExtrasUi();
+    if (!ui) return;
+    diagnostics.authState = 'approved';
+    if (ui.state) ui.state.textContent = '승인됨 · 자동 동기화';
+    if (ui.approval) ui.approval.classList.add('hidden');
+    if (ui.content) ui.content.classList.remove('hidden');
+    if (ui.fallbackGrid) ui.fallbackGrid.classList.add('hidden');
+    renderItems(data && data.items, ui.items);
+    renderStocks(data && data.stocks, ui.stocks);
+    renderMomExtras(data || {});
+  }
+
+  function showApproval(code) {
+    var ui = ensureMomExtrasUi();
+    if (!ui) return;
+    diagnostics.authState = 'approval';
+    if (ui.state) ui.state.textContent = '승인 대기 중';
+    if (ui.approvalCode) ui.approvalCode.textContent = code || '------';
+    if (ui.approval) ui.approval.classList.remove('hidden');
+    if (ui.content) ui.content.classList.add('hidden');
+    if (ui.fallbackGrid) ui.fallbackGrid.classList.remove('hidden');
+    showFallbackHome(code ? '승인번호 ' + code : 'TV 승인 대기 중');
+  }
+
   function momToken() {
     try { return localStorage.getItem(MOM_TOKEN_KEY) || ''; } catch (e) { return ''; }
   }
@@ -272,24 +419,49 @@
   function loadMomExtras() {
     var ui = ensureMomExtrasUi();
     if (!ui || ui.mom.classList.contains('hidden')) return Promise.resolve(null);
+
+    showFallbackHome('엄마 홈 연결 확인 중…');
     var token = momToken();
     if (!token || typeof fetch !== 'function') {
-      if (isMomApprovedVisible(ui)) renderMomExtras({ mom_message: { quote: fallbackQuote(), ticker: [] } });
+      diagnostics.authState = 'waiting-token';
+      if (ui.state) ui.state.textContent = 'TV 인증 준비 중…';
+      setFallbackState('TV 인증 준비 중…');
       return Promise.resolve(null);
     }
+
+    diagnostics.authState = 'loading';
+    if (ui.state) ui.state.textContent = '엄마 홈 동기화 중…';
     return fetch(cacheBust(MOM_API_URL + '?action=data'), {
       method: 'GET',
       cache: 'no-store',
       headers: { 'x-tv-token': token, 'Content-Type': 'application/json' }
     }).then(function (response) {
-      if (!response.ok) throw new Error('mom HTTP ' + response.status);
-      return response.json();
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        if (!response.ok) {
+          var error = new Error(body.error || ('mom HTTP ' + response.status));
+          error.status = response.status;
+          error.body = body;
+          throw error;
+        }
+        return body;
+      });
     }).then(function (data) {
-      renderMomExtras(data || {});
+      renderPrivateData(data || {});
+      diagnostics.lastMomError = '';
       return data;
     }).catch(function (error) {
       diagnostics.lastMomError = String(error && (error.message || error.name) || error);
-      if (isMomApprovedVisible(ui)) renderMomExtras({ mom_message: { quote: fallbackQuote(), ticker: [] } });
+      if (error && error.status === 403) {
+        showApproval(error.body && error.body.approval_code);
+      } else if (error && error.status === 401) {
+        diagnostics.authState = 'renewing';
+        if (ui.state) ui.state.textContent = 'TV 인증 갱신 중…';
+        setFallbackState('TV 인증 갱신 중…');
+      } else {
+        diagnostics.authState = 'error';
+        if (ui.state) ui.state.textContent = '연결 재시도 중…';
+        setFallbackState('연결 재시도 중…');
+      }
       return null;
     });
   }
@@ -303,9 +475,31 @@
     clearMomTimer();
     var ui = ensureMomExtrasUi();
     if (!ui || ui.mom.classList.contains('hidden')) return;
+    var fast = diagnostics.authState === 'waiting-token' || diagnostics.authState === 'renewing' || diagnostics.authState === 'starting';
     momTimer = setTimeout(function () {
       loadMomExtras().then(scheduleMomRefresh);
-    }, MOM_REFRESH_MS);
+    }, fast ? MOM_FAST_RETRY_MS : MOM_REFRESH_MS);
+  }
+
+  function runtimeActivated() {
+    var state = document.getElementById('momState');
+    if (!state) return false;
+    var text = String(state.textContent || '');
+    return text.indexOf('R6') < 0 && text.indexOf('로컬 홈 준비 완료') < 0;
+  }
+
+  function activateMomRuntime() {
+    if (runtimeActivated()) return;
+    if (activationAttempts >= 40) return;
+    activationAttempts += 1;
+    diagnostics.activationAttempts = activationAttempts;
+    var button = document.querySelector('[data-action="mom"]');
+    if (button && typeof button.click === 'function') {
+      try { button.click(); } catch (e) {}
+    }
+    if (runtimeActivated()) return;
+    clearTimeout(activationTimer);
+    activationTimer = setTimeout(activateMomRuntime, 250);
   }
 
   function syncMomVisibility() {
@@ -315,6 +509,8 @@
       clearMomTimer();
       return;
     }
+    showFallbackHome('엄마 홈 연결 확인 중…');
+    activateMomRuntime();
     loadMomExtras().then(scheduleMomRefresh);
   }
 
@@ -330,7 +526,6 @@
     }
     momObserver = new MutationObserver(function () { syncMomVisibility(); });
     momObserver.observe(ui.mom, { attributes: true, attributeFilter: ['class'] });
-    momObserver.observe(ui.content, { attributes: true, attributeFilter: ['class'] });
     syncMomVisibility();
   }
 
@@ -378,7 +573,9 @@
         loaded: diagnostics.momLoaded,
         quoteSource: diagnostics.quoteSource,
         tickerCount: diagnostics.tickerCount,
-        lastError: diagnostics.lastMomError
+        lastError: diagnostics.lastMomError,
+        authState: diagnostics.authState,
+        activationAttempts: diagnostics.activationAttempts
       };
     }
   };
