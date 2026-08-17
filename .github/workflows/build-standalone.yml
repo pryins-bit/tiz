@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'app/**'
+      - 'korea.m3u'
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - 'app/**'
+      - 'korea.m3u'
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
@@ -183,12 +185,14 @@ jobs:
           with zipfile.ZipFile('KoreaTV.wgt') as zf:
               names = set(zf.namelist())
               required = {
-                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
+                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json', 'korea.m3u',
                   'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js', 'style.css',
                   'author-signature.xml', 'signature1.xml'
               }
               missing = sorted(required - names)
               assert not missing, f'KoreaTV.wgt missing required files: {missing}'
+              playlist = zf.read('korea.m3u').decode('utf-8')
+              assert playlist.startswith('#EXTM3U') and '#EXTINF:' in playlist, 'packaged playlist fallback invalid'
               config_bytes = zf.read('config.xml')
               config = config_bytes.decode('utf-8')
               assert '<widget ' in config or '<widget\n' in config
@@ -208,6 +212,9 @@ jobs:
               assert 'data-action="watch-tv"' in index
               bootstrap = zf.read('bootstrap.js').decode('utf-8')
               assert 'CHECK_BUDGET_MS = 450' in bootstrap
+              assert 'PLAYLIST_FALLBACK_TIMEOUT_MS = 1800' in bootstrap
+              assert "PLAYLIST_LOCAL = 'korea.m3u'" in bootstrap
+              assert 'cdn.jsdelivr.net/gh/pryins-bit/tiz@main/' in bootstrap
               assert 'runtime-version.json' in bootstrap
               assert 'avplay-adapter.js' in bootstrap
               remote = zf.read('remote-input.js').decode('utf-8')
@@ -220,7 +227,7 @@ jobs:
               main = zf.read('main.js').decode('utf-8')
               assert 'setTimeout(openMom, 40)' in main
               assert 'avplay.start(channel.url' in main
-          print('KoreaTV.wgt contains signatures, Mom OS entry, AVPlay runtime, exact-once remote input, and TV input privilege')
+          print('KoreaTV.wgt contains signatures, packaged playlist fallback, Mom OS entry, AVPlay runtime, exact-once remote input, and TV input privilege')
           PY
 
       - name: Package editable project ZIP
@@ -241,7 +248,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. Mom OS opens first, Samsung AVPlay is preferred for live HLS A/V sync, and channel UP/+ increases the visible channel number. Runtime updates still use the 450ms launch check. In TizenBrew Installer use: pryins-bit/tiz'
+          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. Mom OS opens first, raw GitHub network hangs fall back to jsDelivr and a packaged korea.m3u, Samsung AVPlay is preferred for live HLS A/V sync, and channel UP/+ increases the visible channel number. Runtime updates still use the 450ms launch check. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
               --title 'Korea TV Standalone (Mom OS + AVPlay)' \
