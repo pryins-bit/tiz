@@ -1,10 +1,10 @@
 {
   "name": "tiz-korea-tv",
-  "version": "0.7.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Minimal Samsung Tizen 6 Korea IPTV player using the owner's korea.m3u and an AVPlay-first Sky IPTV-derived core",
+  "description": "One-click Korea IPTV player and remote-friendly TV home for TizenBrew with optional Mom TV dashboard",
   "packageType": "app",
-  "appName": "수니TV",
+  "appName": "Korea TV",
   "appPath": "app/index.html",
   "keys": [
     "0",

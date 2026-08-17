@@ -11,6 +11,10 @@
     'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop'
   ];
 
+  // Samsung's own Tizen TV VOD reference app accepts both the documented
+  // ChannelUp/ChannelDown codes and browser-style PageUp/PageDown variants.
+  // Keep the documented color family at 403-406; 447-449 are volume codes on
+  // Samsung Tizen and must never be treated as colors.
   var FALLBACK_CODE_TO_NAME = {
     13: 'Enter',
     19: 'MediaPause',
@@ -57,8 +61,9 @@
     Escape: 'Back'
   };
 
-  // Some Samsung firmware emits a second arrow/Page event for one rocker press.
-  // This capture-phase gateway owns zapping and suppresses same-direction twins.
+  // Some Samsung remotes emit two different-looking keydown events for one
+  // physical rocker press. The remote gateway owns full-screen zapping and
+  // suppresses same-direction duplicates before they reach the player.
   var CHANNEL_DUPLICATE_GUARD_MS = 700;
   var lastZapDirection = 0;
   var lastZapAt = 0;
@@ -120,8 +125,10 @@
       return;
     }
 
-    // getSupportedKeys can be incomplete on older firmware, so registration is
-    // still attempted for every semantic key name.
+    // getSupportedKeys() is useful for discovering model-specific numeric
+    // codes, but it is not an allow-list for registration. Samsung's reference
+    // implementation registers the semantic names directly. Some older TVs
+    // return incomplete enumeration results while registerKey still works.
     var names = REQUESTED_KEYS.slice();
     try {
       var supported = manager.getSupportedKeys();
@@ -166,6 +173,8 @@
     if (code >= 48 && code <= 57) return String(code - 48);
     if (code >= 96 && code <= 105) return String(code - 96);
 
+    // Prefer the model-specific keyCode map once available. This mirrors the
+    // Samsung reference pattern and avoids browser key-string differences.
     var byCode = diagnostics.codeToName[String(code)] || FALLBACK_CODE_TO_NAME[code];
     if (byCode) return normalizeNamedKey(byCode);
 
@@ -187,8 +196,9 @@
     return false;
   }
 
-  // ChannelUp / ArrowUp = next/higher channel number. ChannelDown / ArrowDown
-  // = previous/lower channel number. This matches the physical Samsung rocker.
+  // Channel-number semantics for this app are explicit: moving the rocker UP
+  // increases the visible channel number (3 -> 4); moving DOWN decreases it.
+  // Right/left retain next/previous semantics when no panel is open.
   function zapDirection(name) {
     if (name === 'ChannelUp') return 1;
     if (name === 'ChannelDown') return -1;
