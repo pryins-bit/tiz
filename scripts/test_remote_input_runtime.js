@@ -31,6 +31,7 @@ const elements = {
 
 const listeners = {};
 const document = {
+  body: null,
   addEventListener(type, handler, capture) {
     if (!listeners[type]) listeners[type] = [];
     listeners[type].push({ handler, capture: !!capture });
@@ -66,6 +67,10 @@ const tvinputdevice = {
       { name: 'ChannelUp', code: 427 },
       { name: 'ChannelDown', code: 428 }
     ];
+  },
+  getKey(name) {
+    if (name === 'ColorF0Red') return { name, code: 403 };
+    return null;
   },
   registerKeyBatch(names, success) {
     batchCalls.push(names.slice());
@@ -104,12 +109,13 @@ context.global = context;
 const source = fs.readFileSync(path.join(__dirname, '..', 'app', 'remote-input.js'), 'utf8');
 vm.runInNewContext(source, context, { filename: 'remote-input.js' });
 
-assert.strictEqual(batchCalls.length, 1, 'remote keys should register in one batch when supported');
+assert.strictEqual(individualCalls[0], 'ColorF0Red', 'Red must be registered individually first');
+assert.strictEqual(batchCalls.length, 1, 'remaining remote keys should batch-register when supported');
 const registered = batchCalls[0];
-for (const name of ['ChannelUp', 'ChannelDown', 'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue']) {
+for (const name of ['ChannelUp', 'ChannelDown', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue', 'ChannelList', 'PreviousChannel', 'Info']) {
   assert(registered.includes(name), 'batch registration missing ' + name);
 }
-assert.strictEqual(individualCalls.length, 0, 'individual fallback should not run after batch success');
+assert(!registered.includes('ColorF0Red'), 'successfully direct-registered Red should not be redundantly batched');
 
 const remote = windowObject.KoreaTVRemote;
 assert(remote, 'KoreaTVRemote API was not installed');
@@ -119,6 +125,9 @@ assert.strictEqual(remote.getName({ key: 'PageUp', keyCode: 33 }), 'ChannelUp');
 assert.strictEqual(remote.getName({ key: 'PageDown', keyCode: 34 }), 'ChannelDown');
 assert.strictEqual(remote.getName({ key: 'XF86RaiseChannel', keyCode: 0 }), 'ChannelUp');
 assert.strictEqual(remote.getName({ key: 'XF86LowerChannel', keyCode: 0 }), 'ChannelDown');
+assert.strictEqual(remote.getName({ keyCode: 10073 }), 'ChannelList');
+assert.strictEqual(remote.getName({ keyCode: 10190 }), 'PreviousChannel');
+assert.strictEqual(remote.getName({ keyCode: 457 }), 'Info');
 assert.notStrictEqual(remote.getName({ keyCode: 447 }), 'ColorF0Red', 'volume-up code must never masquerade as red');
 assert.notStrictEqual(remote.getName({ keyCode: 448 }), 'ColorF1Green', 'volume-down code must never masquerade as green');
 assert.notStrictEqual(remote.getName({ keyCode: 449 }), 'ColorF2Yellow', 'mute code must never masquerade as yellow');
@@ -159,9 +168,8 @@ dispatch('keydown', { key: 'ChannelUp', keyCode: 427, repeat: false });
 assert.strictEqual(currentChannel, 4, 'channel-up should tune 3 -> 4 from an open panel');
 assert.deepStrictEqual(tuned, [4, 3, 4]);
 
-// Emergency owner shortcut: Red is capture-owned by remote-input and forces the
-// exact current channel to play, even while a panel is open. This must stop the
-// older main.js Red handler from reopening another home panel.
+// Primary emergency shortcut: Red is capture-owned and forces the exact current
+// channel to play, even while a panel is open.
 clock += 1000;
 const red = dispatch('keydown', { key: 'XF86Red', keyCode: 403, repeat: false });
 assert.strictEqual(red.defaultPrevented, true, 'red shortcut should consume the browser default');
@@ -170,6 +178,16 @@ assert.strictEqual(currentChannel, 4, 'red should preserve and force the current
 assert.deepStrictEqual(tuned, [4, 3, 4, 4]);
 assert.strictEqual(windowObject.KoreaTVRemoteDiagnostics.directRedPlays, 1, 'one red force-play should be observable');
 
+// Backup rescue for firmware/remotes that never deliver Red: ChannelList must
+// use the same exact-current-channel path rather than opening another panel.
+clock += 1000;
+const listRescue = dispatch('keydown', { key: '', keyCode: 10073, repeat: false });
+assert.strictEqual(listRescue.defaultPrevented, true);
+assert.strictEqual(listRescue.__stopped, true);
+assert.deepStrictEqual(tuned, [4, 3, 4, 4, 4]);
+assert.strictEqual(windowObject.KoreaTVRemoteDiagnostics.directRescuePlays, 2);
+
+assert(windowObject.KoreaTVRemoteDiagnostics.listenerTargets.includes('document'), 'document capture listener must be installed');
 assert(windowObject.KoreaTVRemoteDiagnostics.suppressedZaps >= 2, 'duplicate/repeat suppressions should be observable');
 assert.strictEqual(windowObject.KoreaTVRemoteDiagnostics.directZaps, 3, 'expected three direct one-step zaps');
 
