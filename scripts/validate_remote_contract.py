@@ -30,7 +30,7 @@ def main():
     assert 'http://tizen.org/privilege/tv.inputdevice' in privileges, (
         'standalone config.xml must grant tv.inputdevice privilege'
     )
-    assert config_root.attrib.get('version') == '0.5.0', 'R6 standalone manifest version must be 0.5.0'
+    assert config_root.attrib.get('version') == '0.6.0', 'clean legacy reinstall manifest version must be 0.6.0'
 
     index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
     assert 'src="bootstrap.js"' in index, 'app/index.html must launch through bootstrap.js'
