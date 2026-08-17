@@ -46,4 +46,22 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app/runtime-version.json
           git commit -m 'chore: stamp runtime version'
-          git push
+
+          # Playlist/market/stream-refresh workflows can push to main at the
+          # same time. Rebase the tiny stamp commit onto the newest main and
+          # retry instead of losing the runtime update with a non-fast-forward.
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo 'Runtime stamp rebase conflicted; refusing to overwrite main.'
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Runtime stamp push raced with another writer (attempt ${attempt}); retrying..."
+            sleep $((attempt * 2))
+          done
+          echo 'Runtime stamp could not be pushed after retries.'
+          exit 1
