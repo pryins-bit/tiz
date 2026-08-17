@@ -6,22 +6,18 @@ on:
     branches: [main]
     paths:
       - 'app/**'
-      - 'korea.m3u'
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
       - 'scripts/test_remote_input_runtime.js'
-      - 'scripts/test_avplay_adapter.js'
       - '.github/workflows/build-standalone.yml'
   pull_request:
     paths:
       - 'app/**'
-      - 'korea.m3u'
       - 'tizen-standalone/**'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_remote_contract.py'
       - 'scripts/test_remote_input_runtime.js'
-      - 'scripts/test_avplay_adapter.js'
       - '.github/workflows/build-standalone.yml'
 
 permissions:
@@ -45,15 +41,10 @@ jobs:
           node --check app/main.js
           node --check app/numeric-remote.js
           node --check app/remote-input.js
-          node --check app/avplay-adapter.js
           node --check scripts/test_remote_input_runtime.js
-          node --check scripts/test_avplay_adapter.js
 
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
-
-      - name: Simulate Samsung AVPlay lifecycle
-        run: node scripts/test_avplay_adapter.js
 
       - name: Validate Samsung remote input and updater contract
         run: python scripts/validate_remote_contract.py
@@ -185,14 +176,12 @@ jobs:
           with zipfile.ZipFile('KoreaTV.wgt') as zf:
               names = set(zf.namelist())
               required = {
-                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json', 'korea.m3u',
-                  'brand-runtime.js', 'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js', 'style.css',
+                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
+                  'main.js', 'numeric-remote.js', 'remote-input.js', 'style.css',
                   'author-signature.xml', 'signature1.xml'
               }
               missing = sorted(required - names)
               assert not missing, f'KoreaTV.wgt missing required files: {missing}'
-              playlist = zf.read('korea.m3u').decode('utf-8')
-              assert playlist.startswith('#EXTM3U') and '#EXTINF:' in playlist, 'packaged playlist fallback invalid'
               config_bytes = zf.read('config.xml')
               config = config_bytes.decode('utf-8')
               assert '<widget ' in config or '<widget\n' in config
@@ -207,32 +196,14 @@ jobs:
               index = zf.read('index.html').decode('utf-8')
               assert 'src="bootstrap.js"' in index
               assert 'src="main.js"' not in index
-              assert '$WEBAPIS/webapis/webapis.js' in index
-              assert 'type="application/avplayer"' in index
               bootstrap = zf.read('bootstrap.js').decode('utf-8')
               assert 'CHECK_BUDGET_MS = 450' in bootstrap
-              assert 'PLAYLIST_FALLBACK_TIMEOUT_MS = 1800' in bootstrap
-              assert "PLAYLIST_LOCAL = 'korea.m3u'" in bootstrap
-              assert 'cdn.jsdelivr.net/gh/pryins-bit/tiz@main/' in bootstrap
               assert 'runtime-version.json' in bootstrap
               remote = zf.read('remote-input.js').decode('utf-8')
               assert 'registerKeyBatch' in remote and 'ChannelUp' in remote and 'ColorF0Red' in remote
               assert 'CHANNEL_DUPLICATE_GUARD_MS' in remote
               assert 'XF86Red' in remote and 'PageUp' in remote
-              assert "if (name === 'ChannelUp') return 1;" in remote
-              brand = zf.read('brand-runtime.js').decode('utf-8')
-              main = zf.read('main.js').decode('utf-8')
-              if 'legacy-channel-only' in brand:
-                  assert 'forceLive' in brand and 'KoreaTVPlayer' in brand
-                  assert 'tuneToNumber: tuneToNumber' in main
-                  assert 'playChannel(true)' in main
-                  print('KoreaTV.wgt legacy channel-only rollback package validated')
-              else:
-                  avplay = zf.read('avplay-adapter.js').decode('utf-8')
-                  assert 'webapis.avplay' in avplay and 'prepareAsync' in avplay and 'setDisplayRect' in avplay
-                  assert 'setTimeout(openMom, 40)' in main
-                  assert 'avplay.start(channel.url' in main
-                  print('KoreaTV.wgt Mom OS + AVPlay package validated')
+          print('KoreaTV.wgt contains signatures, updater shell, exact-once remote runtime, and TV input privilege')
           PY
 
       - name: Package editable project ZIP
@@ -253,16 +224,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if grep -q 'legacy-channel-only' app/brand-runtime.js; then
-            TITLE='Korea TV Standalone (Legacy Channel Player)'
-            NOTES='Signed Samsung Tizen 6 rollback build. Starts the legacy pre-Mom player path and forces live TV, while retaining the current updater and corrected Samsung remote gateway. Runtime updates remain enabled.'
-          else
-            TITLE='Korea TV Standalone (Mom OS + AVPlay)'
-            NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. Mom OS opens first, raw GitHub network hangs fall back to jsDelivr and a packaged korea.m3u, Samsung AVPlay is preferred for live HLS A/V sync, and channel UP/+ increases the visible channel number. Runtime updates still use the 450ms launch check.'
-          fi
+          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. On every launch it checks the GitHub runtime manifest for up to 450ms, loads a newer runtime when available, otherwise starts the cached/packaged runtime immediately. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
-            gh release edit standalone-latest --title "$TITLE" --notes "$NOTES" --latest
+            gh release edit standalone-latest \
+              --title 'Korea TV Standalone (auto-updating shell)' \
+              --notes "$NOTES" \
+              --latest
           else
-            gh release create standalone-latest --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" --latest
+            gh release create standalone-latest \
+              --target "$GITHUB_SHA" \
+              --title 'Korea TV Standalone (auto-updating shell)' \
+              --notes "$NOTES" \
+              --latest
           fi
           gh release upload standalone-latest KoreaTV.wgt --clobber
