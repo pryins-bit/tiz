@@ -154,27 +154,39 @@ const quoteText = document.getElementById('momDailyQuoteText');
 const quoteBy = document.getElementById('momDailyQuoteBy');
 const ticker = document.getElementById('momTicker');
 const tickerTrack = document.getElementById('momTickerTrack');
+const fallbackGrid = document.getElementById('momFallbackGrid');
 
-assert(quote && !quote.classList.contains('hidden'), 'daily quote must be visible for an approved Mom Home');
+assert(quote && !quote.classList.contains('hidden'), 'daily quote must be visible on Mom Home');
 assert(quoteText.textContent === malicious, 'quote must be assigned as textContent without HTML parsing');
 assert(quoteBy.textContent === '가족', 'quote attribution must render');
 assert(ticker && !ticker.classList.contains('hidden'), 'ticker must be visible when messages exist');
 assert(tickerTrack.textContent.includes('첫 메시지') && tickerTrack.textContent.includes('둘째 메시지'), 'ticker must include every server message');
 assert(mom.classList.contains('mom-extras-active'), 'Mom Home must reserve layout space for extras');
+assert(fallbackGrid, 'Mom Home must have a useful local fallback dashboard instead of an empty screen');
 
 context.SuniTVMomExtras.apply({ mom_message: { ticker: [] } });
 assert(!quote.classList.contains('hidden'), 'fallback daily quote must remain visible when server quote is absent');
 assert(quoteText.textContent.length > 0, 'fallback quote must not be blank');
-assert(ticker.classList.contains('hidden'), 'empty ticker must be hidden');
+assert(ticker.classList.contains('hidden'), 'empty server ticker may be hidden after an explicit render');
 
 const q1 = context.SuniTVMomExtras.fallbackQuote();
 const q2 = context.SuniTVMomExtras.fallbackQuote();
 assert(q1.text === q2.text, 'fallback quote must be deterministic for the same local day');
 
+// Private content can be hidden while approval/auth catches up. The public/local
+// Mom Home must remain useful instead of collapsing back to an empty R6 shell.
 content.classList.add('hidden');
-context.SuniTVMomExtras.apply({ mom_message: { quote: { text: '숨김 테스트' }, ticker: ['숨김'] } });
-assert(quote.classList.contains('hidden'), 'quote must hide while device approval/content is unavailable');
-assert(ticker.classList.contains('hidden'), 'ticker must hide while device approval/content is unavailable');
-assert(!mom.classList.contains('mom-extras-active'), 'layout reservation must clear when approval content is hidden');
+context.SuniTVMomExtras.apply({ mom_message: { quote: { text: '인증 중에도 보임' }, ticker: ['연결 중 메시지'] } });
+assert(!quote.classList.contains('hidden'), 'quote must remain visible while private Mom content is hidden');
+assert(quoteText.textContent === '인증 중에도 보임', 'quote must update while auth/private content is transitioning');
+assert(!ticker.classList.contains('hidden'), 'ticker must remain visible while private Mom content is hidden');
+assert(tickerTrack.textContent.includes('연결 중 메시지'), 'ticker text must survive the auth transition');
+assert(mom.classList.contains('mom-extras-active'), 'layout reservation must remain while Mom Home itself is visible');
+
+mom.classList.add('hidden');
+context.SuniTVMomExtras.apply({ mom_message: { quote: { text: '홈 닫힘' }, ticker: ['숨김'] } });
+assert(quote.classList.contains('hidden'), 'extras must hide only when Mom Home itself is closed');
+assert(ticker.classList.contains('hidden'), 'ticker must hide when Mom Home itself is closed');
+assert(!mom.classList.contains('mom-extras-active'), 'layout reservation must clear when Mom Home is closed');
 
 console.log('Mom extras runtime tests: PASS');
