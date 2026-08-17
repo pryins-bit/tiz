@@ -65,3 +65,19 @@ jobs:
           done
           echo 'Runtime stamp could not be pushed after retries.'
           exit 1
+      - name: Refresh fast Supabase rescue manifest cache
+        run: |
+          # This public endpoint accepts no version/body from the caller. It
+          # re-reads the trusted GitHub runtime manifest server-side and only
+          # refreshes the public rescue cache, so no Supabase secret is needed.
+          for attempt in 1 2 3; do
+            if curl --fail --silent --show-error \
+              'https://inzopchhmvljprbpvzcs.supabase.co/functions/v1/tv-runtime?action=refresh' \
+              -o /tmp/tv-runtime-refresh.json; then
+              cat /tmp/tv-runtime-refresh.json
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          echo 'Supabase runtime manifest cache refresh failed.'
+          exit 1

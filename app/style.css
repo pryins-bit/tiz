@@ -61,6 +61,7 @@ button,input { font:inherit; }
 .search-results { margin-top:20px; max-height:570px; overflow:hidden; display:flex; flex-direction:column; gap:8px; }
 
 .mom-home { position:fixed; inset:0; width:auto; box-sizing:border-box; padding:52px 64px 42px; background:linear-gradient(120deg,rgba(9,14,22,.995),rgba(17,24,35,.985) 55%,rgba(12,18,27,.99)); border:0; border-radius:0; z-index:70; box-shadow:none; }
+.mom-home::after { content:'자동업데이트 H3'; position:absolute; right:20px; bottom:12px; z-index:9; padding:5px 9px; border:1px solid rgba(255,255,255,.12); border-radius:7px; background:rgba(0,0,0,.32); font-size:12px; font-weight:700; letter-spacing:.5px; opacity:.42; pointer-events:none; }
 .mom-head { display:flex; justify-content:space-between; gap:40px; align-items:flex-start; padding-bottom:24px; border-bottom:1px solid rgba(255,255,255,.15); }
 .mom-title { font-size:54px; font-weight:800; letter-spacing:.5px; }
 .mom-clock { margin-top:8px; font-size:25px; opacity:.78; }
