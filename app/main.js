@@ -12,7 +12,6 @@
   var ZAP_DEBOUNCE_MS = 320;
 
   var video = document.getElementById('video');
-  var avplay = window.KoreaTVAVPlay || null;
   var statusEl = document.getElementById('status');
   var bannerEl = document.getElementById('banner');
   var nameEl = document.getElementById('channelName');
@@ -68,8 +67,6 @@
   var momPollTimer = null;
   var momClockTimer = null;
   var homeClockTimer = null;
-  var hasStartedPlayback = false;
-  var pausedForMom = false;
 
   function readJson(key, fallback) {
     try {
@@ -229,47 +226,12 @@
     video.onabort = null;
   }
 
-  function avplayActive() {
-    return !!(avplay && typeof avplay.isActive === 'function' && avplay.isActive());
-  }
-
-  function pausePlayback() {
-    if (avplayActive()) return avplay.pause();
-    try { video.pause(); return true; } catch (e) { return false; }
-  }
-
-  function resumePlayback() {
-    if (avplayActive()) return avplay.resume();
-    try {
-      var p = video.play();
-      if (p && typeof p.catch === 'function') p.catch(function () {});
-      return true;
-    } catch (e) { return false; }
-  }
-
-  function togglePlayback() {
-    if (avplayActive()) return avplay.toggle();
-    try {
-      if (video.paused) resumePlayback(); else video.pause();
-      return true;
-    } catch (e) { return false; }
-  }
-
-  function playbackExists() {
-    if (avplayActive()) return true;
-    return !!(video.currentSrc || video.getAttribute('src'));
-  }
-
   function destroyPlayer() {
     clearTimeout(failureTimer);
     clearTimeout(autoAdvanceTimer);
     failureTimer = null;
     autoAdvanceTimer = null;
     clearVideoHandlers();
-    if (avplay && typeof avplay.stop === 'function' && avplayActive()) {
-      try { avplay.stop(); } catch (e0) {}
-    }
-    video.classList.remove('avplay-active');
     if (hls) {
       try { hls.destroy(); } catch (e) {}
       hls = null;
@@ -298,22 +260,18 @@
     }, 650);
   }
 
-  function playbackStarted(generation, channel) {
-    if (!samePlayback(generation, channel)) return;
-    clearTimeout(failureTimer);
-    failureTimer = null;
-    hideStatus();
-    addRecent(channel);
-    renderHome();
-    showBanner();
-  }
-
   function attachCommonEvents(generation, channel) {
     video.onerror = function () {
       markFailedAndAdvance(generation, channel, 'video-error');
     };
     video.onplaying = function () {
-      playbackStarted(generation, channel);
+      if (!samePlayback(generation, channel)) return;
+      clearTimeout(failureTimer);
+      failureTimer = null;
+      hideStatus();
+      addRecent(channel);
+      renderHome();
+      showBanner();
     };
     video.onwaiting = function () {
       if (samePlayback(generation, channel)) showStatus('버퍼링 중: ' + channel.name);
@@ -339,8 +297,6 @@
     var generation = playbackGeneration;
     destroyPlayer();
     attachCommonEvents(generation, channel);
-    hasStartedPlayback = true;
-    pausedForMom = false;
     showStatus('채널 전환: ' + channel.name);
     homeNowNameEl.textContent = channel.name;
     showBanner();
@@ -349,28 +305,6 @@
       markFailedAndAdvance(generation, channel, 'startup-timeout');
     }, 15000);
 
-    // Samsung TV path: use the native AVPlay multimedia pipeline first. It is
-    // the platform API intended for adaptive/live streaming and avoids relying
-    // on the old Tizen WebView's HTML5 HLS timing pipeline for A/V sync.
-    if (avplay && typeof avplay.isAvailable === 'function' && avplay.isAvailable()) {
-      video.classList.add('avplay-active');
-      var avStarted = avplay.start(channel.url, {
-        onbuffering: function (active) {
-          if (!samePlayback(generation, channel)) return;
-          if (active) showStatus('버퍼링 중: ' + channel.name);
-        },
-        onplaying: function () {
-          playbackStarted(generation, channel);
-        },
-        onerror: function (reason) {
-          markFailedAndAdvance(generation, channel, 'avplay-' + String(reason || 'error'));
-        }
-      });
-      if (avStarted) return;
-      video.classList.remove('avplay-active');
-    }
-
-    // Non-Samsung/browser fallback: native HLS first, then hls.js/MSE.
     var nativeHls = '';
     try { nativeHls = video.canPlayType('application/vnd.apple.mpegurl'); } catch (e) {}
     if (nativeHls) {
@@ -482,8 +416,7 @@
     tuneToIndex: tuneToIndex,
     changeChannel: function (delta) { requestChannelChange(Number(delta) < 0 ? -1 : 1); },
     currentNumber: function () { return channels.length ? index + 1 : 0; },
-    channelCount: function () { return channels.length; },
-    playbackEngine: function () { return avplayActive() ? 'avplay' : 'html5'; }
+    channelCount: function () { return channels.length; }
   };
 
   function loadPlaylist() {
@@ -504,11 +437,8 @@
         failedThisRound = {};
         updateHealth();
         renderHome();
-        homeNowNameEl.textContent = currentChannel() ? currentChannel().name : '';
-        hideStatus();
-        // Standalone entry contract: Mom OS is the first screen. Live TV does
-        // not start silently behind it; TV starts only after TV 보기/channel input.
-        setTimeout(openMom, 40);
+        playChannel(true);
+        setTimeout(openHome, 900);
       })
       .catch(function (error) {
         showStatus('채널 목록을 불러오지 못했습니다.\n' + String(error && error.message ? error.message : error));
@@ -738,13 +668,6 @@
     dimEl.classList.add('hidden');
   }
 
-  function startTvView() {
-    var needStart = !hasStartedPlayback || !playbackExists();
-    closeAllPanels();
-    if (needStart) playChannel(true);
-    else resumePlayback();
-  }
-
   function focusFirst(root) {
     var target = root.querySelector('.focusable:not(.hidden)');
     if (target) try { target.focus(); } catch (e) {}
@@ -775,8 +698,7 @@
     var group = node.getAttribute('data-group');
     if (group) { openBrowser('categories', group); return; }
     var action = node.getAttribute('data-action');
-    if (action === 'continue' || action === 'watch-tv') startTvView();
-    else if (action === 'open-tv-home') { closeMom(); openHome(); }
+    if (action === 'continue') closeAllPanels();
     else if (action === 'favorites') openBrowser('favorites');
     else if (action === 'recent') openBrowser('recent');
     else if (action === 'categories') openBrowser('categories');
@@ -923,9 +845,6 @@
     closeHome();
     closeBrowser();
     closeSearch();
-    if (hasStartedPlayback && playbackExists()) {
-      pausedForMom = pausePlayback();
-    }
     momOpen = true;
     momHomeEl.classList.remove('hidden');
     dimEl.classList.remove('hidden');
@@ -933,7 +852,6 @@
     clearInterval(momClockTimer);
     momClockTimer = setInterval(updateMomClock, 30000);
     checkMomStatus().then(scheduleMomPoll);
-    setTimeout(function () { focusFirst(momHomeEl); }, 30);
   }
 
   function closeMom() {
@@ -942,10 +860,6 @@
     clearTimeout(momPollTimer);
     clearInterval(momClockTimer);
     if (!browserOpen && !searchOpen) dimEl.classList.add('hidden');
-    if (pausedForMom) {
-      pausedForMom = false;
-      resumePlayback();
-    }
   }
 
   function remoteKeyName(event) {
@@ -954,10 +868,10 @@
     }
     var code = Number(event.keyCode || event.which || 0);
     var fallback = {
-      13: 'Enter', 33: 'ChannelUp', 34: 'ChannelDown',
-      37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown',
+      13: 'Enter', 37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown',
       403: 'ColorF0Red', 404: 'ColorF1Green', 405: 'ColorF2Yellow', 406: 'ColorF3Blue',
       427: 'ChannelUp', 428: 'ChannelDown',
+      447: 'ColorF0Red', 448: 'ColorF1Green', 449: 'ColorF2Yellow', 450: 'ColorF3Blue',
       10009: 'Back', 10252: 'MediaPlayPause', 415: 'MediaPlay', 19: 'MediaPause'
     };
     return event.key || event.keyIdentifier || fallback[code] || '';
@@ -967,6 +881,8 @@
     var key = remoteKeyName(event);
     var typing = document.activeElement === searchInputEl;
 
+    // Colors are semantic TV buttons, not generic keyboard codes. Resolve them
+    // by Samsung key name first so firmware-specific numeric codes still work.
     if (key === 'ColorF0Red') {
       event.preventDefault();
       homeOpen ? closeHome() : openHome();
@@ -1009,7 +925,7 @@
       return;
     }
 
-    if (homeOpen || browserOpen || searchOpen || momOpen) {
+    if (homeOpen || browserOpen || searchOpen) {
       if (key === 'ArrowRight') { event.preventDefault(); moveFocus(1); return; }
       if (key === 'ArrowLeft') { event.preventDefault(); moveFocus(-1); return; }
       if (key === 'ArrowDown') { event.preventDefault(); moveFocus(homeOpen ? 4 : 1); return; }
@@ -1024,16 +940,16 @@
       }
     }
 
-    // Explicit channel-number semantics: UP/+ increases the number; DOWN/-
-    // decreases it. This matches the owner's expected 3 -> 4 behavior.
+    // TV-list semantics: up means a lower channel number, down means a higher
+    // one. Right/left retain familiar next/previous horizontal behavior.
     if (key === 'ArrowUp' || key === 'ChannelUp') {
       event.preventDefault();
-      requestChannelChange(1, event);
+      requestChannelChange(-1, event);
       return;
     }
     if (key === 'ArrowDown' || key === 'ChannelDown') {
       event.preventDefault();
-      requestChannelChange(-1, event);
+      requestChannelChange(1, event);
       return;
     }
     if (key === 'ArrowRight') {
@@ -1047,9 +963,12 @@
       return;
     }
     if (key === 'Enter') { showBanner(); return; }
-    if (key === 'MediaPlayPause') { togglePlayback(); return; }
-    if (key === 'MediaPlay') { resumePlayback(); return; }
-    if (key === 'MediaPause') { pausePlayback(); }
+    if (key === 'MediaPlayPause') {
+      if (video.paused) video.play(); else video.pause();
+      return;
+    }
+    if (key === 'MediaPlay') { video.play(); return; }
+    if (key === 'MediaPause') { video.pause(); }
   });
 
   loadPlaylist();
