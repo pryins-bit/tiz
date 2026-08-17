@@ -1,10 +1,10 @@
 {
-  "name": "tiz-suni-tv",
-  "version": "0.4.0",
+  "name": "tiz-korea-tv",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Suni TV: one-click Korean IPTV player and remote-friendly Mom OS dashboard for TizenBrew",
+  "description": "One-click Korea IPTV player and remote-friendly TV home for TizenBrew with optional Mom TV dashboard",
   "packageType": "app",
-  "appName": "수니TV",
+  "appName": "Korea TV",
   "appPath": "app/index.html",
   "keys": [
     "0",
@@ -31,7 +31,6 @@
   "evaluateScriptOnDocumentStart": false,
   "files": [
     "app",
-    "icon.png",
     "README.md",
     "THIRD_PARTY_NOTICES.md"
   ]

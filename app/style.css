@@ -76,10 +76,3 @@ button,input { font:inherit; }
 .stock-row { display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
 .stock-price { font-size:24px; }.stock-change { margin-left:12px; font-size:20px; opacity:.9; }
 .empty-row { padding:15px 4px; font-size:19px; opacity:.62; }
-
-/* H5 emergency channel-only mode.
-   The installed R6 shell still contains Mom/Home markup. The TV already proved
-   that remote style.css updates are arriving (H3 was visible), so use CSS as
-   the deterministic kill switch: no JavaScript race can re-open these panels. */
-#momHome, #tvHome, #browserPanel, #searchPanel, #dim { display:none !important; }
-body::after { content:'H5 CHANNEL'; position:fixed; right:14px; bottom:8px; z-index:99; padding:3px 7px; border-radius:5px; background:rgba(0,0,0,.55); color:#fff; font-size:11px; opacity:.45; pointer-events:none; }

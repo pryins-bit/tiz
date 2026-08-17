@@ -20,10 +20,3 @@ SamsungDForum/tizen-tv-vod-ref-app was consulted for Samsung TVInputDevice regis
 
 Project: https://github.com/SamsungDForum/tizen-tv-vod-ref-app
 License: MPL-2.0
-
-## Samsung PlayerAVPlay sample
-
-SamsungDForum/PlayerAVPlay and Samsung's current AVPlay documentation were used as the lifecycle reference for the Korea TV AVPlay adapter: load `$WEBAPIS/webapis/webapis.js`, open the URL, set the listener/display area, prepare asynchronously, then play; stop/close on teardown. Korea TV's adapter is independently structured around its runtime updater and live-channel callbacks.
-
-Project: https://github.com/SamsungDForum/PlayerAVPlay
-License: Samsung sample license permitting use, modification, merge, publication, distribution, sublicensing, and sale with notice preservation (MIT-style terms)
