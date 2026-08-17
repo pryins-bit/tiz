@@ -3,10 +3,12 @@
 
   var RAW_BASE = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/app/';
   var CDN_BASE = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/app/';
+  var RESCUE_BASE = 'https://inzopchhmvljprbpvzcs.supabase.co/functions/v1/tv-runtime?path=';
   var PLAYLIST_RAW = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
   var PLAYLIST_CDN = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
+  var PLAYLIST_RESCUE = RESCUE_BASE + encodeURIComponent('korea.m3u');
   var PLAYLIST_LOCAL = 'korea.m3u';
-  var PACKAGED_VERSION = '2026.08.17.3';
+  var PACKAGED_VERSION = '2026.08.17.4';
   var CHECK_BUDGET_MS = 450;
   var NETWORK_REQUEST_TIMEOUT_MS = 3500;
   var PLAYLIST_FALLBACK_TIMEOUT_MS = 1800;
@@ -20,7 +22,8 @@
   var diagnostics = {
     runtimeSource: 'packaged',
     playlistSource: '',
-    lastNetworkError: ''
+    lastNetworkError: '',
+    rescueEnabled: true
   };
   window.KoreaTVBootstrapDiagnostics = diagnostics;
 
@@ -30,6 +33,10 @@
 
   function cacheBust(url) {
     return String(url || '') + (String(url || '').indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+  }
+
+  function rescuePath(path) {
+    return RESCUE_BASE + encodeURIComponent('app/' + path);
   }
 
   function hasRequiredFiles(files) {
@@ -117,20 +124,27 @@
     });
   }
 
+  function playlistSourceName(response) {
+    var url = String(response && response.url || '');
+    if (url.indexOf('supabase.co') >= 0) return 'supabase-rescue';
+    if (url.indexOf('jsdelivr.net') >= 0) return 'jsdelivr';
+    return 'github-raw';
+  }
+
   function installPlaylistFetchFallback() {
     if (!nativeFetch) return;
     window.fetch = function (url, options) {
       var target = String(url || '');
-      var isPlaylist = target.indexOf(PLAYLIST_RAW) === 0 || target.indexOf(PLAYLIST_CDN) === 0;
+      var isPlaylist = target.indexOf(PLAYLIST_RAW) === 0 || target.indexOf(PLAYLIST_CDN) === 0 || target.indexOf(PLAYLIST_RESCUE) === 0;
       if (!isPlaylist) return nativeFetch(url, options);
 
       return firstOk(
-        [PLAYLIST_RAW, PLAYLIST_CDN],
+        [PLAYLIST_RAW, PLAYLIST_CDN, PLAYLIST_RESCUE],
         options || { cache: 'no-store' },
         PLAYLIST_FALLBACK_TIMEOUT_MS,
         null
       ).then(function (response) {
-        diagnostics.playlistSource = response.url && response.url.indexOf('jsdelivr.net') >= 0 ? 'jsdelivr' : 'github-raw';
+        diagnostics.playlistSource = playlistSourceName(response);
         diagnostics.lastNetworkError = '';
         return response;
       }).catch(function (remoteError) {
@@ -146,10 +160,10 @@
 
   function fetchTextPath(path) {
     return firstOk(
-      [RAW_BASE + path, CDN_BASE + path],
+      [RAW_BASE + path, CDN_BASE + path, rescuePath(path)],
       { cache: 'no-store' },
       NETWORK_REQUEST_TIMEOUT_MS,
-      ['github-raw', 'jsdelivr']
+      ['github-raw', 'jsdelivr', 'supabase-rescue']
     ).then(function (response) {
       diagnostics.lastNetworkError = '';
       return response.text();
