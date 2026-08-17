@@ -1,6 +1,66 @@
 (function () {
   'use strict';
 
+  // Runtime-level recovery for already-installed WGTs. Older bootstrap shells
+  // can update this file, so intercept the one known playlist URL here before
+  // main.js starts. If raw.githubusercontent.com hangs on Samsung Tizen, switch
+  // to the fixed jsDelivr mirror instead of leaving the app on the loading text.
+  var PLAYLIST_RAW = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
+  var PLAYLIST_CDN = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
+  var PLAYLIST_TIMEOUT_MS = 1600;
+  var PLAYLIST_CDN_TIMEOUT_MS = 2800;
+
+  function installPlaylistFetchGuard() {
+    if (typeof window.fetch !== 'function' || window.__koreaTvPlaylistFetchGuard) return;
+    window.__koreaTvPlaylistFetchGuard = true;
+    var nativeFetch = window.fetch.bind(window);
+
+    function timedFetch(url, options, timeoutMs) {
+      return new Promise(function (resolve, reject) {
+        var settled = false;
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          reject(new Error('playlist fetch timeout'));
+        }, timeoutMs);
+        nativeFetch(url, options).then(function (response) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (!response || !response.ok) {
+            reject(new Error('playlist HTTP ' + (response ? response.status : 'unknown')));
+            return;
+          }
+          resolve(response);
+        }).catch(function (error) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          reject(error);
+        });
+      });
+    }
+
+    window.fetch = function (input, options) {
+      var url = typeof input === 'string' ? input : String(input && input.url || '');
+      if (url.indexOf(PLAYLIST_RAW) !== 0) return nativeFetch(input, options);
+
+      var cleanOptions = options || {};
+      return timedFetch(input, cleanOptions, PLAYLIST_TIMEOUT_MS).catch(function () {
+        var mirror = PLAYLIST_CDN + '?t=' + Date.now();
+        return timedFetch(mirror, { cache: 'no-store' }, PLAYLIST_CDN_TIMEOUT_MS);
+      });
+    };
+
+    window.KoreaTVPlaylistFetchGuard = {
+      raw: PLAYLIST_RAW,
+      fallback: PLAYLIST_CDN,
+      timeoutMs: PLAYLIST_TIMEOUT_MS
+    };
+  }
+
+  installPlaylistFetchGuard();
+
   var buffer = '';
   var timer = null;
   var overlay = null;
