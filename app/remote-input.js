@@ -157,9 +157,10 @@
     // direct registration fails, leave Red in the batch so it gets a second
     // registration path rather than silently losing the key.
     var redDirect = registerOne(manager, 'ColorF0Red');
-    var names = REQUESTED_KEYS.filter(function (name) {
-      return !(redDirect && name === 'ColorF0Red');
-    });
+    var names = REQUESTED_KEYS.slice();
+    if (redDirect) {
+      names = names.filter(function (name) { return name !== 'ColorF0Red'; });
+    }
 
     try {
       if (typeof manager.getKey === 'function') {
