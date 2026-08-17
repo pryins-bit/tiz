@@ -1,17 +1,35 @@
 (function () {
   'use strict';
 
-  var BASE = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/app/';
-  var MANIFEST_URL = BASE + 'runtime-version.json';
-  var PACKAGED_VERSION = '2026.08.17.2';
+  var RAW_BASE = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/app/';
+  var CDN_BASE = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/app/';
+  var PLAYLIST_RAW = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
+  var PLAYLIST_CDN = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
+  var PLAYLIST_LOCAL = 'korea.m3u';
+  var PACKAGED_VERSION = '2026.08.17.3';
   var CHECK_BUDGET_MS = 450;
+  var NETWORK_REQUEST_TIMEOUT_MS = 3500;
+  var PLAYLIST_FALLBACK_TIMEOUT_MS = 1800;
+  var LOCAL_PLAYLIST_TIMEOUT_MS = 1200;
   var CACHE_KEY = 'korea_tv_runtime_cache_v2';
   var CACHE_VERSION_KEY = 'korea_tv_runtime_version_v2';
   var DEFAULT_FILES = ['brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'];
   var started = false;
+  var nativeFetch = typeof window.fetch === 'function' ? window.fetch.bind(window) : null;
+
+  var diagnostics = {
+    runtimeSource: 'packaged',
+    playlistSource: '',
+    lastNetworkError: ''
+  };
+  window.KoreaTVBootstrapDiagnostics = diagnostics;
 
   function safeJson(text, fallback) {
     try { return JSON.parse(text); } catch (e) { return fallback; }
+  }
+
+  function cacheBust(url) {
+    return String(url || '') + (String(url || '').indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
   }
 
   function hasRequiredFiles(files) {
@@ -46,17 +64,103 @@
     return cached && cached.version ? cached.version : PACKAGED_VERSION;
   }
 
-  function fetchText(url) {
-    return fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now(), {
-      cache: 'no-store'
-    }).then(function (response) {
-      if (!response.ok) throw new Error('HTTP ' + response.status + ' ' + url);
+  function timedFetch(url, options, timeoutMs) {
+    if (!nativeFetch) return Promise.reject(new Error('fetch unavailable'));
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        reject(new Error('network timeout: ' + url));
+      }, timeoutMs);
+      nativeFetch(url, options || {}).then(function (response) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(response);
+      }, function (error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+  }
+
+  function firstOk(urls, options, timeoutMs, sourceNames) {
+    return new Promise(function (resolve, reject) {
+      var remaining = urls.length;
+      var settled = false;
+      var lastError = null;
+
+      function failed(error) {
+        lastError = error || lastError;
+        remaining -= 1;
+        if (!settled && remaining <= 0) {
+          settled = true;
+          reject(lastError || new Error('all network sources failed'));
+        }
+      }
+
+      urls.forEach(function (url, index) {
+        timedFetch(cacheBust(url), options, timeoutMs).then(function (response) {
+          if (settled) return;
+          if (!response || !response.ok) {
+            failed(new Error('HTTP ' + (response ? response.status : 0) + ' ' + url));
+            return;
+          }
+          settled = true;
+          if (sourceNames && sourceNames[index]) diagnostics.runtimeSource = sourceNames[index];
+          resolve(response);
+        }).catch(failed);
+      });
+    });
+  }
+
+  function installPlaylistFetchFallback() {
+    if (!nativeFetch) return;
+    window.fetch = function (url, options) {
+      var target = String(url || '');
+      var isPlaylist = target.indexOf(PLAYLIST_RAW) === 0 || target.indexOf(PLAYLIST_CDN) === 0;
+      if (!isPlaylist) return nativeFetch(url, options);
+
+      return firstOk(
+        [PLAYLIST_RAW, PLAYLIST_CDN],
+        options || { cache: 'no-store' },
+        PLAYLIST_FALLBACK_TIMEOUT_MS,
+        null
+      ).then(function (response) {
+        diagnostics.playlistSource = response.url && response.url.indexOf('jsdelivr.net') >= 0 ? 'jsdelivr' : 'github-raw';
+        diagnostics.lastNetworkError = '';
+        return response;
+      }).catch(function (remoteError) {
+        diagnostics.lastNetworkError = String(remoteError && (remoteError.message || remoteError.name) || remoteError);
+        return timedFetch(PLAYLIST_LOCAL, options || {}, LOCAL_PLAYLIST_TIMEOUT_MS).then(function (response) {
+          if (!response || !response.ok) throw new Error('packaged playlist unavailable');
+          diagnostics.playlistSource = 'packaged';
+          return response;
+        });
+      });
+    };
+  }
+
+  function fetchTextPath(path) {
+    return firstOk(
+      [RAW_BASE + path, CDN_BASE + path],
+      { cache: 'no-store' },
+      NETWORK_REQUEST_TIMEOUT_MS,
+      ['github-raw', 'jsdelivr']
+    ).then(function (response) {
+      diagnostics.lastNetworkError = '';
       return response.text();
+    }).catch(function (error) {
+      diagnostics.lastNetworkError = String(error && (error.message || error.name) || error);
+      throw error;
     });
   }
 
   function fetchManifest() {
-    return fetchText(MANIFEST_URL).then(function (text) {
+    return fetchTextPath('runtime-version.json').then(function (text) {
       var manifest = safeJson(text, null);
       if (!manifest || !manifest.version) throw new Error('invalid runtime manifest');
       if (!Array.isArray(manifest.files) || !manifest.files.length) manifest.files = DEFAULT_FILES.slice();
@@ -67,7 +171,7 @@
   function fetchBundle(manifest) {
     var files = manifest.files || DEFAULT_FILES;
     var jobs = files.map(function (name) {
-      return fetchText(BASE + name).then(function (text) {
+      return fetchTextPath(name).then(function (text) {
         if (!text || text.length < 20) throw new Error('empty runtime file: ' + name);
         return { name: name, text: text };
       });
@@ -119,6 +223,7 @@
   function runPackaged() {
     if (started) return;
     started = true;
+    diagnostics.runtimeSource = 'packaged';
     var names = ['brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js'];
     names.forEach(function (name) {
       var script = document.createElement('script');
@@ -131,7 +236,11 @@
   function runCurrent() {
     var cached = readCachedBundle();
     if (cached && cached.files) {
-      try { runBundle(cached); return; } catch (e) {}
+      try {
+        diagnostics.runtimeSource = 'cache';
+        runBundle(cached);
+        return;
+      } catch (e) {}
     }
     runPackaged();
   }
@@ -143,6 +252,8 @@
     }).catch(function () {});
   }
 
+  installPlaylistFetchFallback();
+
   var manifestPromise = fetchManifest();
   var budgetPromise = new Promise(function (resolve) {
     setTimeout(function () { resolve({ timeout: true }); }, CHECK_BUDGET_MS);
@@ -153,8 +264,6 @@
     budgetPromise
   ]).then(function (winner) {
     if (winner && winner.timeout) {
-      // Network did not answer inside the launch budget. Start immediately with
-      // the last known-good runtime, then prepare any newer build for next launch.
       runCurrent();
       manifestPromise.then(refreshForNextLaunch).catch(function () {});
       return;
@@ -166,8 +275,6 @@
       return;
     }
 
-    // A newer runtime is confirmed. Wait for the small JS/CSS bundle, cache it,
-    // then start exactly once with the new code. If download fails, fall back.
     fetchBundle(manifest).then(function (bundle) {
       writeCachedBundle(bundle);
       runBundle(bundle);
