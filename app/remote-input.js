@@ -78,6 +78,7 @@
     lastEvents: [],
     suppressedZaps: 0,
     directZaps: 0,
+    directRedPlays: 0,
     errors: []
   };
   window.KoreaTVRemoteDiagnostics = diagnostics;
@@ -213,6 +214,15 @@
     return !!(player && typeof player.currentNumber === 'function' && typeof player.channelCount === 'function' && typeof player.tuneToNumber === 'function');
   }
 
+  function forceCurrentChannel() {
+    if (!playerCanTune()) return false;
+    var player = window.KoreaTVPlayer;
+    var current = Number(player.currentNumber());
+    var total = Number(player.channelCount());
+    if (!current || !total) return false;
+    return player.tuneToNumber(current) !== false;
+  }
+
   function tuneOneStep(direction) {
     var player = window.KoreaTVPlayer;
     var current = Number(player.currentNumber());
@@ -243,6 +253,18 @@
   document.addEventListener('keydown', function (event) {
     var name = nameFromEvent(event);
     rememberEvent(event, name);
+
+    // Owner emergency shortcut: Red always leaves any Mom/Home/search panel and
+    // forces the currently selected channel to start. Capture the event here so
+    // an older main.js color handler cannot turn Red back into another home panel.
+    if (name === 'ColorF0Red') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.repeat) return;
+      if (forceCurrentChannel()) diagnostics.directRedPlays += 1;
+      return;
+    }
+
     var direction = zapDirection(name);
     if (!direction || !playerCanTune()) return;
 
