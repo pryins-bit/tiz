@@ -9,6 +9,7 @@ on:
       - "scripts/sync_tizen_standalone.py"
       - "scripts/validate_remote_contract.py"
       - "scripts/test_remote_input_runtime.js"
+      - "scripts/test_avplay_adapter.js"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
   push:
@@ -20,6 +21,7 @@ on:
       - "scripts/sync_tizen_standalone.py"
       - "scripts/validate_remote_contract.py"
       - "scripts/test_remote_input_runtime.js"
+      - "scripts/test_avplay_adapter.js"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
 
@@ -39,9 +41,13 @@ jobs:
           node --check app/main.js
           node --check app/numeric-remote.js
           node --check app/remote-input.js
+          node --check app/avplay-adapter.js
           node --check scripts/test_remote_input_runtime.js
+          node --check scripts/test_avplay_adapter.js
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
+      - name: Simulate Samsung AVPlay lifecycle
+        run: node scripts/test_avplay_adapter.js
       - name: Verify Samsung remote input contract
         run: python scripts/validate_remote_contract.py
       - name: Verify fixed playlist contract

@@ -59,6 +59,8 @@ const FakeDate = { now: () => clock };
 const batchCalls = [];
 const individualCalls = [];
 const tvinputdevice = {
+  // Deliberately incomplete: the regression was filtering registration to
+  // this list, which could drop color buttons on older firmware.
   getSupportedKeys() {
     return [
       { name: 'ChannelUp', code: 427 },
@@ -121,39 +123,41 @@ assert.notStrictEqual(remote.getName({ keyCode: 447 }), 'ColorF0Red', 'volume-up
 assert.notStrictEqual(remote.getName({ keyCode: 448 }), 'ColorF1Green', 'volume-down code must never masquerade as green');
 assert.notStrictEqual(remote.getName({ keyCode: 449 }), 'ColorF2Yellow', 'mute code must never masquerade as yellow');
 
-// Physical ChannelDown means lower/previous channel. A firmware twin ArrowDown
-// must not cause a second tune.
-dispatch('keydown', { key: 'PageDown', keyCode: 34, repeat: false });
-assert.strictEqual(currentChannel, 2, 'channel-down should move to the previous/lower channel exactly once');
-assert.deepStrictEqual(tuned, [2]);
-clock += 120;
-dispatch('keydown', { key: 'ArrowDown', keyCode: 40, repeat: false });
-assert.strictEqual(currentChannel, 2, 'same-direction duplicate must be suppressed');
-assert.deepStrictEqual(tuned, [2]);
-
-// Opposite direction is a genuine user action.
-clock += 100;
+// Owner contract: UP/+ increases the visible channel number. A single physical
+// up press can surface as PageUp followed by ArrowUp; it must still be 3 -> 4,
+// never 3 -> 5.
 dispatch('keydown', { key: 'PageUp', keyCode: 33, repeat: false });
-assert.strictEqual(currentChannel, 3, 'channel-up should move to the next/higher channel exactly once');
-assert.deepStrictEqual(tuned, [2, 3]);
+assert.strictEqual(currentChannel, 4, 'channel-up should increase exactly one channel');
+assert.deepStrictEqual(tuned, [4]);
+clock += 120;
+dispatch('keydown', { key: 'ArrowUp', keyCode: 38, repeat: false });
+assert.strictEqual(currentChannel, 4, 'same-direction duplicate must be suppressed');
+assert.deepStrictEqual(tuned, [4]);
 
+// DOWN/- decreases by exactly one and is a real opposite-direction action.
+clock += 100;
+dispatch('keydown', { key: 'PageDown', keyCode: 34, repeat: false });
+assert.strictEqual(currentChannel, 3, 'channel-down should decrease exactly one channel');
+assert.deepStrictEqual(tuned, [4, 3]);
+
+// A firmware repeat event should never trigger another tune.
 clock += 1000;
-dispatch('keydown', { key: 'ChannelUp', keyCode: 427, repeat: true });
+dispatch('keydown', { key: 'ChannelDown', keyCode: 428, repeat: true });
 assert.strictEqual(currentChannel, 3);
-assert.deepStrictEqual(tuned, [2, 3]);
+assert.deepStrictEqual(tuned, [4, 3]);
 
-// D-pad arrows remain panel navigation if a legacy panel is ever present.
+// D-pad arrows belong to panel focus while a Korea TV panel is visible.
 elements.tvHome.classList.remove('hidden');
 clock += 1000;
-dispatch('keydown', { key: 'ArrowDown', keyCode: 40, repeat: false });
+dispatch('keydown', { key: 'ArrowUp', keyCode: 38, repeat: false });
 assert.strictEqual(currentChannel, 3, 'panel arrow navigation must not tune channels');
-assert.deepStrictEqual(tuned, [2, 3]);
+assert.deepStrictEqual(tuned, [4, 3]);
 
-// Channel rocker remains a channel control even if a panel is visible.
+// Channel rocker remains a channel control even if the home panel is visible.
 clock += 1000;
-dispatch('keydown', { key: 'ChannelDown', keyCode: 428, repeat: false });
-assert.strictEqual(currentChannel, 2, 'channel rocker should tune from an open panel');
-assert.deepStrictEqual(tuned, [2, 3, 2]);
+dispatch('keydown', { key: 'ChannelUp', keyCode: 427, repeat: false });
+assert.strictEqual(currentChannel, 4, 'channel-up should tune 3 -> 4 from an open panel');
+assert.deepStrictEqual(tuned, [4, 3, 4]);
 
 assert(windowObject.KoreaTVRemoteDiagnostics.suppressedZaps >= 2, 'duplicate/repeat suppressions should be observable');
 assert.strictEqual(windowObject.KoreaTVRemoteDiagnostics.directZaps, 3, 'expected three direct one-step zaps');
