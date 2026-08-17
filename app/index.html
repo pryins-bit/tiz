@@ -48,20 +48,26 @@
     #video.mom-html5-pip { left:0 !important; top:0 !important; right:auto !important; bottom:auto !important; width:64.583333% !important; height:100% !important; object-fit:contain !important; }
   </style>
   <script type="text/javascript" src="$WEBAPIS/webapis/webapis.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
   <script>
     (function () {
       'use strict';
 
-      // R5 startup rescue lives in the installed shell, before bootstrap.js.
-      // It deliberately does not depend on the remotely cached runtime: the
-      // first playlist request races the network against the packaged M3U so a
-      // hanging GitHub request cannot leave an old runtime on the loading text.
-      var SHELL_BUILD = '2026.08.17.5';
+      // R6 startup rescue lives in the installed shell, before bootstrap.js.
+      // External hls.js is intentionally async so an unreachable CDN can never
+      // stop HTML parsing before Mom Home exists. The first playlist request
+      // also races the network against the packaged M3U.
+      var SHELL_BUILD = '2026.08.17.6';
       var PLAYLIST_RAW = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
       var PLAYLIST_CDN = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
       var LOCAL_DELAY_MS = 120;
       window.KoreaTVShellBuild = SHELL_BUILD;
+      window.KoreaTVShellDiagnostics = {
+        build: SHELL_BUILD,
+        hlsNonBlocking: true,
+        momVisibleInMarkup: true,
+        runtimeMomActivated: false
+      };
 
       if (typeof window.fetch === 'function') {
         var nativeFetch = window.fetch.bind(window);
@@ -102,7 +108,25 @@
         var mom = document.getElementById('momHome');
         var state = document.getElementById('momState');
         if (mom) mom.classList.remove('hidden');
-        if (state) state.textContent = 'R5 · 시작 준비 중…';
+        if (state) state.textContent = 'R6 · 로컬 홈 준비 완료';
+
+        // Wait until main.js has finished installing its click handler, then
+        // enter the real Mom runtime once. This starts Supabase/status polling
+        // without waiting for the playlist promise to resolve.
+        var attempts = 0;
+        function enterRuntimeMom() {
+          attempts += 1;
+          var button = document.querySelector('[data-action="mom"]');
+          if (window.KoreaTVPlayer && button && typeof button.click === 'function') {
+            try {
+              button.click();
+              window.KoreaTVShellDiagnostics.runtimeMomActivated = true;
+            } catch (e) {}
+            return;
+          }
+          if (attempts < 40) setTimeout(enterRuntimeMom, 100);
+        }
+        setTimeout(enterRuntimeMom, 0);
       });
     }());
   </script>
@@ -164,10 +188,10 @@
     </div>
   </section>
 
-  <section id="momHome" class="mom-home hidden" aria-live="polite">
+  <section id="momHome" class="mom-home" aria-live="polite">
     <div class="mom-head">
       <div><div class="mom-title"><span class="suni-word">수니</span><span class="suni-tv">TV</span> · 엄마 홈</div><div id="momClock" class="mom-clock"></div></div>
-      <div id="momState" class="mom-state">R5 · 시작 준비 중…</div>
+      <div id="momState" class="mom-state">R6 · 로컬 홈 준비 완료</div>
     </div>
     <div class="mom-actions">
       <button class="mom-tv-button focusable" data-action="watch-tv">▶ TV 보기</button>
