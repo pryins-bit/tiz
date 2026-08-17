@@ -1,7 +1,5 @@
-'use strict';
-
-const fs = require('fs');
-const vm = require('vm');
+import fs from 'node:fs';
+import vm from 'node:vm';
 
 class FakeNode {
   constructor(tagName) {
