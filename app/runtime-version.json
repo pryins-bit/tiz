@@ -1,8 +1,9 @@
 {
-  "version": "4cbdc7fa80b4ea40e3a006568d378cd8d1365e38",
+  "version": "f434693c1630b438c785bcc0f20f4e298f96f8e7",
   "files": [
     "remote-input.js",
     "numeric-remote.js",
+    "avplay-adapter.js",
     "main.js",
     "style.css"
   ]

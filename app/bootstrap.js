@@ -7,7 +7,7 @@
   var CHECK_BUDGET_MS = 450;
   var CACHE_KEY = 'korea_tv_runtime_cache_v1';
   var CACHE_VERSION_KEY = 'korea_tv_runtime_version_v1';
-  var DEFAULT_FILES = ['remote-input.js', 'numeric-remote.js', 'main.js', 'style.css'];
+  var DEFAULT_FILES = ['remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'];
   var started = false;
 
   function safeJson(text, fallback) {
@@ -99,6 +99,7 @@
       injectStyle(bundle.files['style.css']);
       injectScript('remote-input.js', bundle.files['remote-input.js']);
       injectScript('numeric-remote.js', bundle.files['numeric-remote.js']);
+      injectScript('avplay-adapter.js', bundle.files['avplay-adapter.js']);
       injectScript('main.js', bundle.files['main.js']);
     } catch (error) {
       started = false;
@@ -109,7 +110,7 @@
   function runPackaged() {
     if (started) return;
     started = true;
-    var names = ['remote-input.js', 'numeric-remote.js', 'main.js'];
+    var names = ['remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js'];
     names.forEach(function (name) {
       var script = document.createElement('script');
       script.src = name;

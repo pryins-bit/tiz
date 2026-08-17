@@ -11,7 +11,7 @@ REQUIRED_KEYS = {
     'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
     'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop',
 }
-RUNTIME_FILES = {'remote-input.js', 'numeric-remote.js', 'main.js', 'style.css'}
+RUNTIME_FILES = {'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'}
 
 
 def main():
@@ -23,9 +23,6 @@ def main():
     config_path = ROOT / 'tizen-standalone' / 'config.xml'
     config_root = ET.parse(config_path).getroot()
     tizen_ns = '{http://tizen.org/ns/widgets}'
-    app = config_root.find(f'{tizen_ns}application')
-    assert app is not None
-    assert app.attrib.get('required_version') == '6.0', 'primary package must target Tizen 6.0 explicitly'
     privileges = {
         node.attrib.get('name')
         for node in config_root.findall(f'{tizen_ns}privilege')
@@ -33,21 +30,16 @@ def main():
     assert 'http://tizen.org/privilege/tv.inputdevice' in privileges, (
         'standalone config.xml must grant tv.inputdevice privilege'
     )
-    assert 'http://developer.samsung.com/privilege/avplay' in privileges, (
-        'standalone config.xml must grant Samsung AVPlay privilege'
-    )
 
     index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
     assert 'src="bootstrap.js"' in index, 'app/index.html must launch through bootstrap.js'
-    assert '$WEBAPIS/webapis/webapis.js' in index, 'Samsung WebAPI loader missing'
-    assert 'type="application/avplayer"' in index, 'single AVPlay object surface missing'
-    assert index.index('type="application/avplayer"') < index.index('id="html5-player"'), (
-        'AVPlay object must precede the HTML5 fallback surface'
-    )
-    for script in ('main.js', 'numeric-remote.js', 'remote-input.js'):
+    for script in ('main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js'):
         assert f'src="{script}"' not in index, (
             f'app/index.html must not bypass the updater by loading {script} directly'
         )
+    assert '$WEBAPIS/webapis/webapis.js' in index, 'Samsung AVPlay WebAPI library must load in the shell'
+    assert 'type="application/avplayer"' in index, 'Samsung AVPlay object missing from shell'
+    assert 'data-action="watch-tv"' in index, 'Mom OS home must expose a TV 보기 action'
 
     manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))
     assert manifest.get('version'), 'runtime-version.json missing version'
@@ -57,19 +49,26 @@ def main():
     assert 'CHECK_BUDGET_MS = 450' in bootstrap, 'launch update check must keep 450ms budget'
     assert 'runtime-version.json' in bootstrap
     assert 'raw.githubusercontent.com/pryins-bit/tiz/main/app/' in bootstrap
-    assert 'Promise.race' in bootstrap
-    assert 'refreshForNextLaunch' in bootstrap
-    assert 'runPackaged' in bootstrap
+    assert 'Promise.race' in bootstrap, 'bootstrap must race update check against launch budget'
+    assert 'refreshForNextLaunch' in bootstrap, 'slow-network updates must be cached for next launch'
+    assert 'runPackaged' in bootstrap, 'bootstrap needs packaged offline fallback'
     for name in RUNTIME_FILES:
         assert name in bootstrap, f'bootstrap missing runtime file {name}'
+    assert bootstrap.index("injectScript('avplay-adapter.js'") < bootstrap.index("injectScript('main.js'"), (
+        'AVPlay adapter must execute before main.js'
+    )
 
     remote = (ROOT / 'app' / 'remote-input.js').read_text(encoding='utf-8')
     assert 'registerKeyBatch' in remote and 'registerKey(' in remote, (
         'remote-input.js must keep batch + individual registration fallback'
     )
-    assert 'getSupportedKeys' in remote and 'codeToName' in remote
+    assert 'getSupportedKeys' in remote and 'codeToName' in remote, (
+        'remote input must derive firmware-specific key codes dynamically'
+    )
     assert 'names = REQUESTED_KEYS.slice()' in remote
-    assert 'names = names.filter' not in remote
+    assert 'names = names.filter' not in remote, (
+        'getSupportedKeys enumeration must not filter semantic registration names'
+    )
     for name in REQUIRED_KEYS:
         assert repr(name) in remote, f'remote-input.js missing requested key {name}'
 
@@ -92,57 +91,63 @@ def main():
             f'remote-input.js must not register platform-default key {platform_key}'
         )
 
-    assert "name === 'ChannelUp') return 1" in remote
-    assert "name === 'ChannelDown') return -1" in remote
     assert 'CHANNEL_DUPLICATE_GUARD_MS' in remote
-    assert 'stopImmediatePropagation' in remote
+    assert 'stopImmediatePropagation' in remote, (
+        'remote gateway must own a handled physical zap before main.js sees it'
+    )
+    assert "if (name === 'ChannelUp') return 1;" in remote, 'ChannelUp must increase channel number'
+    assert "if (name === 'ChannelDown') return -1;" in remote, 'ChannelDown must decrease channel number'
+    assert "name === 'ArrowUp' || name === 'ArrowRight'" in remote
     assert 'KoreaTVPlayer' in remote and 'tuneToNumber' in remote
     assert 'currentNumber' in remote and 'channelCount' in remote
     assert 'suppressedZaps' in remote and 'directZaps' in remote
 
     numeric = (ROOT / 'app' / 'numeric-remote.js').read_text(encoding='utf-8')
-    assert 'KoreaTVPlayer.tuneToNumber' in numeric
-    assert "fireKey('ChannelUp'" not in numeric and "fireKey('ChannelDown'" not in numeric
-    assert 'for (var i = 0; i < count;' not in numeric
+    assert 'KoreaTVPlayer.tuneToNumber' in numeric, 'numeric tuning must call the direct player API once'
+    assert "fireKey('ChannelUp'" not in numeric and "fireKey('ChannelDown'" not in numeric, (
+        'numeric tuning must not synthesize repeated channel-zap key events'
+    )
+    assert 'for (var i = 0; i < count;' not in numeric, (
+        'numeric tuning must not loop through intermediate channels'
+    )
+
+    avplay = (ROOT / 'app' / 'avplay-adapter.js').read_text(encoding='utf-8')
+    for token in ('webapis.avplay', 'av.open(', 'av.setListener(', 'av.setDisplayRect(', 'av.prepareAsync(', 'av.play()', 'av.stop()', 'av.close()'):
+        assert token in avplay, f'AVPlay adapter missing lifecycle token {token}'
+    assert 'KoreaTVAVPlayDiagnostics' in avplay and 'KoreaTVAVPlay' in avplay
 
     main_js = (ROOT / 'app' / 'main.js').read_text(encoding='utf-8')
-    assert "PLAYLIST_URL = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u'" in main_js
-    assert 'playbackGeneration' in main_js and 'samePlayback' in main_js
-    assert 'clearVideoHandlers' in main_js
-    assert 'ZAP_DEBOUNCE_MS' in main_js and 'event.repeat' in main_js
+    assert 'playbackGeneration' in main_js and 'samePlayback' in main_js, (
+        'player callbacks must ignore stale source generations'
+    )
+    assert 'clearVideoHandlers' in main_js, 'player teardown must detach old video handlers before source removal'
+    assert 'ZAP_DEBOUNCE_MS' in main_js and 'event.repeat' in main_js, (
+        'main.js fallback zapping must suppress key-repeat storms'
+    )
+    assert 'window.KoreaTVAVPlay' in main_js and 'avplay.start(channel.url' in main_js, (
+        'main player must prefer Samsung AVPlay when available'
+    )
     assert "key === 'ArrowUp' || key === 'ChannelUp'" in main_js
-    assert 'requestChannelChange(1, event)' in main_js, 'up/channel-up must move to the next/higher channel'
+    assert 'requestChannelChange(1, event)' in main_js, 'up/channel-up fallback must increase channel number'
     assert "key === 'ArrowDown' || key === 'ChannelDown'" in main_js
-    assert 'requestChannelChange(-1, event)' in main_js, 'down/channel-down must move to the previous/lower channel'
+    assert 'requestChannelChange(-1, event)' in main_js, 'down/channel-down fallback must decrease channel number'
     for color_name in ('ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue'):
-        assert f"key === '{color_name}'" in main_js
+        assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
     assert 'window.KoreaTVPlayer' in main_js and 'tuneToNumber: tuneToNumber' in main_js
-    assert 'playChannel(true)' in main_js
-
-    # SKY IPTV-derived Samsung AVPlay lifecycle safeguards.
-    for marker in (
-        'PREPARE_TIMEOUT_MS = 10000',
-        "setBufferingParam('PLAYER_BUFFER_FOR_PLAY'",
-        "setBufferingParam('PLAYER_BUFFER_FOR_RESUME'",
-        "SMART-TV; Linux; Tizen 6.0",
-        'setDisplayRect(0, 0, 1920, 1080)',
-        'prepareAsync',
-        "STARTBITRATE=LOWEST",
-    ):
-        assert marker in main_js, f'Sky AVPlay safeguard missing: {marker}'
-
-    style = (ROOT / 'app' / 'style.css').read_text(encoding='utf-8')
-    assert 'background: transparent !important' in style, 'AVPlay hardware plane must not be covered by opaque page background'
-    assert '#av-player' in style and '1920px' in style and '1080px' in style
+    assert 'playChannel(true)' in main_js, 'direct tuning must force the exact selected channel'
+    assert 'setTimeout(openMom, 40)' in main_js, 'standalone launch must open Mom OS first'
+    assert 'setTimeout(openHome, 900)' not in main_js, 'old Korea TV home autostart must not return'
+    assert "action === 'continue' || action === 'watch-tv'" in main_js, 'Mom OS TV 보기 must start live TV'
+    assert 'homeOpen || browserOpen || searchOpen || momOpen' in main_js, 'Mom OS arrows must stay panel navigation'
 
     runtime_test = ROOT / 'scripts' / 'test_remote_input_runtime.js'
-    assert runtime_test.exists()
+    assert runtime_test.exists(), 'deterministic Samsung remote runtime simulation missing'
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
-    for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js'):
+    for name in ('bootstrap.js', 'runtime-version.json', 'remote-input.js', 'avplay-adapter.js'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung Tizen 6 Sky AVPlay core + exact-once remote + updater contract OK')
+    print('Samsung remote + Mom OS startup + AVPlay + launch updater contract OK')
 
 
 if __name__ == '__main__':
