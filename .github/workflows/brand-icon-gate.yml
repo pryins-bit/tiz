@@ -10,6 +10,7 @@ on:
       - 'app/runtime-version.json'
       - 'scripts/sync_tizen_standalone.py'
       - 'scripts/validate_branding.py'
+      - 'scripts/test_mom_extras_runtime.js'
       - '.github/workflows/stamp-runtime-version.yml'
       - '.github/workflows/brand-icon-gate.yml'
   push:
@@ -17,6 +18,8 @@ on:
     paths:
       - 'icon.png'
       - 'brand.json'
+      - 'app/brand-runtime.js'
+      - 'scripts/test_mom_extras_runtime.js'
       - '.github/workflows/brand-icon-gate.yml'
   workflow_dispatch:
 
@@ -39,10 +42,11 @@ jobs:
         run: |
           python -m json.tool brand.json >/dev/null
           python scripts/validate_branding.py
-      - name: Validate branding JavaScript
+      - name: Validate branding and Mom extras JavaScript
         run: |
           node --check app/brand-runtime.js
           node --check app/bootstrap.js
+          node scripts/test_mom_extras_runtime.js
       - name: Verify standalone packaging inputs
         run: |
           python scripts/sync_tizen_standalone.py
