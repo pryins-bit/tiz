@@ -257,7 +257,7 @@ jobs:
           gh release upload standalone-latest KoreaTV.wgt --clobber
 
       - name: Publish formal v1.0.0 release checkpoint
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release: v1.0.0')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'v1.0.0 stable checkpoint')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
