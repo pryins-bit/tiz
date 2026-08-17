@@ -30,12 +30,15 @@
   var lastZapAt = 0;
   var rescueGeneration = 0;
   var debugBadge = null;
+  var channelOnlyTimer = null;
 
   var diagnostics = {
     apiAvailable: false,
     requested: REQUESTED_KEYS.slice(), supported: [], registered: [], codeToName: {}, nameToCode: {},
     lastEvents: [], listenerTargets: [], suppressedZaps: 0, directZaps: 0,
-    directRedPlays: 0, directRescuePlays: 0, rescueRetries: 0, errors: []
+    directRedPlays: 0, directRescuePlays: 0, rescueRetries: 0,
+    channelOnlyMode: false, channelOnlyAttempts: 0, channelOnlyStarts: 0, blockedMomClicks: 0,
+    errors: []
   };
   window.KoreaTVRemoteDiagnostics = diagnostics;
 
@@ -277,6 +280,51 @@
     ensureDebugBadge();
   }
 
+  function standaloneChannelOnlyShell() {
+    try {
+      if (!document || typeof document.querySelector !== 'function') return false;
+      return !!document.querySelector('[data-action="watch-tv"]');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function blockMomClicksInChannelOnlyMode(event) {
+    if (!diagnostics.channelOnlyMode || !event) return;
+    var node = event.target;
+    while (node && node !== document) {
+      if (node.getAttribute && node.getAttribute('data-action') === 'mom') {
+        try { event.preventDefault(); } catch (e) {}
+        try { event.stopImmediatePropagation(); } catch (e2) {}
+        diagnostics.blockedMomClicks += 1;
+        return;
+      }
+      node = node.parentNode;
+    }
+  }
+
+  function startChannelOnlyMode() {
+    if (!standaloneChannelOnlyShell()) return;
+    diagnostics.channelOnlyMode = true;
+    if (document && typeof document.addEventListener === 'function') {
+      try { document.addEventListener('click', blockMomClicksInChannelOnlyMode, true); } catch (e) {}
+    }
+
+    var attempts = 0;
+    function attempt() {
+      attempts += 1;
+      diagnostics.channelOnlyAttempts = attempts;
+      if (forceCurrentChannel()) {
+        diagnostics.channelOnlyStarts += 1;
+        updateDebugBadge('TV-ONLY', 0);
+        return;
+      }
+      if (attempts < 80) channelOnlyTimer = setTimeout(attempt, 250);
+      else updateDebugBadge('TV 준비 실패', 0);
+    }
+    channelOnlyTimer = setTimeout(attempt, 80);
+  }
+
   window.KoreaTVRemote = {
     getName: nameFromEvent,
     getCode: function (name) { return diagnostics.nameToCode[name] || null; },
@@ -286,4 +334,5 @@
 
   registerRemoteKeys();
   installListeners();
+  startChannelOnlyMode();
 }());
