@@ -49,6 +49,63 @@
   </style>
   <script type="text/javascript" src="$WEBAPIS/webapis/webapis.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      // R5 startup rescue lives in the installed shell, before bootstrap.js.
+      // It deliberately does not depend on the remotely cached runtime: the
+      // first playlist request races the network against the packaged M3U so a
+      // hanging GitHub request cannot leave an old runtime on the loading text.
+      var SHELL_BUILD = '2026.08.17.5';
+      var PLAYLIST_RAW = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
+      var PLAYLIST_CDN = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
+      var LOCAL_DELAY_MS = 120;
+      window.KoreaTVShellBuild = SHELL_BUILD;
+
+      if (typeof window.fetch === 'function') {
+        var nativeFetch = window.fetch.bind(window);
+        window.__SuniTVNativeFetch = nativeFetch;
+
+        function isPlaylistUrl(url) {
+          return url.indexOf(PLAYLIST_RAW) === 0 || url.indexOf(PLAYLIST_CDN) === 0;
+        }
+
+        function localPlaylistFetch() {
+          return nativeFetch('korea.m3u?t=' + Date.now(), { cache: 'no-store' }).then(function (response) {
+            if (!response || !response.ok) throw new Error('packaged playlist HTTP ' + (response ? response.status : 0));
+            return response;
+          });
+        }
+
+        window.fetch = function (input, options) {
+          var url = typeof input === 'string' ? input : String(input && input.url || '');
+          if (!isPlaylistUrl(url)) return nativeFetch(input, options);
+
+          var remote = nativeFetch(input, options || { cache: 'no-store' }).then(function (response) {
+            if (!response || !response.ok) throw new Error('remote playlist HTTP ' + (response ? response.status : 0));
+            return response;
+          });
+          var local = new Promise(function (resolve, reject) {
+            setTimeout(function () {
+              localPlaylistFetch().then(resolve, reject);
+            }, LOCAL_DELAY_MS);
+          });
+
+          return Promise.race([remote, local]).catch(function () {
+            return localPlaylistFetch();
+          });
+        };
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var mom = document.getElementById('momHome');
+        var state = document.getElementById('momState');
+        if (mom) mom.classList.remove('hidden');
+        if (state) state.textContent = 'R5 · 시작 준비 중…';
+      });
+    }());
+  </script>
   <script defer src="bootstrap.js"></script>
 </head>
 <body>
@@ -110,7 +167,7 @@
   <section id="momHome" class="mom-home hidden" aria-live="polite">
     <div class="mom-head">
       <div><div class="mom-title"><span class="suni-word">수니</span><span class="suni-tv">TV</span> · 엄마 홈</div><div id="momClock" class="mom-clock"></div></div>
-      <div id="momState" class="mom-state">연결 확인 중…</div>
+      <div id="momState" class="mom-state">R5 · 시작 준비 중…</div>
     </div>
     <div class="mom-actions">
       <button class="mom-tv-button focusable" data-action="watch-tv">▶ TV 보기</button>
