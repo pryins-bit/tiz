@@ -159,6 +159,17 @@ dispatch('keydown', { key: 'ChannelUp', keyCode: 427, repeat: false });
 assert.strictEqual(currentChannel, 4, 'channel-up should tune 3 -> 4 from an open panel');
 assert.deepStrictEqual(tuned, [4, 3, 4]);
 
+// Emergency owner shortcut: Red is capture-owned by remote-input and forces the
+// exact current channel to play, even while a panel is open. This must stop the
+// older main.js Red handler from reopening another home panel.
+clock += 1000;
+const red = dispatch('keydown', { key: 'XF86Red', keyCode: 403, repeat: false });
+assert.strictEqual(red.defaultPrevented, true, 'red shortcut should consume the browser default');
+assert.strictEqual(red.__stopped, true, 'red shortcut must stop older bubble handlers');
+assert.strictEqual(currentChannel, 4, 'red should preserve and force the current channel');
+assert.deepStrictEqual(tuned, [4, 3, 4, 4]);
+assert.strictEqual(windowObject.KoreaTVRemoteDiagnostics.directRedPlays, 1, 'one red force-play should be observable');
+
 assert(windowObject.KoreaTVRemoteDiagnostics.suppressedZaps >= 2, 'duplicate/repeat suppressions should be observable');
 assert.strictEqual(windowObject.KoreaTVRemoteDiagnostics.directZaps, 3, 'expected three direct one-step zaps');
 
