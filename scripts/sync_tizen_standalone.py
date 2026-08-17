@@ -7,6 +7,7 @@ SRC = ROOT / 'app'
 DST = ROOT / 'tizen-standalone' / 'build'
 CONFIG = ROOT / 'tizen-standalone' / 'config.xml'
 ICON = ROOT / 'icon.png'
+PLAYLIST = ROOT / 'korea.m3u'
 
 
 def main():
@@ -27,6 +28,7 @@ def main():
         shutil.copy2(SRC / name, DST / name)
     shutil.copy2(CONFIG, DST / 'config.xml')
     shutil.copy2(ICON, DST / 'icon.png')
+    shutil.copy2(PLAYLIST, DST / 'korea.m3u')
     print(f'prepared standalone Tizen project at {DST}')
 
 
