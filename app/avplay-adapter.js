@@ -1,6 +1,36 @@
 (function () {
   'use strict';
 
+  // Playlist transport guard: the PR #27 main.js deliberately cache-busts the
+  // raw GitHub URL on every launch (`?t=...` + no-store). On TV this can hit
+  // raw.githubusercontent.com rate limiting (HTTP 429). Rewrite only that one
+  // playlist request to jsDelivr's GitHub CDN, without touching the runtime
+  // updater or any channel stream URL. If the CDN fails, retry the stable raw
+  // URL once without the cache-busting query string.
+  var PLAYLIST_RAW_PREFIX = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
+  var PLAYLIST_CDN_URL = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
+  var nativeFetch = window.fetch;
+  if (typeof nativeFetch === 'function') {
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url ? String(input.url) : '');
+      if (url.indexOf(PLAYLIST_RAW_PREFIX) === 0) {
+        var nextInit = {};
+        var sourceInit = init || {};
+        Object.keys(sourceInit).forEach(function (key) { nextInit[key] = sourceInit[key]; });
+        nextInit.cache = 'default';
+        return nativeFetch.call(window, PLAYLIST_CDN_URL, nextInit)
+          .then(function (response) {
+            if (response && response.ok) return response;
+            return nativeFetch.call(window, PLAYLIST_RAW_PREFIX, nextInit);
+          })
+          .catch(function () {
+            return nativeFetch.call(window, PLAYLIST_RAW_PREFIX, nextInit);
+          });
+      }
+      return nativeFetch.call(window, input, init);
+    };
+  }
+
   // Samsung-native playback adapter for live HLS. The lifecycle follows
   // SamsungDForum/PlayerAVPlay (MIT-style license) and current Samsung AVPlay
   // documentation: open -> setListener/display -> prepareAsync -> play.
