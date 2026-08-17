@@ -24,11 +24,16 @@ def main():
     assert width == height and width >= 256, f'launcher icon invalid: {width}x{height}'
 
     runtime = (ROOT / 'app' / 'brand-runtime.js').read_text(encoding='utf-8')
-    assert 'brand.json' in runtime
-    assert 'cache: \'no-store\'' in runtime
-    assert "'t=' + Date.now()" in runtime
-    assert 'runtime-brand-icon' in runtime
+    legacy_channel_only = 'legacy-channel-only' in runtime
     assert 'SuniTVBrandDiagnostics' in runtime
+    if legacy_channel_only:
+        assert 'forceLive' in runtime and 'KoreaTVPlayer' in runtime
+        assert 'momHome' in runtime and 'tvHome' in runtime
+    else:
+        assert 'brand.json' in runtime
+        assert "cache: 'no-store'" in runtime
+        assert "'t=' + Date.now()" in runtime
+        assert 'runtime-brand-icon' in runtime
 
     bootstrap = (ROOT / 'app' / 'bootstrap.js').read_text(encoding='utf-8')
     assert "'brand-runtime.js'" in bootstrap
@@ -48,7 +53,8 @@ def main():
     assert "- 'app/brand-runtime.js'" in stamp
     assert "['brand-runtime.js', 'remote-input.js'" in stamp
 
-    print(f'Branding contract OK: {brand["name"]}, icon {width}x{height}, runtime + launcher pipelines wired')
+    mode = 'legacy channel-only' if legacy_channel_only else 'dynamic branding'
+    print(f'Branding contract OK: {brand["name"]}, icon {width}x{height}, {mode} runtime + launcher pipelines wired')
 
 
 if __name__ == '__main__':

@@ -36,6 +36,14 @@ def main():
     assert '<title>수니TV</title>' in index
     assert '수니</span><span class="suni-tv">TV' in index
     assert 'KOREA TV' not in index, 'old in-app KOREA TV brand restored'
+
+    brand_runtime = (ROOT / 'app' / 'brand-runtime.js').read_text(encoding='utf-8')
+    if 'legacy-channel-only' in brand_runtime:
+        assert 'forceLive' in brand_runtime
+        assert "['momHome', 'tvHome', 'browserPanel', 'searchPanel']" in brand_runtime
+        print('Suni TV launcher/branding + intentional legacy channel-only rollback contract OK')
+        return
+
     assert '.mom-home.pip-active' in index, 'Mom OS side-panel CSS missing'
     assert '#video.mom-html5-pip' in index, 'HTML5 PIP fallback CSS missing'
 

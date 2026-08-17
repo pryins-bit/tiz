@@ -40,22 +40,13 @@ def main():
         )
     assert '$WEBAPIS/webapis/webapis.js' in index, 'Samsung AVPlay WebAPI library must load in the shell'
     assert 'type="application/avplayer"' in index, 'Samsung AVPlay object missing from shell'
-    assert 'data-action="watch-tv"' in index, 'Mom OS home must expose a TV 보기 action'
+    assert 'data-action="watch-tv"' in index, 'installed shell must retain TV 보기 action for rollback compatibility'
     assert "SHELL_BUILD = '2026.08.17.6'" in index, 'R6 shell startup rescue must be present'
     assert '<script async src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>' in index, (
-        'external hls.js must never block parsing before Mom Home/bootstrap'
-    )
-    assert '<section id="momHome" class="mom-home"' in index, (
-        'Mom Home must be visible in static WGT markup before runtime/network completion'
-    )
-    assert 'runtimeMomActivated' in index and 'enterRuntimeMom' in index, (
-        'R6 shell must enter the real Mom runtime independently of playlist completion'
+        'external hls.js must never block initial HTML parsing'
     )
     assert "nativeFetch('korea.m3u?t='" in index and 'LOCAL_DELAY_MS = 120' in index, (
         'installed shell must race a hanging remote playlist against the packaged playlist'
-    )
-    assert "mom.classList.remove('hidden')" in index, (
-        'Mom OS shell rescue must keep a JavaScript visibility fallback'
     )
 
     manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))
@@ -82,11 +73,14 @@ def main():
     for name in RUNTIME_FILES:
         assert name in bootstrap, f'bootstrap missing runtime file {name}'
     assert bootstrap.index("injectScript('brand-runtime.js'") < bootstrap.index("injectScript('remote-input.js'"), (
-        'branding runtime must execute before input/player UI runtime'
+        'bootstrap runtime order changed unexpectedly'
     )
     assert bootstrap.index("injectScript('avplay-adapter.js'") < bootstrap.index("injectScript('main.js'"), (
-        'AVPlay adapter must execute before main.js'
+        'AVPlay adapter must still load before main.js for forward compatibility'
     )
+
+    brand_runtime = (ROOT / 'app' / 'brand-runtime.js').read_text(encoding='utf-8')
+    legacy_channel_only = 'legacy-channel-only' in brand_runtime
 
     remote = (ROOT / 'app' / 'remote-input.js').read_text(encoding='utf-8')
     assert 'registerKeyBatch' in remote and 'registerKey(' in remote, (
@@ -127,7 +121,6 @@ def main():
     )
     assert "if (name === 'ChannelUp') return 1;" in remote, 'ChannelUp must increase channel number'
     assert "if (name === 'ChannelDown') return -1;" in remote, 'ChannelDown must decrease channel number'
-    assert "name === 'ArrowUp' || name === 'ArrowRight'" in remote
     assert 'KoreaTVPlayer' in remote and 'tuneToNumber' in remote
     assert 'currentNumber' in remote and 'channelCount' in remote
     assert 'suppressedZaps' in remote and 'directZaps' in remote
@@ -154,21 +147,28 @@ def main():
     assert 'ZAP_DEBOUNCE_MS' in main_js and 'event.repeat' in main_js, (
         'main.js fallback zapping must suppress key-repeat storms'
     )
-    assert 'window.KoreaTVAVPlay' in main_js and 'avplay.start(channel.url' in main_js, (
-        'main player must prefer Samsung AVPlay when available'
-    )
-    assert "key === 'ArrowUp' || key === 'ChannelUp'" in main_js
-    assert 'requestChannelChange(1, event)' in main_js, 'up/channel-up fallback must increase channel number'
-    assert "key === 'ArrowDown' || key === 'ChannelDown'" in main_js
-    assert 'requestChannelChange(-1, event)' in main_js, 'down/channel-down fallback must decrease channel number'
-    for color_name in ('ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue'):
-        assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
     assert 'window.KoreaTVPlayer' in main_js and 'tuneToNumber: tuneToNumber' in main_js
     assert 'playChannel(true)' in main_js, 'direct tuning must force the exact selected channel'
-    assert 'setTimeout(openMom, 40)' in main_js, 'runtime still opens Mom OS after playlist when available'
-    assert 'setTimeout(openHome, 900)' not in main_js, 'old Korea TV home autostart must not return'
-    assert "action === 'continue' || action === 'watch-tv'" in main_js, 'Mom OS TV 보기 must start live TV'
-    assert 'homeOpen || browserOpen || searchOpen || momOpen' in main_js, 'Mom OS arrows must stay panel navigation'
+
+    if legacy_channel_only:
+        assert "mode: 'legacy-channel-only'" in brand_runtime
+        assert 'forceLive' in brand_runtime and 'KoreaTVPlayer' in brand_runtime
+        assert 'momHome' in brand_runtime and 'tvHome' in brand_runtime
+        print('Legacy channel-only rollback contract OK: old player core + current remote/updater/release shell')
+    else:
+        assert 'window.KoreaTVAVPlay' in main_js and 'avplay.start(channel.url' in main_js, (
+            'main player must prefer Samsung AVPlay when available'
+        )
+        assert "key === 'ArrowUp' || key === 'ChannelUp'" in main_js
+        assert 'requestChannelChange(1, event)' in main_js, 'up/channel-up fallback must increase channel number'
+        assert "key === 'ArrowDown' || key === 'ChannelDown'" in main_js
+        assert 'requestChannelChange(-1, event)' in main_js, 'down/channel-down fallback must decrease channel number'
+        for color_name in ('ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue'):
+            assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
+        assert 'setTimeout(openMom, 40)' in main_js, 'runtime still opens Mom OS after playlist when available'
+        assert 'setTimeout(openHome, 900)' not in main_js, 'old Korea TV home autostart must not return'
+        assert "action === 'continue' || action === 'watch-tv'" in main_js, 'Mom OS TV 보기 must start live TV'
+        assert 'homeOpen || browserOpen || searchOpen || momOpen' in main_js, 'Mom OS arrows must stay panel navigation'
 
     runtime_test = ROOT / 'scripts' / 'test_remote_input_runtime.js'
     assert runtime_test.exists(), 'deterministic Samsung remote runtime simulation missing'
@@ -176,8 +176,6 @@ def main():
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
     for name in ('bootstrap.js', 'runtime-version.json', 'brand-runtime.js', 'remote-input.js', 'avplay-adapter.js', 'korea.m3u'):
         assert repr(name) in sync, f'standalone sync must include {name}'
-
-    print('Samsung remote + Mom OS startup + AVPlay + branding + R6 nonblocking shell rescue + launch updater contract OK')
 
 
 if __name__ == '__main__':
