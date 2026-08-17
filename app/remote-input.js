@@ -6,15 +6,14 @@
   // remain available even if Korea TV has a bug.
   var REQUESTED_KEYS = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'ChannelUp', 'ChannelDown',
+    'ChannelUp', 'ChannelDown', 'ChannelList', 'PreviousChannel',
     'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
-    'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop'
+    'MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop',
+    'Info'
   ];
 
-  // Samsung's own Tizen TV VOD reference app accepts both the documented
-  // ChannelUp/ChannelDown codes and browser-style PageUp/PageDown variants.
-  // Keep the documented color family at 403-406; 447-449 are volume codes on
-  // Samsung Tizen and must never be treated as colors.
+  // Samsung's documented key family. Keep 447-449 platform-owned volume keys;
+  // they must never be mistaken for color shortcuts.
   var FALLBACK_CODE_TO_NAME = {
     13: 'Enter',
     19: 'MediaPause',
@@ -32,7 +31,10 @@
     415: 'MediaPlay',
     427: 'ChannelUp',
     428: 'ChannelDown',
+    457: 'Info',
     10009: 'Back',
+    10073: 'ChannelList',
+    10190: 'PreviousChannel',
     10252: 'MediaPlayPause'
   };
 
@@ -55,6 +57,7 @@
     XF86AudioPlay: 'MediaPlayPause',
     XF86AudioPause: 'MediaPause',
     XF86AudioStop: 'MediaStop',
+    XF86Info: 'Info',
     XF86Back: 'Back',
     Backspace: 'Back',
     Return: 'Back',
@@ -67,6 +70,8 @@
   var CHANNEL_DUPLICATE_GUARD_MS = 700;
   var lastZapDirection = 0;
   var lastZapAt = 0;
+  var rescueGeneration = 0;
+  var debugBadge = null;
 
   var diagnostics = {
     apiAvailable: false,
@@ -76,9 +81,12 @@
     codeToName: {},
     nameToCode: {},
     lastEvents: [],
+    listenerTargets: [],
     suppressedZaps: 0,
     directZaps: 0,
     directRedPlays: 0,
+    directRescuePlays: 0,
+    rescueRetries: 0,
     errors: []
   };
   window.KoreaTVRemoteDiagnostics = diagnostics;
@@ -104,15 +112,19 @@
     if (!diagnostics.codeToName[String(code)]) diagnostics.codeToName[String(code)] = FALLBACK_CODE_TO_NAME[code];
   });
 
+  function registerOne(manager, name) {
+    try {
+      manager.registerKey(name);
+      rememberRegistered([name]);
+      return true;
+    } catch (error) {
+      diagnostics.errors.push(name + ' -> ' + errorText(error));
+      return false;
+    }
+  }
+
   function registerIndividually(manager, names) {
-    names.forEach(function (name) {
-      try {
-        manager.registerKey(name);
-        rememberRegistered([name]);
-      } catch (error) {
-        diagnostics.errors.push(name + ' -> ' + errorText(error));
-      }
-    });
+    names.forEach(function (name) { registerOne(manager, name); });
   }
 
   function registerRemoteKeys() {
@@ -126,11 +138,9 @@
       return;
     }
 
-    // getSupportedKeys() is useful for discovering model-specific numeric
-    // codes, but it is not an allow-list for registration. Samsung's reference
-    // implementation registers the semantic names directly. Some older TVs
-    // return incomplete enumeration results while registerKey still works.
-    var names = REQUESTED_KEYS.slice();
+    // Discover the model-specific code when possible. Do not use this as an
+    // allow-list because older televisions can enumerate fewer keys than they
+    // are still able to register.
     try {
       var supported = manager.getSupportedKeys();
       for (var i = 0; i < supported.length; i += 1) {
@@ -140,6 +150,24 @@
       }
     } catch (error) {
       diagnostics.errors.push('getSupportedKeys -> ' + errorText(error));
+    }
+
+    // The physical-TV failure is specifically the rescue/color path. Register
+    // Red individually first, matching Samsung's documented example. If that
+    // direct registration fails, leave Red in the batch so it gets a second
+    // registration path rather than silently losing the key.
+    var redDirect = registerOne(manager, 'ColorF0Red');
+    var names = REQUESTED_KEYS.filter(function (name) {
+      return !(redDirect && name === 'ColorF0Red');
+    });
+
+    try {
+      if (typeof manager.getKey === 'function') {
+        var redKey = manager.getKey('ColorF0Red');
+        if (redKey && redKey.code != null) rememberCode('ColorF0Red', redKey.code);
+      }
+    } catch (error2) {
+      diagnostics.errors.push('getKey ColorF0Red -> ' + errorText(error2));
     }
 
     if (typeof manager.registerKeyBatch === 'function') {
@@ -153,8 +181,8 @@
           }
         );
         return;
-      } catch (error) {
-        diagnostics.errors.push('registerKeyBatch throw -> ' + errorText(error));
+      } catch (error3) {
+        diagnostics.errors.push('registerKeyBatch throw -> ' + errorText(error3));
       }
     }
     registerIndividually(manager, names);
@@ -174,8 +202,6 @@
     if (code >= 48 && code <= 57) return String(code - 48);
     if (code >= 96 && code <= 105) return String(code - 96);
 
-    // Prefer the model-specific keyCode map once available. This mirrors the
-    // Samsung reference pattern and avoids browser key-string differences.
     var byCode = diagnostics.codeToName[String(code)] || FALLBACK_CODE_TO_NAME[code];
     if (byCode) return normalizeNamedKey(byCode);
 
@@ -183,7 +209,7 @@
     for (var i = 0; i < candidates.length; i += 1) {
       var named = normalizeNamedKey(candidates[i]);
       if (!named || named === 'Unidentified') continue;
-      if (named.indexOf('ColorF') === 0 || named.indexOf('Channel') === 0 || named.indexOf('Media') === 0 || named.indexOf('Arrow') === 0 || named === 'Enter' || named === 'Back' || /^[0-9]$/.test(named)) return named;
+      if (named.indexOf('ColorF') === 0 || named.indexOf('Channel') === 0 || named.indexOf('Media') === 0 || named.indexOf('Arrow') === 0 || named === 'Enter' || named === 'Back' || named === 'Info' || /^[0-9]$/.test(named)) return named;
     }
     return '';
   }
@@ -199,7 +225,6 @@
 
   // Channel-number semantics for this app are explicit: moving the rocker UP
   // increases the visible channel number (3 -> 4); moving DOWN decreases it.
-  // Right/left retain next/previous semantics when no panel is open.
   function zapDirection(name) {
     if (name === 'ChannelUp') return 1;
     if (name === 'ChannelDown') return -1;
@@ -223,6 +248,31 @@
     return player.tuneToNumber(current) !== false;
   }
 
+  function forceCurrentChannelEventually(isRed) {
+    rescueGeneration += 1;
+    var generation = rescueGeneration;
+    var tries = 0;
+
+    function attempt() {
+      if (generation !== rescueGeneration) return;
+      tries += 1;
+      if (forceCurrentChannel()) {
+        diagnostics.directRescuePlays += 1;
+        if (isRed) diagnostics.directRedPlays += 1;
+        updateDebugBadge(isRed ? 'RED → TV' : 'RESCUE → TV', 0);
+        return;
+      }
+      if (tries < 24) {
+        diagnostics.rescueRetries += 1;
+        setTimeout(attempt, 250);
+      } else {
+        updateDebugBadge('TV 준비 실패', 0);
+      }
+    }
+
+    attempt();
+  }
+
   function tuneOneStep(direction) {
     var player = window.KoreaTVPlayer;
     var current = Number(player.currentNumber());
@@ -244,24 +294,59 @@
     diagnostics.lastEvents = diagnostics.lastEvents.slice(0, 12);
   }
 
-  window.KoreaTVRemote = {
-    getName: nameFromEvent,
-    getCode: function (name) { return diagnostics.nameToCode[name] || null; },
-    diagnostics: diagnostics
-  };
+  function ensureDebugBadge() {
+    if (debugBadge || !document || !document.createElement || !document.body) return debugBadge;
+    try {
+      debugBadge = document.createElement('div');
+      debugBadge.id = 'koreaTvRemoteDebug';
+      debugBadge.textContent = 'RKEY2 READY';
+      debugBadge.style.position = 'fixed';
+      debugBadge.style.left = '14px';
+      debugBadge.style.bottom = '12px';
+      debugBadge.style.zIndex = '9999';
+      debugBadge.style.padding = '5px 8px';
+      debugBadge.style.borderRadius = '6px';
+      debugBadge.style.background = 'rgba(0,0,0,.72)';
+      debugBadge.style.border = '1px solid rgba(255,255,255,.28)';
+      debugBadge.style.color = '#fff';
+      debugBadge.style.fontSize = '14px';
+      debugBadge.style.fontFamily = 'Arial,sans-serif';
+      debugBadge.style.pointerEvents = 'none';
+      document.body.appendChild(debugBadge);
+    } catch (e) {
+      debugBadge = null;
+    }
+    return debugBadge;
+  }
 
-  document.addEventListener('keydown', function (event) {
+  function updateDebugBadge(name, code) {
+    var badge = ensureDebugBadge();
+    if (!badge) return;
+    badge.textContent = 'RKEY2 ' + String(name || '?') + (code ? ' / ' + code : '');
+  }
+
+  function isRescueKey(name) {
+    if (name === 'ColorF0Red' || name === 'ChannelList' || name === 'PreviousChannel' || name === 'Info') return true;
+    return panelsOpen() && (name === 'MediaPlay' || name === 'MediaPlayPause');
+  }
+
+  function handleRemoteKey(event) {
+    if (!event || event.__koreaTvRemoteGatewaySeen) return;
+    try { event.__koreaTvRemoteGatewaySeen = true; } catch (e) {}
+
     var name = nameFromEvent(event);
+    var code = Number(event.keyCode || event.which || 0);
     rememberEvent(event, name);
+    updateDebugBadge(name, code);
 
-    // Owner emergency shortcut: Red always leaves any Mom/Home/search panel and
-    // forces the currently selected channel to start. Capture the event here so
-    // an older main.js color handler cannot turn Red back into another home panel.
-    if (name === 'ColorF0Red') {
+    // Rescue controls are capture-owned. Red is the primary requested key;
+    // Channel List / Previous / Info and Play while a panel is open are backup
+    // exits for remotes/firmware that never deliver a physical Red key event.
+    if (isRescueKey(name)) {
       event.preventDefault();
       event.stopImmediatePropagation();
       if (event.repeat) return;
-      if (forceCurrentChannel()) diagnostics.directRedPlays += 1;
+      forceCurrentChannelEventually(name === 'ColorF0Red');
       return;
     }
 
@@ -285,7 +370,40 @@
     lastZapDirection = direction;
     lastZapAt = now;
     if (tuneOneStep(direction)) diagnostics.directZaps += 1;
-  }, true);
+  }
+
+  function attachListener(target, label) {
+    if (!target || typeof target.addEventListener !== 'function') return;
+    try {
+      target.addEventListener('keydown', handleRemoteKey, true);
+      diagnostics.listenerTargets.push(label);
+    } catch (error) {
+      diagnostics.errors.push('listener ' + label + ' -> ' + errorText(error));
+    }
+  }
+
+  function installListeners() {
+    // Samsung documentation demonstrates body keydown. Keep document/window as
+    // redundant capture points; a per-event marker prevents double handling.
+    attachListener(window, 'window');
+    attachListener(document, 'document');
+    if (document.body) attachListener(document.body, 'body');
+    else if (document.addEventListener) {
+      document.addEventListener('DOMContentLoaded', function () {
+        attachListener(document.body, 'body');
+        ensureDebugBadge();
+      }, false);
+    }
+    ensureDebugBadge();
+  }
+
+  window.KoreaTVRemote = {
+    getName: nameFromEvent,
+    getCode: function (name) { return diagnostics.nameToCode[name] || null; },
+    forceCurrentChannel: function () { forceCurrentChannelEventually(false); },
+    diagnostics: diagnostics
+  };
 
   registerRemoteKeys();
+  installListeners();
 }());
