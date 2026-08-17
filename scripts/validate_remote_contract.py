@@ -30,6 +30,7 @@ def main():
     assert 'http://tizen.org/privilege/tv.inputdevice' in privileges, (
         'standalone config.xml must grant tv.inputdevice privilege'
     )
+    assert config_root.attrib.get('version') == '0.5.0', 'R6 standalone manifest version must be 0.5.0'
 
     index = (ROOT / 'app' / 'index.html').read_text(encoding='utf-8')
     assert 'src="bootstrap.js"' in index, 'app/index.html must launch through bootstrap.js'
@@ -40,12 +41,21 @@ def main():
     assert '$WEBAPIS/webapis/webapis.js' in index, 'Samsung AVPlay WebAPI library must load in the shell'
     assert 'type="application/avplayer"' in index, 'Samsung AVPlay object missing from shell'
     assert 'data-action="watch-tv"' in index, 'Mom OS home must expose a TV 보기 action'
-    assert "SHELL_BUILD = '2026.08.17.5'" in index, 'R5 shell startup rescue must be present'
+    assert "SHELL_BUILD = '2026.08.17.6'" in index, 'R6 shell startup rescue must be present'
+    assert '<script async src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>' in index, (
+        'external hls.js must never block parsing before Mom Home/bootstrap'
+    )
+    assert '<section id="momHome" class="mom-home"' in index, (
+        'Mom Home must be visible in static WGT markup before runtime/network completion'
+    )
+    assert 'runtimeMomActivated' in index and 'enterRuntimeMom' in index, (
+        'R6 shell must enter the real Mom runtime independently of playlist completion'
+    )
     assert "nativeFetch('korea.m3u?t='" in index and 'LOCAL_DELAY_MS = 120' in index, (
         'installed shell must race a hanging remote playlist against the packaged playlist'
     )
     assert "mom.classList.remove('hidden')" in index, (
-        'Mom OS must become visible from the installed shell even before runtime/network completion'
+        'Mom OS shell rescue must keep a JavaScript visibility fallback'
     )
 
     manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))
@@ -60,9 +70,9 @@ def main():
     assert 'PLAYLIST_FALLBACK_TIMEOUT_MS = 1800' in bootstrap, 'playlist fetch must have a finite Samsung-TV deadline'
     assert "PLAYLIST_LOCAL = 'korea.m3u'" in bootstrap, 'standalone must know its packaged playlist fallback'
     assert "CACHE_KEY = 'korea_tv_runtime_cache_v3'" in bootstrap, (
-        'R5 shell must ignore stale pre-rescue runtime caches after shell replacement'
+        'R5+ shell must ignore stale pre-rescue runtime caches after shell replacement'
     )
-    assert "PACKAGED_VERSION = '2026.08.17.5'" in bootstrap, 'packaged runtime version must match R5 shell'
+    assert "PACKAGED_VERSION = '2026.08.17.5'" in bootstrap, 'packaged runtime baseline must retain the R5 cache boundary'
     assert 'installPlaylistFetchFallback' in bootstrap and 'timedFetch' in bootstrap and 'firstOk' in bootstrap, (
         'bootstrap must prevent a hanging raw GitHub playlist request from blocking startup forever'
     )
@@ -155,7 +165,7 @@ def main():
         assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
     assert 'window.KoreaTVPlayer' in main_js and 'tuneToNumber: tuneToNumber' in main_js
     assert 'playChannel(true)' in main_js, 'direct tuning must force the exact selected channel'
-    assert 'setTimeout(openMom, 40)' in main_js, 'standalone launch must open Mom OS first after playlist is available'
+    assert 'setTimeout(openMom, 40)' in main_js, 'runtime still opens Mom OS after playlist when available'
     assert 'setTimeout(openHome, 900)' not in main_js, 'old Korea TV home autostart must not return'
     assert "action === 'continue' || action === 'watch-tv'" in main_js, 'Mom OS TV 보기 must start live TV'
     assert 'homeOpen || browserOpen || searchOpen || momOpen' in main_js, 'Mom OS arrows must stay panel navigation'
@@ -167,7 +177,7 @@ def main():
     for name in ('bootstrap.js', 'runtime-version.json', 'brand-runtime.js', 'remote-input.js', 'avplay-adapter.js', 'korea.m3u'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote + Mom OS startup + AVPlay + branding + R5 shell rescue + launch updater contract OK')
+    print('Samsung remote + Mom OS startup + AVPlay + branding + R6 nonblocking shell rescue + launch updater contract OK')
 
 
 if __name__ == '__main__':
