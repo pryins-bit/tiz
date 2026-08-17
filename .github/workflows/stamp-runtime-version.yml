@@ -65,6 +65,37 @@ jobs:
           done
           echo 'Runtime stamp could not be pushed after retries.'
           exit 1
+      - name: Purge jsDelivr branch cache for runtime files
+        run: |
+          # The TV races GitHub Raw, jsDelivr and the Supabase rescue endpoint.
+          # jsDelivr caches GitHub branch URLs, so a stale CDN response can win
+          # that race even after the manifest version changed. Purge every fixed
+          # runtime URL after the source + stamped manifest are on main.
+          files=(
+            runtime-version.json
+            brand-runtime.js
+            remote-input.js
+            numeric-remote.js
+            avplay-adapter.js
+            main.js
+            style.css
+          )
+          for file in "${files[@]}"; do
+            ok=0
+            url="https://purge.jsdelivr.net/gh/pryins-bit/tiz@main/app/${file}"
+            for attempt in 1 2 3; do
+              if curl --fail --silent --show-error "$url" -o "/tmp/purge-${file//\//_}.json"; then
+                echo "Purged ${file}"
+                ok=1
+                break
+              fi
+              sleep $((attempt * 2))
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "Failed to purge jsDelivr cache for ${file}"
+              exit 1
+            fi
+          done
       - name: Refresh fast Supabase rescue manifest cache
         run: |
           # This public endpoint accepts no version/body from the caller. It
