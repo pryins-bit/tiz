@@ -49,6 +49,12 @@ def main():
     assert 'CHECK_BUDGET_MS = 450' in bootstrap, 'launch update check must keep 450ms budget'
     assert 'runtime-version.json' in bootstrap
     assert 'raw.githubusercontent.com/pryins-bit/tiz/main/app/' in bootstrap
+    assert 'cdn.jsdelivr.net/gh/pryins-bit/tiz@main/app/' in bootstrap, 'runtime updater needs a second trusted CDN source'
+    assert 'PLAYLIST_FALLBACK_TIMEOUT_MS = 1800' in bootstrap, 'playlist fetch must have a finite Samsung-TV deadline'
+    assert "PLAYLIST_LOCAL = 'korea.m3u'" in bootstrap, 'standalone must know its packaged playlist fallback'
+    assert 'installPlaylistFetchFallback' in bootstrap and 'timedFetch' in bootstrap and 'firstOk' in bootstrap, (
+        'bootstrap must prevent a hanging raw GitHub playlist request from blocking startup forever'
+    )
     assert 'Promise.race' in bootstrap, 'bootstrap must race update check against launch budget'
     assert 'refreshForNextLaunch' in bootstrap, 'slow-network updates must be cached for next launch'
     assert 'runPackaged' in bootstrap, 'bootstrap needs packaged offline fallback'
@@ -138,7 +144,7 @@ def main():
         assert f"key === '{color_name}'" in main_js, f'main.js missing semantic color handling for {color_name}'
     assert 'window.KoreaTVPlayer' in main_js and 'tuneToNumber: tuneToNumber' in main_js
     assert 'playChannel(true)' in main_js, 'direct tuning must force the exact selected channel'
-    assert 'setTimeout(openMom, 40)' in main_js, 'standalone launch must open Mom OS first'
+    assert 'setTimeout(openMom, 40)' in main_js, 'standalone launch must open Mom OS first after playlist is available'
     assert 'setTimeout(openHome, 900)' not in main_js, 'old Korea TV home autostart must not return'
     assert "action === 'continue' || action === 'watch-tv'" in main_js, 'Mom OS TV 보기 must start live TV'
     assert 'homeOpen || browserOpen || searchOpen || momOpen' in main_js, 'Mom OS arrows must stay panel navigation'
@@ -147,10 +153,10 @@ def main():
     assert runtime_test.exists(), 'deterministic Samsung remote runtime simulation missing'
 
     sync = (ROOT / 'scripts' / 'sync_tizen_standalone.py').read_text(encoding='utf-8')
-    for name in ('bootstrap.js', 'runtime-version.json', 'brand-runtime.js', 'remote-input.js', 'avplay-adapter.js'):
+    for name in ('bootstrap.js', 'runtime-version.json', 'brand-runtime.js', 'remote-input.js', 'avplay-adapter.js', 'korea.m3u'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote + Mom OS startup + AVPlay + branding + launch updater contract OK')
+    print('Samsung remote + Mom OS startup + AVPlay + branding + network fallback + launch updater contract OK')
 
 
 if __name__ == '__main__':
