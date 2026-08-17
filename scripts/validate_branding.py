@@ -33,7 +33,8 @@ def main():
     bootstrap = (ROOT / 'app' / 'bootstrap.js').read_text(encoding='utf-8')
     assert "'brand-runtime.js'" in bootstrap
     assert "injectScript('brand-runtime.js'" in bootstrap
-    assert "var CACHE_KEY = 'korea_tv_runtime_cache_v2'" in bootstrap
+    assert "var CACHE_KEY = 'korea_tv_runtime_cache_v3'" in bootstrap
+    assert "PACKAGED_VERSION = '2026.08.17.5'" in bootstrap
     assert 'hasRequiredFiles' in bootstrap
 
     manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))

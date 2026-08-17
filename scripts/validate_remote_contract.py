@@ -40,6 +40,13 @@ def main():
     assert '$WEBAPIS/webapis/webapis.js' in index, 'Samsung AVPlay WebAPI library must load in the shell'
     assert 'type="application/avplayer"' in index, 'Samsung AVPlay object missing from shell'
     assert 'data-action="watch-tv"' in index, 'Mom OS home must expose a TV 보기 action'
+    assert "SHELL_BUILD = '2026.08.17.5'" in index, 'R5 shell startup rescue must be present'
+    assert "nativeFetch('korea.m3u?t='" in index and 'LOCAL_DELAY_MS = 120' in index, (
+        'installed shell must race a hanging remote playlist against the packaged playlist'
+    )
+    assert "mom.classList.remove('hidden')" in index, (
+        'Mom OS must become visible from the installed shell even before runtime/network completion'
+    )
 
     manifest = json.loads((ROOT / 'app' / 'runtime-version.json').read_text(encoding='utf-8'))
     assert manifest.get('version'), 'runtime-version.json missing version'
@@ -52,6 +59,10 @@ def main():
     assert 'cdn.jsdelivr.net/gh/pryins-bit/tiz@main/app/' in bootstrap, 'runtime updater needs a second trusted CDN source'
     assert 'PLAYLIST_FALLBACK_TIMEOUT_MS = 1800' in bootstrap, 'playlist fetch must have a finite Samsung-TV deadline'
     assert "PLAYLIST_LOCAL = 'korea.m3u'" in bootstrap, 'standalone must know its packaged playlist fallback'
+    assert "CACHE_KEY = 'korea_tv_runtime_cache_v3'" in bootstrap, (
+        'R5 shell must ignore stale pre-rescue runtime caches after shell replacement'
+    )
+    assert "PACKAGED_VERSION = '2026.08.17.5'" in bootstrap, 'packaged runtime version must match R5 shell'
     assert 'installPlaylistFetchFallback' in bootstrap and 'timedFetch' in bootstrap and 'firstOk' in bootstrap, (
         'bootstrap must prevent a hanging raw GitHub playlist request from blocking startup forever'
     )
@@ -156,7 +167,7 @@ def main():
     for name in ('bootstrap.js', 'runtime-version.json', 'brand-runtime.js', 'remote-input.js', 'avplay-adapter.js', 'korea.m3u'):
         assert repr(name) in sync, f'standalone sync must include {name}'
 
-    print('Samsung remote + Mom OS startup + AVPlay + branding + network fallback + launch updater contract OK')
+    print('Samsung remote + Mom OS startup + AVPlay + branding + R5 shell rescue + launch updater contract OK')
 
 
 if __name__ == '__main__':

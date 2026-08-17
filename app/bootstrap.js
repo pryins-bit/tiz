@@ -8,18 +8,22 @@
   var PLAYLIST_CDN = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
   var PLAYLIST_RESCUE = RESCUE_BASE + encodeURIComponent('korea.m3u');
   var PLAYLIST_LOCAL = 'korea.m3u';
-  var PACKAGED_VERSION = '2026.08.17.4';
+  var PACKAGED_VERSION = '2026.08.17.5';
   var CHECK_BUDGET_MS = 450;
   var NETWORK_REQUEST_TIMEOUT_MS = 3500;
   var PLAYLIST_FALLBACK_TIMEOUT_MS = 1800;
   var LOCAL_PLAYLIST_TIMEOUT_MS = 1200;
-  var CACHE_KEY = 'korea_tv_runtime_cache_v2';
-  var CACHE_VERSION_KEY = 'korea_tv_runtime_version_v2';
+  // R5 intentionally starts a fresh cache namespace. A previously cached
+  // runtime can contain the pre-rescue startup path and must not outrank the
+  // packaged R5 runtime after the shell itself has been replaced.
+  var CACHE_KEY = 'korea_tv_runtime_cache_v3';
+  var CACHE_VERSION_KEY = 'korea_tv_runtime_version_v3';
   var DEFAULT_FILES = ['brand-runtime.js', 'remote-input.js', 'numeric-remote.js', 'avplay-adapter.js', 'main.js', 'style.css'];
   var started = false;
   var nativeFetch = typeof window.fetch === 'function' ? window.fetch.bind(window) : null;
 
   var diagnostics = {
+    shellBuild: window.KoreaTVShellBuild || PACKAGED_VERSION,
     runtimeSource: 'packaged',
     playlistSource: '',
     lastNetworkError: '',
@@ -128,6 +132,7 @@
     var url = String(response && response.url || '');
     if (url.indexOf('supabase.co') >= 0) return 'supabase-rescue';
     if (url.indexOf('jsdelivr.net') >= 0) return 'jsdelivr';
+    if (url.indexOf('korea.m3u') >= 0 && url.indexOf('http') !== 0) return 'packaged-shell-race';
     return 'github-raw';
   }
 
