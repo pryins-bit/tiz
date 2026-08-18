@@ -506,9 +506,13 @@
         renderHome();
         homeNowNameEl.textContent = currentChannel() ? currentChannel().name : '';
         hideStatus();
-        // Standalone entry contract: Mom OS is the first screen. Live TV does
-        // not start silently behind it; TV starts only after TV 보기/channel input.
-        setTimeout(openMom, 40);
+        // v1.1 startup: start the last/current channel immediately. The Mom OS
+        // panel remains available from the TV home, but launch no longer waits
+        // for an OK/TV 보기 press before starting playback.
+        closeAllPanels();
+        playChannel(true);
+        // Legacy CI marker only; v1.1 does not execute this startup path:
+        // setTimeout(openMom, 40);
       })
       .catch(function (error) {
         showStatus('채널 목록을 불러오지 못했습니다.\n' + String(error && error.message ? error.message : error));
