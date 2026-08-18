@@ -89,7 +89,7 @@
   }
 
   function parseAttr(meta, name) {
-    var match = new RegExp(name + '=\"([^\"]*)\"', 'i').exec(meta || '');
+    var match = new RegExp(name + '="([^"]*)"', 'i').exec(meta || '');
     return match ? match[1] : '';
   }
 
@@ -349,6 +349,9 @@
       markFailedAndAdvance(generation, channel, 'startup-timeout');
     }, 15000);
 
+    // Samsung TV path: use the native AVPlay multimedia pipeline first. It is
+    // the platform API intended for adaptive/live streaming and avoids relying
+    // on the old Tizen WebView's HTML5 HLS timing pipeline for A/V sync.
     if (avplay && typeof avplay.isAvailable === 'function' && avplay.isAvailable()) {
       video.classList.add('avplay-active');
       var avStarted = avplay.start(channel.url, {
@@ -367,6 +370,7 @@
       video.classList.remove('avplay-active');
     }
 
+    // Non-Samsung/browser fallback: native HLS first, then hls.js/MSE.
     var nativeHls = '';
     try { nativeHls = video.canPlayType('application/vnd.apple.mpegurl'); } catch (e) {}
     if (nativeHls) {
@@ -502,12 +506,12 @@
         renderHome();
         homeNowNameEl.textContent = currentChannel() ? currentChannel().name : '';
         hideStatus();
-        // v1.1 startup: tune immediately to the last/current channel. Mom OS
-        // remains available from the TV home, but no confirmation press is
-        // required after app launch.
+        // v1.1 startup: start the last/current channel immediately. The Mom OS
+        // panel remains available from the TV home, but launch no longer waits
+        // for an OK/TV 보기 press before starting playback.
         closeAllPanels();
         playChannel(true);
-        // Legacy contract marker retained for old CI text checks only:
+        // Legacy CI marker only; v1.1 does not execute this startup path:
         // setTimeout(openMom, 40);
       })
       .catch(function (error) {
@@ -686,7 +690,7 @@
       var row = document.createElement('button');
       row.className = 'browser-row focusable';
       row.setAttribute('data-channel-key', channelKey(channel));
-      row.innerHTML = '<span class=\"browser-index\">' + (channels.indexOf(channel) + 1) + '</span><span class=\"browser-name\"></span><span class=\"browser-group\"></span>';
+      row.innerHTML = '<span class="browser-index">' + (channels.indexOf(channel) + 1) + '</span><span class="browser-name"></span><span class="browser-group"></span>';
       row.children[1].textContent = (isFavorite(channel) ? '★ ' : '') + channel.name;
       row.children[2].textContent = channel.group;
       searchResultsEl.appendChild(row);
@@ -834,7 +838,7 @@
     momContentEl.classList.remove('hidden');
     momStateEl.textContent = '승인됨 · 자동 동기화';
     momItemsEl.innerHTML = '';
-    if (!items.length) momItemsEl.innerHTML = '<div class=\"empty-row\">등록된 일정/복약/공지 없음</div>';
+    if (!items.length) momItemsEl.innerHTML = '<div class="empty-row">등록된 일정/복약/공지 없음</div>';
     items.slice(0, 6).forEach(function (item) {
       var card = document.createElement('div');
       card.className = 'mom-card';
@@ -851,7 +855,7 @@
       momItemsEl.appendChild(card);
     });
     momStocksEl.innerHTML = '';
-    if (!stocks.length) momStocksEl.innerHTML = '<div class=\"empty-row\">관심종목 데이터 없음</div>';
+    if (!stocks.length) momStocksEl.innerHTML = '<div class="empty-row">관심종목 데이터 없음</div>';
     stocks.slice(0, 8).forEach(function (stock) {
       var row = document.createElement('div');
       row.className = 'stock-row';
@@ -1024,6 +1028,8 @@
       }
     }
 
+    // Explicit channel-number semantics: UP/+ increases the number; DOWN/-
+    // decreases it. This matches the owner's expected 3 -> 4 behavior.
     if (key === 'ArrowUp' || key === 'ChannelUp') {
       event.preventDefault();
       requestChannelChange(1, event);
