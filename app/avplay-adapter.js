@@ -31,6 +31,39 @@
     };
   }
 
+  // Update 1 KBS compatibility path for already-installed Tizen 6 shells.
+  // The playlist carries only the stable official KBS ON AIR identity URL.
+  // When AVPlay receives one of those URLs, resolve the transient service_url
+  // from the official KBS live API and pass only that transient URL to AVPlay.
+  // Nothing returned by this API is persisted as a stable M3U8.
+  var KBS_API_BASE = 'https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/';
+
+  function kbsChannelCode(url) {
+    var text = String(url || '');
+    if (text.indexOf('https://onair.kbs.co.kr/') !== 0) return '';
+    var match = /[?&]ch_code=(11|12)(?:&|$)/.exec(text);
+    return match ? match[1] : '';
+  }
+
+  function resolveKbsStream(channelCode) {
+    if (typeof nativeFetch !== 'function') return Promise.reject(new Error('fetch unavailable'));
+    return nativeFetch.call(window, KBS_API_BASE + channelCode + '?_=' + Date.now(), {
+      cache: 'no-store',
+      credentials: 'omit',
+      headers: { 'Accept': 'application/json' }
+    }).then(function (response) {
+      if (!response || !response.ok) {
+        throw new Error('KBS live API HTTP ' + (response ? response.status : 'unknown'));
+      }
+      return response.json();
+    }).then(function (data) {
+      var item = data && data.channel_item && data.channel_item[0];
+      var serviceUrl = item && item.service_url ? String(item.service_url) : '';
+      if (!/^https?:\/\//i.test(serviceUrl)) throw new Error('KBS live API service_url missing');
+      return serviceUrl;
+    });
+  }
+
   // Samsung-native playback adapter for live HLS. The lifecycle follows
   // SamsungDForum/PlayerAVPlay (MIT-style license) and current Samsung AVPlay
   // documentation: open -> setListener/display -> prepareAsync -> play.
@@ -109,6 +142,26 @@
     var av = manager();
     diagnostics.available = !!av;
     if (!av || !url) return false;
+
+    var kbsCode = kbsChannelCode(url);
+    if (kbsCode) {
+      var requestToken = generation;
+      diagnostics.url = String(url);
+      diagnostics.lastError = '';
+      diagnostics.buffering = true;
+      if (callbacks && typeof callbacks.onbuffering === 'function') callbacks.onbuffering(true);
+      resolveKbsStream(kbsCode).then(function (serviceUrl) {
+        if (requestToken !== generation) return;
+        diagnostics.buffering = false;
+        if (callbacks && typeof callbacks.onbuffering === 'function') callbacks.onbuffering(false);
+        start(serviceUrl, callbacks);
+      }).catch(function (error) {
+        if (requestToken !== generation) return;
+        diagnostics.buffering = false;
+        fail(callbacks, requestToken, error);
+      });
+      return true;
+    }
 
     stopInternal(false);
     generation += 1;
