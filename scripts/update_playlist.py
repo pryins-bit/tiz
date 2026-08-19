@@ -4,6 +4,10 @@
 stream_candidates.json is refreshed automatically by the collector. The separate
 approved_channels.json snapshot is the promotion boundary: newly discovered
 channels are not exposed on the TV until explicitly approved.
+
+KBS1/KBS2 are special providers, not fixed M3U8 streams. Their playlist entries
+carry stable official KBS ON AIR identity URLs; the Samsung runtime resolves the
+transient `service_url` from the official KBS live API at playback time.
 """
 
 from __future__ import annotations
@@ -14,8 +18,29 @@ import re
 from pathlib import Path
 
 
+SPECIAL_CHANNELS = [
+    {
+        "tvg_id": "KBS1.official",
+        "channel": "KBS1",
+        "group": "공중파",
+        "url": "https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=globalList",
+    },
+    {
+        "tvg_id": "KBS2.official",
+        "channel": "KBS2",
+        "group": "공중파",
+        "url": "https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=12&ch_type=globalList",
+    },
+]
+SPECIAL_URLS = {row["url"] for row in SPECIAL_CHANNELS}
+
+
 def is_direct_hls(url: str) -> bool:
     return url.split("?", 1)[0].lower().endswith(".m3u8") and url.startswith(("http://", "https://"))
+
+
+def is_playlist_target(url: str) -> bool:
+    return is_direct_hls(url) or url in SPECIAL_URLS
 
 
 def clean_name(name: str) -> str:
@@ -119,6 +144,16 @@ def generate(rows: list[dict], approved_keys: set[str]) -> str:
 
     selected = sorted(best_by_channel.values(), key=channel_sort_key)
     output = ["#EXTM3U"]
+
+    # KBS1/KBS2 are not approved fixed stream candidates. They are stable
+    # identities for the official dynamic runtime provider and always remain at
+    # the front of the terrestrial lineup.
+    for row in SPECIAL_CHANNELS:
+        output.append(
+            f'#EXTINF:-1 tvg-id="{row["tvg_id"]}" group-title="{row["group"]}",{row["channel"]} (KBS 공식 동적)'
+        )
+        output.append(row["url"])
+
     seen_urls: set[str] = set()
     for row in selected:
         url = str(row["url"])
@@ -150,8 +185,8 @@ def validate(text: str) -> None:
         if i + 1 >= len(lines):
             raise ValueError("dangling #EXTINF without URL")
         url = lines[i + 1]
-        if not is_direct_hls(url):
-            raise ValueError(f"invalid HLS URL after EXTINF: {url}")
+        if not is_playlist_target(url):
+            raise ValueError(f"invalid playlist URL after EXTINF: {url}")
         if url in urls:
             raise ValueError(f"duplicate URL in promoted playlist: {url}")
         urls.add(url)
@@ -162,6 +197,9 @@ def validate(text: str) -> None:
         if current_category < last_category:
             raise ValueError("playlist category order is invalid")
         last_category = current_category
+
+    if not SPECIAL_URLS.issubset(urls):
+        raise ValueError("KBS1/KBS2 dynamic identities missing from playlist")
 
 
 def main() -> int:
@@ -178,7 +216,7 @@ def main() -> int:
     validate(playlist)
     Path(args.output).write_text(playlist, encoding="utf-8", newline="\n")
     count = sum(1 for line in playlist.splitlines() if line.startswith("#EXTINF:"))
-    print(f"promoted {count} approved unique 720p+ channels to {args.output}")
+    print(f"promoted {count} visible channels (including 2 dynamic KBS identities) to {args.output}")
     return 0
 
 
