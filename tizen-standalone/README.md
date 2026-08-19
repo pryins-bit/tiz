@@ -24,6 +24,12 @@ The app registers digits 0-9, ChannelUp/ChannelDown, the four color keys, and me
 
 Numeric tuning must also remain usable while the startup TV Home is visible. `scripts/validate_remote_contract.py` guards these requirements in CI.
 
+## KBS1/KBS2 official provider
+
+KBS1 and KBS2 are not stored as fixed HLS entries in `korea.m3u`. `app/kbs-provider.js` is loaded before `bootstrap.js`, injects the two official KBS ON AIR channel identities into the visible channel list, and resolves the current HLS URL only when the user selects KBS1 or KBS2. If dynamic extraction or AVPlay fails, the official KBS ON AIR web player is the fallback.
+
+The standalone sync must package `kbs-provider.js`. Ephemeral KBS HLS URLs are runtime-only data and must never be written back into repository playlists. Arbitrary third-party KBS relays are intentionally rejected.
+
 ## Experimental RF tuner model
 
 The branch `feature/rf-tuner-experiment-tizen6-20260819` additionally grants:
@@ -34,7 +40,7 @@ and packages `app/rf-tuner.js`. The Korea TV Home contains an **안테나 UHD/RF
 
 This branch intentionally does not use `webapis.broadcast.tuneDirect()`. The experiment tests the public TVWindow path only; direct RF channel selection is not assumed on the consumer Tizen 6 target.
 
-The RF branch is **not deployed**. Its actual `TV` source exposure, RF display, remote Channel +/- behavior, and IPTV return path require physical-TV verification before any merge or release.
+The RF branch is **not deployed**. Its KBS provider behavior, actual `TV` source exposure, RF display, remote Channel +/- behavior, and IPTV return path require physical-TV verification before any merge or release.
 
 ## TizenBrew Installer
 
@@ -56,8 +62,8 @@ The CI fallback author certificate is currently ephemeral. That is sufficient fo
 
 If seamless binary updates become necessary, configure one persistent author key only through encrypted GitHub Actions secrets and reuse it for every build. Never commit the private key, certificate bundle containing the private key, or its password.
 
-Playlist-only changes do not require a standalone rebuild because the app fetches the stable `main/korea.m3u` URL at runtime.
+Playlist-only changes do not require a standalone rebuild because the app fetches the stable `main/korea.m3u` URL at runtime. The KBS provider and RF tuner are shell assets, so their first introduction requires a WGT build when the owner later authorizes deployment.
 
 ## Verification boundary
 
-CI confirmation means the WGT has valid package structure, signature files, and declared privileges. It does **not** prove that Samsung's Tizen 6 package manager accepted the package, that TVWindow exposes the tuner on the target TV, or that the physical remote behaves as expected. Those remain real-device checks.
+CI confirmation means the WGT has valid package structure, signature files, and declared privileges. It does **not** prove that Samsung's Tizen 6 package manager accepted the package, that KBS ON AIR resolution works in the physical TV WebView, that TVWindow exposes the tuner, or that the physical remote behaves as expected. Those remain real-device checks.
