@@ -1,0 +1,118 @@
+name: Force and verify Update 1 standalone release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/force-update1-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dispatch standalone build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run build-standalone.yml --ref main
+          sleep 5
+          RUN_ID="$(gh run list --workflow build-standalone.yml --branch main --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$RUN_ID"
+          echo "BUILD_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          echo "Dispatched build run: $RUN_ID"
+
+      - name: Require standalone build success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run watch "$BUILD_RUN_ID" --exit-status
+
+      - name: Download and verify published rolling WGT
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -f KoreaTV.wgt
+          gh release download standalone-latest --pattern KoreaTV.wgt --clobber
+          python - <<'PY'
+          import hashlib
+          import json
+          import re
+          import zipfile
+          from pathlib import Path
+
+          path = Path('KoreaTV.wgt')
+          assert path.exists() and path.stat().st_size > 0, 'published KoreaTV.wgt missing'
+          with zipfile.ZipFile(path) as zf:
+              names = set(zf.namelist())
+              required = {
+                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
+                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js',
+                  'channel-policy.js', 'kbs-provider.js', 'style.css',
+                  'author-signature.xml', 'signature1.xml'
+              }
+              missing = sorted(required - names)
+              assert not missing, f'published WGT missing Update 1 files: {missing}'
+              index = zf.read('index.html').decode('utf-8')
+              assert 'src="channel-policy.js"' in index
+              assert 'src="kbs-provider.js"' in index
+              policy = zf.read('channel-policy.js').decode('utf-8')
+              assert 'expectedNormalCount: 54' in policy
+              assert 'expectedVisibleCount: 56' in policy
+              kbs = zf.read('kbs-provider.js').decode('utf-8')
+              assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
+              config = zf.read('config.xml').decode('utf-8')
+              match = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+              assert match, 'WGT version missing'
+              version = match.group(1)
+          digest = hashlib.sha256(path.read_bytes()).hexdigest()
+          Path('release-verify.json').write_text(json.dumps({
+              'version': version,
+              'sha256': digest,
+              'channel_contract': '54 ordinary + KBS1/KBS2 = 56',
+              'verified_files': ['channel-policy.js', 'kbs-provider.js'],
+          }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('Published WGT verified:', version, digest)
+          PY
+
+      - name: Record verified release on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          mkdir -p .release
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          data = json.loads(Path('release-verify.json').read_text(encoding='utf-8'))
+          data.update({
+              'build_run_id': os.environ['BUILD_RUN_ID'],
+              'verified_at': datetime.now(timezone.utc).isoformat(),
+              'release_tag': 'standalone-latest',
+              'asset': 'KoreaTV.wgt',
+          })
+          Path('.release/standalone-latest.json').write_text(
+              json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+          )
+          PY
+          git add .release/standalone-latest.json
+          if git diff --cached --quiet; then
+            echo "Release marker already current."
+            exit 0
+          fi
+          git commit -m "release: verify standalone-latest Update 1"
+          git push
