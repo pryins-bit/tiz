@@ -24,6 +24,18 @@ The app registers digits 0-9, ChannelUp/ChannelDown, the four color keys, and me
 
 Numeric tuning must also remain usable while the startup TV Home is visible. `scripts/validate_remote_contract.py` guards these requirements in CI.
 
+## Experimental RF tuner model
+
+The branch `feature/rf-tuner-experiment-tizen6-20260819` additionally grants:
+
+`http://tizen.org/privilege/tv.window`
+
+and packages `app/rf-tuner.js`. The Korea TV Home contains an **안테나 UHD/RF** card. The experiment queries `VIDEOSOURCE`, selects a source whose type is `TV`, then uses `tizen.tvwindow.setSource()` and `tizen.tvwindow.show()` to place the physical tuner video in front of the Web application. Back hides the TV window and restores the previously selected IPTV channel.
+
+This branch intentionally does not use `webapis.broadcast.tuneDirect()`. The experiment tests the public TVWindow path only; direct RF channel selection is not assumed on the consumer Tizen 6 target.
+
+The RF branch is **not deployed**. Its actual `TV` source exposure, RF display, remote Channel +/- behavior, and IPTV return path require physical-TV verification before any merge or release.
+
 ## TizenBrew Installer
 
 Every relevant push to `main` runs `.github/workflows/build-standalone.yml`. The workflow syncs the app assets, validates the manifest, installs the Tizen Studio CLI, creates an author certificate for the build, signs the package with the old-Tizen public distributor profile, verifies the signature files, and publishes/replaces `KoreaTV.wgt` in the rolling GitHub Release tagged `standalone-latest`.
@@ -48,4 +60,4 @@ Playlist-only changes do not require a standalone rebuild because the app fetche
 
 ## Verification boundary
 
-CI confirmation means the WGT has valid package structure, both required signature files, the remote-input runtime, and the required manifest privilege. It does **not** prove that Samsung's Tizen 6 package manager accepted the package or that the physical remote delivered every key on the target TV. Those remain real-device checks.
+CI confirmation means the WGT has valid package structure, signature files, and declared privileges. It does **not** prove that Samsung's Tizen 6 package manager accepted the package, that TVWindow exposes the tuner on the target TV, or that the physical remote behaves as expected. Those remain real-device checks.
