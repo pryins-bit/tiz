@@ -20,6 +20,7 @@ def main():
         'numeric-remote.js',
         'remote-input.js',
         'avplay-adapter.js',
+        'rf-tuner.js',
         'style.css',
     ):
         shutil.copy2(SRC / name, DST / name)
