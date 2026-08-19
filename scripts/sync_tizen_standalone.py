@@ -20,6 +20,7 @@ def main():
         'numeric-remote.js',
         'remote-input.js',
         'avplay-adapter.js',
+        'channel-policy.js',
         'kbs-provider.js',
         'rf-tuner.js',
         'style.css',
