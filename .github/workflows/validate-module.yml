@@ -10,6 +10,7 @@ on:
       - "scripts/validate_remote_contract.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
+      - "scripts/test_rf_tuner.js"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
   push:
@@ -22,6 +23,7 @@ on:
       - "scripts/validate_remote_contract.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
+      - "scripts/test_rf_tuner.js"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
 
@@ -42,13 +44,22 @@ jobs:
           node --check app/numeric-remote.js
           node --check app/remote-input.js
           node --check app/avplay-adapter.js
+          node --check app/rf-tuner.js
           node --check scripts/test_remote_input_runtime.js
           node --check scripts/test_avplay_adapter.js
+          node --check scripts/test_rf_tuner.js
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
       - name: Simulate Samsung AVPlay lifecycle
         run: node scripts/test_avplay_adapter.js
+      - name: Simulate Tizen TVWindow RF lifecycle
+        run: node scripts/test_rf_tuner.js
       - name: Verify Samsung remote input contract
         run: python scripts/validate_remote_contract.py
+      - name: Verify RF standalone privilege and packaging
+        run: |
+          grep -F 'http://tizen.org/privilege/tv.window' tizen-standalone/config.xml
+          grep -F "'rf-tuner.js'" scripts/sync_tizen_standalone.py
+          grep -F 'src="rf-tuner.js"' app/index.html
       - name: Verify fixed playlist contract
         run: grep -F "https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u" app/main.js
