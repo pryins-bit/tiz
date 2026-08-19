@@ -1,5 +1,6 @@
 name: Build standalone Tizen app
 
+# Update 1 release trigger: signed WGT must contain the 56-channel contract.
 on:
   workflow_dispatch:
   push:
@@ -11,6 +12,7 @@ on:
       - 'scripts/validate_remote_contract.py'
       - 'scripts/test_remote_input_runtime.js'
       - 'scripts/test_avplay_adapter.js'
+      - 'scripts/test_update1_runtime.js'
       - '.github/workflows/build-standalone.yml'
   pull_request:
     paths:
@@ -20,6 +22,7 @@ on:
       - 'scripts/validate_remote_contract.py'
       - 'scripts/test_remote_input_runtime.js'
       - 'scripts/test_avplay_adapter.js'
+      - 'scripts/test_update1_runtime.js'
       - '.github/workflows/build-standalone.yml'
 
 permissions:
@@ -44,14 +47,20 @@ jobs:
           node --check app/numeric-remote.js
           node --check app/remote-input.js
           node --check app/avplay-adapter.js
+          node --check app/channel-policy.js
+          node --check app/kbs-provider.js
           node --check scripts/test_remote_input_runtime.js
           node --check scripts/test_avplay_adapter.js
+          node --check scripts/test_update1_runtime.js
 
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
 
       - name: Simulate Samsung AVPlay lifecycle
         run: node scripts/test_avplay_adapter.js
+
+      - name: Validate Update 1 56-channel contract
+        run: node scripts/test_update1_runtime.js
 
       - name: Validate Samsung remote input and updater contract
         run: python scripts/validate_remote_contract.py
@@ -107,12 +116,13 @@ jobs:
               for node in root.findall('{http://tizen.org/ns/widgets}privilege')
           }
           assert 'http://tizen.org/privilege/tv.inputdevice' in privileges, 'tv.inputdevice privilege missing'
+          assert 'http://tizen.org/privilege/tv.window' not in privileges, 'Update 1 must not contain RF tv.window privilege'
           assert '<widget ' in text or '<widget\n' in text
           assert '<tizen:application ' in text
           assert 'xmlns:tizen="http://tizen.org/ns/widgets"' in text
           assert '<ns0:widget' not in text
           assert '<ns1:application' not in text
-          print('config.xml OK for TizenBrew Installer parser, Tizen IDs, and TV input privilege')
+          print('config.xml OK for TizenBrew Installer parser, Tizen IDs, TV input privilege, and no RF privilege')
           PY
 
       - name: Download Tizen Studio CLI
@@ -184,7 +194,8 @@ jobs:
               names = set(zf.namelist())
               required = {
                   'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
-                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js', 'style.css',
+                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js',
+                  'channel-policy.js', 'kbs-provider.js', 'style.css',
                   'author-signature.xml', 'signature1.xml'
               }
               missing = sorted(required - names)
@@ -200,8 +211,11 @@ jobs:
                   for node in root.findall('{http://tizen.org/ns/widgets}privilege')
               }
               assert 'http://tizen.org/privilege/tv.inputdevice' in privileges
+              assert 'http://tizen.org/privilege/tv.window' not in privileges
               index = zf.read('index.html').decode('utf-8')
-              assert 'src="bootstrap.js"' in index
+              assert 'src="channel-policy.js"' in index
+              assert 'src="kbs-provider.js"' in index
+              assert index.index('src="channel-policy.js"') < index.index('src="kbs-provider.js"') < index.index('src="bootstrap.js"')
               assert 'src="main.js"' not in index
               assert '$WEBAPIS/webapis/webapis.js' in index
               assert 'type="application/avplayer"' in index
@@ -217,10 +231,16 @@ jobs:
               assert "if (name === 'ChannelUp') return 1;" in remote
               avplay = zf.read('avplay-adapter.js').decode('utf-8')
               assert 'webapis.avplay' in avplay and 'prepareAsync' in avplay and 'setDisplayRect' in avplay
+              assert 'cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/' in avplay
+              policy = zf.read('channel-policy.js').decode('utf-8')
+              assert 'expectedNormalCount: 54' in policy
+              assert 'expectedVisibleCount: 56' in policy
+              kbs = zf.read('kbs-provider.js').decode('utf-8')
+              assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
               main = zf.read('main.js').decode('utf-8')
               assert 'setTimeout(openMom, 40)' in main
               assert 'avplay.start(channel.url' in main
-          print('KoreaTV.wgt contains signatures, Mom OS entry, AVPlay runtime, exact-once remote input, and TV input privilege')
+          print('KoreaTV.wgt verified: signed Update 1 shell, 54+2 channel contract, dynamic KBS, no RF privilege')
           PY
 
       - name: Package editable project ZIP
@@ -241,16 +261,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES='Signed Korea TV bootstrap shell for Samsung Tizen 6. Mom OS opens first, Samsung AVPlay is preferred for live HLS A/V sync, and channel UP/+ increases the visible channel number. Runtime updates still use the 450ms launch check. In TizenBrew Installer use: pryins-bit/tiz'
+          NOTES='Update 1 for Samsung Tizen 6. Exactly 56 visible channels: 54 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. Overseas broad FAST channels are excluded. RF tuner is not included. In TizenBrew Installer use: pryins-bit/tiz'
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
-              --title 'Korea TV Standalone (Mom OS + AVPlay)' \
+              --target "$GITHUB_SHA" \
+              --title 'Korea TV Update 1 - 56 Channels + KBS' \
               --notes "$NOTES" \
               --latest
           else
             gh release create standalone-latest \
               --target "$GITHUB_SHA" \
-              --title 'Korea TV Standalone (Mom OS + AVPlay)' \
+              --title 'Korea TV Update 1 - 56 Channels + KBS' \
               --notes "$NOTES" \
               --latest
           fi
