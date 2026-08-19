@@ -8,6 +8,7 @@
   <access origin="*" subdomains="true" />
   <tizen:privilege name="http://tizen.org/privilege/internet" />
   <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice" />
+  <tizen:privilege name="http://tizen.org/privilege/tv.window" />
   <name>Korea TV</name>
-  <description>Korea TV standalone HLS player</description>
+  <description>Korea TV standalone HLS player with experimental RF TVWindow mode</description>
 </widget>
