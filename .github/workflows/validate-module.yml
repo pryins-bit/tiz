@@ -10,6 +10,7 @@ on:
       - "scripts/validate_remote_contract.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
+      - "scripts/test_kbs_provider.js"
       - "scripts/test_rf_tuner.js"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
@@ -23,6 +24,7 @@ on:
       - "scripts/validate_remote_contract.py"
       - "scripts/test_remote_input_runtime.js"
       - "scripts/test_avplay_adapter.js"
+      - "scripts/test_kbs_provider.js"
       - "scripts/test_rf_tuner.js"
       - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/validate-module.yml"
@@ -44,22 +46,37 @@ jobs:
           node --check app/numeric-remote.js
           node --check app/remote-input.js
           node --check app/avplay-adapter.js
+          node --check app/kbs-provider.js
           node --check app/rf-tuner.js
           node --check scripts/test_remote_input_runtime.js
           node --check scripts/test_avplay_adapter.js
+          node --check scripts/test_kbs_provider.js
           node --check scripts/test_rf_tuner.js
       - name: Simulate Samsung remote regressions
         run: node scripts/test_remote_input_runtime.js
       - name: Simulate Samsung AVPlay lifecycle
         run: node scripts/test_avplay_adapter.js
+      - name: Simulate KBS official dynamic provider
+        run: node scripts/test_kbs_provider.js
       - name: Simulate Tizen TVWindow RF lifecycle
         run: node scripts/test_rf_tuner.js
       - name: Verify Samsung remote input contract
         run: python scripts/validate_remote_contract.py
-      - name: Verify RF standalone privilege and packaging
+      - name: Verify KBS provider and RF shell contracts
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('app/index.html').read_text(encoding='utf-8')
+          assert html.index('src="kbs-provider.js"') < html.index('src="bootstrap.js"') < html.index('src="rf-tuner.js"')
+          sync = Path('scripts/sync_tizen_standalone.py').read_text(encoding='utf-8')
+          assert "'kbs-provider.js'" in sync and "'rf-tuner.js'" in sync
+          playlist = Path('korea.m3u').read_text(encoding='utf-8')
+          assert 'KBS1.official' not in playlist and 'KBS2.official' not in playlist
+          assert 'vthanhtivi' not in playlist
+          provider = Path('app/kbs-provider.js').read_text(encoding='utf-8')
+          assert 'ch_code=11' in provider and 'ch_code=12' in provider
+          assert 'onair.kbs.co.kr' in provider
+          PY
           grep -F 'http://tizen.org/privilege/tv.window' tizen-standalone/config.xml
-          grep -F "'rf-tuner.js'" scripts/sync_tizen_standalone.py
-          grep -F 'src="rf-tuner.js"' app/index.html
       - name: Verify fixed playlist contract
         run: grep -F "https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u" app/main.js
