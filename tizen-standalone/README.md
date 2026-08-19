@@ -6,6 +6,18 @@ Source of truth remains `../app/`. Run `python scripts/sync_tizen_standalone.py`
 
 The standalone app keeps the same stable playlist URL: `https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u`.
 
+## Update 1 release checkpoint — 2026-08-20
+
+Update 1 is the currently deployed standalone shell target for Samsung `KU50UA7050FXKR` / Tizen 6.0.
+
+- visible contract: 54 reviewed ordinary channels + KBS1/KBS2 official dynamic providers = 56 total
+- KBS1/KBS2 resolve `channel_item[0].service_url` from the official KBS live API at playback time
+- reviewed foreign FAST channels remain outside the TV presentation layer
+- MBC Gangwon is omitted from the three 1080p regional MBC candidates for this release
+- RF / TVWindow tuner functionality is intentionally excluded and remains Update 2 only
+
+This checkpoint intentionally touches the standalone path so `build-standalone.yml` rebuilds and republishes `standalone-latest/KoreaTV.wgt` after the Update 1 main merge.
+
 ## Target TV and signing requirement
 
 The primary target is Samsung `KU50UA7050FXKR` running Tizen 6.0. TizenBrew Installer's built-in local re-sign step is only used on Tizen 7 or newer, so the Tizen 6 target requires a WGT that already contains valid author and distributor signatures.
