@@ -1,4 +1,8 @@
 #EXTM3U
+#EXTINF:-1 tvg-id="KBS1.official" group-title="공중파",KBS1 (KBS 공식 동적)
+https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=globalList
+#EXTINF:-1 tvg-id="KBS2.official" group-title="공중파",KBS2 (KBS 공식 동적)
+https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=12&ch_type=globalList
 #EXTINF:-1 tvg-id="HLANDTV.kr@SD" group-title="공중파",MBC Chuncheon (춘천 MBC) (1080p)
 https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8
 #EXTINF:-1 tvg-id="HLAODTV.kr@SD" group-title="공중파",MBC Chungbuk (MBC 충북) (720p)
@@ -11,6 +15,8 @@ http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8
 https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8
 #EXTINF:-1 tvg-id="OBSGyeonginTV.kr" group-title="공중파",OBS TV (1080p)
 https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8
+#EXTINF:-1 tvg-id="HLDRDTV.kr@SD" group-title="공중파",SBS CJB (720p)
+http://1.222.207.80:1935/live/cjbtv/playlist.m3u8
 #EXTINF:-1 tvg-id="HLCGDTV.kr@SD" group-title="공중파",SBS G1 (720p)
 http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8
 #EXTINF:-1 tvg-id="HLDHDTV.kr@SD" group-title="공중파",SBS KBC (720p)
@@ -103,3 +109,5 @@ https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8
 https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8
 #EXTINF:-1 tvg-id="GoodTV.kr@SD" group-title="종교",GoodTV (1080p)
 http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8
+#EXTINF:-1 tvg-id="RUTCTV.kr@SD" group-title="종교",RUTC TV (720p)
+http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8
