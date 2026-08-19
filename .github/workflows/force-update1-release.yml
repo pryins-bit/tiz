@@ -1,5 +1,6 @@
 name: Force and verify Update 1 standalone release
 
+# Retriggered after Update 1 runtime/playlist fixes and signed-WGT validation hardening.
 on:
   push:
     branches: [main]
@@ -71,6 +72,7 @@ jobs:
               kbs = zf.read('kbs-provider.js').decode('utf-8')
               assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
               config = zf.read('config.xml').decode('utf-8')
+              assert 'http://tizen.org/privilege/tv.window' not in config
               match = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
               assert match, 'WGT version missing'
               version = match.group(1)
