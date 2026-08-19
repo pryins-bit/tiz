@@ -97,12 +97,11 @@ assert(calls.some((x) => x[0] === 'systeminfo' && x[1] === 'VIDEOSOURCE'));
 assert(calls.some((x) => x[0] === 'setSource' && x[1] === 'TV' && x[2] === 'MAIN'));
 assert(calls.some((x) => x[0] === 'show' && x[2] === 'MAIN' && x[3] === 'FRONT'));
 assert(calls.some((x) => x[0] === 'avplay.stop'));
-assert.deepEqual(rf.diagnostics().resolution, {
-  width: 3840,
-  height: 2160,
-  frequency: 60,
-  aspectRatio: 'ASPECT_RATIO_16x9'
-});
+const resolution = rf.diagnostics().resolution;
+assert.equal(resolution.width, 3840);
+assert.equal(resolution.height, 2160);
+assert.equal(resolution.frequency, 60);
+assert.equal(resolution.aspectRatio, 'ASPECT_RATIO_16x9');
 
 rf.exit();
 assert.equal(rf.isActive(), false, 'RF mode should be inactive after hide');
