@@ -10,9 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const kbs1Page = 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=globalList';
+const kbs1Api = 'https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/11';
 const calls = [];
 
-function response(text, url = '') {
+function textResponse(text, url = '') {
   return {
     ok: true,
     status: 200,
@@ -23,14 +24,32 @@ function response(text, url = '') {
   };
 }
 
+function jsonResponse(data, url = '') {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    url,
+    headers: {},
+    json() { return Promise.resolve(data); }
+  };
+}
+
 function nativeFetch(input) {
   const url = typeof input === 'string' ? input : input.url;
   calls.push(['fetch', url]);
   if (url.includes('korea.m3u')) {
-    return Promise.resolve(response('#EXTM3U\n#EXTINF:-1 tvg-id="demo" group-title="기타",Demo\nhttps://example.test/demo.m3u8\n', url));
+    return Promise.resolve(textResponse('#EXTM3U\n#EXTINF:-1 tvg-id="demo" group-title="기타",Demo\nhttps://example.test/demo.m3u8\n', url));
   }
-  if (url.startsWith('https://onair.kbs.co.kr/')) {
-    return Promise.resolve(response('<script>window.live="https:\\/\\/cdn.kbs.example\\/live\\/master.m3u8?token=abc";</script>', url));
+  if (url.startsWith(kbs1Api)) {
+    return Promise.resolve(jsonResponse({
+      channel_item: [{ service_url: 'https://cdn.kbs.example/live/master.m3u8?token=abc' }]
+    }, url));
+  }
+  if (url.includes('/channel_code/12')) {
+    return Promise.resolve(jsonResponse({
+      channel_item: [{ service_url: 'https://cdn.kbs.example/live/kbs2.m3u8?token=def' }]
+    }, url));
   }
   return Promise.reject(new Error('unexpected fetch ' + url));
 }
@@ -65,7 +84,9 @@ vm.runInNewContext(source, context, { filename: 'kbs-provider.js' });
 assert(windowObject.KoreaTVKBS, 'KoreaTVKBS API missing');
 assert.equal(windowObject.KoreaTVKBS.channels.length, 2);
 assert.equal(windowObject.KoreaTVKBS.channels[0].name, 'KBS1');
+assert.equal(windowObject.KoreaTVKBS.channels[0].channelCode, '11');
 assert.equal(windowObject.KoreaTVKBS.channels[1].name, 'KBS2');
+assert.equal(windowObject.KoreaTVKBS.channels[1].channelCode, '12');
 
 const playlistResponse = await windowObject.fetch('https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u');
 const playlist = await playlistResponse.text();
@@ -76,9 +97,11 @@ assert(playlist.includes('ch_code=12'));
 assert(!playlist.includes('vthanhtivi'));
 
 assert.equal(
-  windowObject.KoreaTVKBS.extractM3U8('x https:\\/\\/cdn.example\\/a.m3u8?x=1 y'),
-  'https://cdn.example/a.m3u8?x=1'
+  windowObject.KoreaTVKBS.serviceUrlFromPayload({ channel_item: [{ service_url: 'https://cdn.example/live.m3u8' }] }),
+  'https://cdn.example/live.m3u8'
 );
+assert.equal(windowObject.KoreaTVKBS.serviceUrlFromPayload({ channel_item: [] }), '');
+assert.equal(windowObject.KoreaTVKBS.serviceUrlFromPayload({ channel_item: [{ service_url: 'javascript:bad' }] }), '');
 
 let startedUrl = '';
 windowObject.KoreaTVAVPlay = {
@@ -97,6 +120,6 @@ assert.equal(windowObject.KoreaTVAVPlay.start(kbs1Page, { onplaying() { played +
 await new Promise((resolve) => setTimeout(resolve, 0));
 assert.equal(startedUrl, 'https://cdn.kbs.example/live/master.m3u8?token=abc');
 assert.equal(played, 1);
-assert(calls.some((item) => item[0] === 'fetch' && item[1].startsWith('https://onair.kbs.co.kr/')));
+assert(calls.some((item) => item[0] === 'fetch' && item[1].startsWith(kbs1Api)));
 
-console.log('KBS official dynamic provider simulation OK');
+console.log('KBS official service_url provider simulation OK');
