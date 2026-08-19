@@ -1,41 +1,108 @@
 (function () {
   'use strict';
 
-  // Playlist transport guard: the PR #27 main.js deliberately cache-busts the
-  // raw GitHub URL on every launch (`?t=...` + no-store). On TV this can hit
-  // raw.githubusercontent.com rate limiting (HTTP 429). Rewrite only that one
-  // playlist request to jsDelivr's GitHub CDN, without touching the runtime
-  // updater or any channel stream URL. If the CDN fails, retry the stable raw
-  // URL once without the cache-busting query string.
-  var PLAYLIST_RAW_PREFIX = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
-  var PLAYLIST_CDN_URL = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@main/korea.m3u';
+  // Update 1 is a frozen presentation model. The broad discovery playlist at
+  // the merge checkpoint is immutable; this runtime filters that snapshot to
+  // the 54 owner-reviewed ordinary channels and injects KBS1/KBS2 as dynamic
+  // official-provider identities. This prevents a stale jsDelivr @main cache or
+  // a later collector refresh from expanding the TV back to ~170 channels.
+  var PLAYLIST_REQUEST_PREFIX = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
+  var UPDATE1_SNAPSHOT_SHA = '6980522daa03f157393b597bb7cecf0c732f7b48';
+  var PLAYLIST_CDN_URL = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@' + UPDATE1_SNAPSHOT_SHA + '/korea.m3u';
+  var PLAYLIST_RAW_FALLBACK = 'https://raw.githubusercontent.com/pryins-bit/tiz/' + UPDATE1_SNAPSHOT_SHA + '/korea.m3u';
+  var KBS1_PAGE = 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=globalList';
+  var KBS2_PAGE = 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=12&ch_type=globalList';
+  var ALLOWED_TVG_IDS = [
+    'HLANDTV.kr@SD', 'HLAODTV.kr@SD', 'HLCQDTV.kr@SD', 'HLAMDTV.kr@SD', 'HLATDTV.kr@SD',
+    'OBSGyeonginTV.kr', 'HLDRDTV.kr@SD', 'HLCGDTV.kr@SD', 'HLDHDTV.kr@SD', 'SBSTV.kr',
+    'HLDPDTV.kr@SD', 'KBSWorld.kr@SD', 'ArirangUN.kr@SD', 'KCTV.kr@SD', 'NBS.kr@SD',
+    'NHTV.kr@SD', 'KTV.kr@SD', 'NationalAssemblyTV.kr@SD', 'TBSTV.kr@SD', 'GugakTV.kr@SD',
+    'GSMyShop.kr@SD', 'GSShop.kr@SD', 'HyundaiHomeShopping.kr@SD', 'LotteHomeShopping.kr@SD',
+    'ShinsegaeTVShopping.kr@SD', 'ShoppingNT.kr@SD', 'WShopping.kr@SD', 'LotteOneTV.kr@SD',
+    'BBSTV.kr@SD', 'BTNTV.kr@SD', 'FGTV.kr@SD', 'GoodTV.kr@SD', 'RUTCTV.kr@SD',
+    '1c4de0451ea0c534', '406f02c36fb0bbf1', 'af16af24e5f20960', '9ef68bf1f70e70cc',
+    '05f68da886351d47', 'eaa3ed55fee9d4f4', '27ac5c3d7a0804bd', '73e33b20d6e24a46',
+    '481692dcd69648d3', 'a72fdf2094abe782', '4cdb7f1638ed16ed', '992b6985e7bd5b52',
+    '77318ecb610c4d51', '278c76a81570bb46', 'b913a82ad1339712', '9cfd89b909b48a6c',
+    'a204567db85d2bc8', 'e3a3870360bb68d5', '5ce3daa40449da98', '1909781e5872797b',
+    'TVChosun2.kr@SD'
+  ];
+  var allowed = {};
+  ALLOWED_TVG_IDS.forEach(function (id) { allowed[String(id).toLowerCase()] = true; });
+
   var nativeFetch = window.fetch;
+
+  function playlistAttr(meta, name) {
+    var match = new RegExp(name + '="([^"]*)"', 'i').exec(meta || '');
+    return match ? match[1] : '';
+  }
+
+  function prepareUpdate1Playlist(text) {
+    var lines = String(text || '').replace(/\r/g, '').split('\n');
+    var output = [
+      '#EXTM3U',
+      '#EXTINF:-1 tvg-id="KBS1.official" group-title="공중파",KBS1 (KBS 공식 동적)',
+      KBS1_PAGE,
+      '#EXTINF:-1 tvg-id="KBS2.official" group-title="공중파",KBS2 (KBS 공식 동적)',
+      KBS2_PAGE
+    ];
+    var seen = {};
+
+    for (var i = 0; i < lines.length; i += 1) {
+      var line = String(lines[i] || '').trim();
+      if (line.indexOf('#EXTINF:') !== 0) continue;
+      var id = playlistAttr(line, 'tvg-id');
+      var key = id.toLowerCase();
+      var media = i + 1 < lines.length ? String(lines[i + 1] || '').trim() : '';
+      if (!allowed[key] || seen[key] || !/^https?:\/\//i.test(media)) continue;
+      seen[key] = true;
+      output.push(line);
+      output.push(media);
+      i += 1;
+    }
+
+    return output.join('\n') + '\n';
+  }
+
+  function playlistResponse(response, text) {
+    return {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      headers: response.headers,
+      text: function () { return Promise.resolve(text); }
+    };
+  }
+
+  function fetchPreparedPlaylist(url, init) {
+    return nativeFetch.call(window, url, init).then(function (response) {
+      if (!response || !response.ok) throw new Error('playlist HTTP ' + (response ? response.status : 'unknown'));
+      return response.text().then(function (text) {
+        return playlistResponse(response, prepareUpdate1Playlist(text));
+      });
+    });
+  }
+
   if (typeof nativeFetch === 'function') {
     window.fetch = function (input, init) {
       var url = typeof input === 'string' ? input : (input && input.url ? String(input.url) : '');
-      if (url.indexOf(PLAYLIST_RAW_PREFIX) === 0) {
+      if (url.indexOf(PLAYLIST_REQUEST_PREFIX) === 0) {
         var nextInit = {};
         var sourceInit = init || {};
         Object.keys(sourceInit).forEach(function (key) { nextInit[key] = sourceInit[key]; });
         nextInit.cache = 'default';
-        return nativeFetch.call(window, PLAYLIST_CDN_URL, nextInit)
-          .then(function (response) {
-            if (response && response.ok) return response;
-            return nativeFetch.call(window, PLAYLIST_RAW_PREFIX, nextInit);
-          })
-          .catch(function () {
-            return nativeFetch.call(window, PLAYLIST_RAW_PREFIX, nextInit);
-          });
+        return fetchPreparedPlaylist(PLAYLIST_CDN_URL, nextInit).catch(function () {
+          return fetchPreparedPlaylist(PLAYLIST_RAW_FALLBACK, nextInit);
+        });
       }
       return nativeFetch.call(window, input, init);
     };
   }
 
-  // Update 1 KBS compatibility path for already-installed Tizen 6 shells.
-  // The playlist carries only the stable official KBS ON AIR identity URL.
-  // When AVPlay receives one of those URLs, resolve the transient service_url
-  // from the official KBS live API and pass only that transient URL to AVPlay.
-  // Nothing returned by this API is persisted as a stable M3U8.
+  // KBS1/KBS2 are not fixed M3U8 entries. The stable playlist URL is only an
+  // identity. Resolve the transient service_url from the official KBS API every
+  // time the user selects KBS1 or KBS2.
   var KBS_API_BASE = 'https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/';
 
   function kbsChannelCode(url) {
