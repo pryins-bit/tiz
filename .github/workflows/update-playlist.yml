@@ -53,18 +53,20 @@ jobs:
       - name: Generate playlist
         run: python scripts/update_playlist.py
 
-      - name: Validate generated playlist
-        shell: bash
+      - name: Validate generated Update 1 playlist
         run: |
-          set -euo pipefail
-          test "$(head -n 1 korea.m3u)" = "#EXTM3U"
-          test "$(grep -c '^#EXTINF:' korea.m3u)" -gt 0
-          awk '
-            /^#EXTINF:/ { need_url=1; next }
-            need_url && /^https?:\/\/.*\.m3u8([?].*)?$/ { need_url=0; next }
-            need_url { print "Invalid URL after EXTINF: " $0 > "/dev/stderr"; exit 1 }
-            END { if (need_url) exit 1 }
-          ' korea.m3u
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.update_playlist import validate
+
+          text = Path('korea.m3u').read_text(encoding='utf-8')
+          validate(text)
+          count = sum(1 for line in text.splitlines() if line.startswith('#EXTINF:'))
+          assert count == 56, f'Update 1 playlist must contain exactly 56 visible channels, got {count}'
+          assert 'tvg-id="KBS1.official"' in text
+          assert 'tvg-id="KBS2.official"' in text
+          print('Update 1 playlist OK: 54 ordinary + KBS1/KBS2 = 56')
+          PY
 
       - name: Commit changes
         if: github.event_name != 'pull_request'
