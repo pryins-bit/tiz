@@ -1,19 +1,23 @@
 (function () {
   'use strict';
 
-  // KBS1/KBS2 are intentionally NOT fixed M3U8 entries. The provider injects
-  // official KBS ON AIR page URLs into the normal channel list and resolves a
-  // current HLS URL at playback time. If resolution is not possible on the
-  // target Tizen WebView, the official ON AIR page is used as the final fallback.
+  // KBS1/KBS2 are intentionally NOT fixed M3U8 entries. Their stable identity
+  // is the official KBS channel code; the playable service_url is transient and
+  // must be resolved again when the channel is selected.
+  var KBS_API_BASE = 'https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/';
   var CHANNELS = [
     {
       id: 'KBS1.official',
       name: 'KBS1',
+      channelCode: '11',
+      apiUrl: KBS_API_BASE + '11',
       pageUrl: 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=globalList'
     },
     {
       id: 'KBS2.official',
       name: 'KBS2',
+      channelCode: '12',
+      apiUrl: KBS_API_BASE + '12',
       pageUrl: 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=12&ch_type=globalList'
     }
   ];
@@ -33,7 +37,10 @@
   function specialM3U() {
     var lines = [];
     CHANNELS.forEach(function (channel) {
-      lines.push('#EXTINF:-1 tvg-id="' + channel.id + '" group-title="공중파",' + channel.name + ' (KBS 공식 ON AIR)');
+      lines.push('#EXTINF:-1 tvg-id="' + channel.id + '" group-title="공중파",' + channel.name + ' (KBS 공식 동적)');
+      // main.js accepts only http(s) channel URLs. This stable official ON AIR
+      // route is used as the channel identity; it is never passed to AVPlay as
+      // media because the wrapper below resolves apiUrl -> service_url first.
       lines.push(channel.pageUrl);
     });
     return lines.join('\n') + '\n';
@@ -82,34 +89,26 @@
     };
   }
 
-  function unescapePage(text) {
-    return String(text || '')
-      .replace(/\\u002[fF]/g, '/')
-      .replace(/\\\//g, '/')
-      .replace(/&amp;/g, '&');
-  }
-
-  function extractM3U8(text) {
-    var source = unescapePage(text);
-    var absolute = /(https?:\/\/[^"'<>\\\s]+?\.m3u8(?:\?[^"'<>\\\s]*)?)/i.exec(source);
-    if (absolute) return absolute[1];
-    var protocolRelative = /(\/\/[^"'<>\\\s]+?\.m3u8(?:\?[^"'<>\\\s]*)?)/i.exec(source);
-    if (protocolRelative) return 'https:' + protocolRelative[1];
-    return '';
+  function serviceUrlFromPayload(data) {
+    var item = data && data.channel_item && data.channel_item[0];
+    var url = item && item.service_url ? String(item.service_url) : '';
+    if (!/^https?:\/\//i.test(url)) return '';
+    return url;
   }
 
   function resolveOfficialStream(channel) {
     if (!nativeFetch) return Promise.reject(new Error('fetch unavailable'));
-    return nativeFetch(channel.pageUrl + '&_=' + Date.now(), {
+    return nativeFetch(channel.apiUrl + '?_=' + Date.now(), {
       cache: 'no-store',
-      credentials: 'omit'
+      credentials: 'omit',
+      headers: { 'Accept': 'application/json' }
     }).then(function (response) {
-      if (!response.ok) throw new Error('KBS ON AIR HTTP ' + response.status);
-      return response.text();
-    }).then(function (html) {
-      var streamUrl = extractM3U8(html);
-      if (!streamUrl) throw new Error('KBS dynamic HLS URL not exposed in page response');
-      return streamUrl;
+      if (!response.ok) throw new Error('KBS live API HTTP ' + response.status);
+      return response.json();
+    }).then(function (data) {
+      var serviceUrl = serviceUrlFromPayload(data);
+      if (!serviceUrl) throw new Error('KBS live API service_url missing');
+      return serviceUrl;
     });
   }
 
@@ -120,7 +119,7 @@
 
   function showOfficialWeb(channel, callbacks, expectedGeneration) {
     removeWebFallback();
-    if (!document || !document.body) {
+    if (typeof document === 'undefined' || !document.body) {
       if (callbacks && typeof callbacks.onerror === 'function') callbacks.onerror('kbs-web-fallback-unavailable');
       return;
     }
@@ -160,10 +159,10 @@
       var channel = channelByPageUrl(url);
       if (!channel) return originalStart.call(api, url, callbacks);
 
-      resolveOfficialStream(channel).then(function (streamUrl) {
+      resolveOfficialStream(channel).then(function (serviceUrl) {
         if (expectedGeneration !== generation) return;
         var proxiedCallbacks = callbacks || {};
-        var started = originalStart.call(api, streamUrl, {
+        var started = originalStart.call(api, serviceUrl, {
           onbuffering: proxiedCallbacks.onbuffering,
           onplaying: proxiedCallbacks.onplaying,
           onerror: function () {
@@ -177,9 +176,9 @@
         showOfficialWeb(channel, callbacks || {}, expectedGeneration);
       });
 
-      // main.js expects a synchronous boolean from the AVPlay adapter. KBS
-      // resolution is asynchronous, so accepting the request here prevents the
-      // normal HTML5 URL path from treating the official page itself as HLS.
+      // main.js expects a synchronous boolean from the AVPlay adapter. KBS API
+      // resolution is asynchronous, so accept this channel request immediately
+      // and keep the official page URL away from the HTML5/HLS fallback path.
       return true;
     };
 
@@ -219,7 +218,7 @@
     channels: CHANNELS.slice(),
     injectSpecialChannels: injectSpecialChannels,
     resolveOfficialStream: resolveOfficialStream,
-    extractM3U8: extractM3U8,
+    serviceUrlFromPayload: serviceUrlFromPayload,
     hideWebFallback: removeWebFallback,
     installedApi: function () { return installedApi; }
   };
