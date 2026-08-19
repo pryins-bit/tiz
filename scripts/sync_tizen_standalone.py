@@ -20,6 +20,8 @@ def main():
         'numeric-remote.js',
         'remote-input.js',
         'avplay-adapter.js',
+        'channel-policy.js',
+        'kbs-provider.js',
         'style.css',
     ):
         shutil.copy2(SRC / name, DST / name)
