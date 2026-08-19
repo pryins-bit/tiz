@@ -33,14 +33,17 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - Numeric channel entry must work even when Mom OS Home, Korea TV Home, or another panel is open. Never restore the old `if (panelsOpen()) return;` behavior that silently discarded digits.
 - Arrow keys are panel-navigation keys whenever Mom OS Home, Korea TV Home, browser, or search is visible. The physical Channel +/- rocker may still directly tune while a panel is visible.
 - Prioritize Korean terrestrial/public channels and affiliates: KBS, MBC, SBS affiliates, EBS, TBC, KNN, KBC, UBC, JTV, CJB, G1, and JIBS.
+- **KBS1 and KBS2 are a deliberate exception to the normal fixed-M3U channel pipeline.** Do not add either as a fixed `.m3u8`, relay, proxy, or approved-channel URL in `korea.m3u`/`approved_channels.json`. `app/kbs-provider.js` must inject KBS1/KBS2 as special channels using the official KBS ON AIR routes (`ch_code=11` and `ch_code=12`), resolve the current HLS URL only at playback time, and fall back to the official KBS ON AIR web player if dynamic HLS resolution or AVPlay fails.
+- Ephemeral KBS HLS URLs discovered at runtime must never be persisted into repository data. Do not use arbitrary third-party KBS relays such as the rejected `vthanhtivi` staging approach.
+- `app/kbs-provider.js` must load before `bootstrap.js` so its playlist-injection and AVPlay hooks are installed before the normal runtime starts. The standalone sync/build must package `kbs-provider.js`.
 - Discovery playlists may be searched for candidates, but only source files with a GitHub file update within the last 365 days are eligible for automated collection.
 - Automated collection must keep only Korean HLS streams with observed resolution of at least 720p. Lower-resolution streams remain only in the registry/history as excluded records, not in `stream_candidates.json`.
 - Deduplicate exact streams by canonicalized URL. If the same URL appears in multiple source lists, keep one stream record and merge its source provenance. Different URLs for the same channel may remain as fallbacks.
 - Persist latest validation state in `stream_registry.json` and append status/resolution changes to `stream_history.jsonl` so dead/recovered/quality changes are auditable.
 - Discovery playlists must never be copied wholesale into `korea.m3u`. Promotion to the TV playlist remains a separate reviewed step represented by `approved_channels.json`.
-- `korea.m3u` may contain only approved channels that are still currently present in `stream_candidates.json` at 720p or higher. Newly discovered channels are not auto-promoted merely because validation succeeds.
+- `korea.m3u` may contain only approved channels that are still currently present in `stream_candidates.json` at 720p or higher. Newly discovered channels are not auto-promoted merely because validation succeeds. KBS1/KBS2 are outside this rule because they are `SPECIAL_PROVIDER` channels, not persisted M3U streams.
 - For an approved channel with multiple live URLs, select one best current URL by observed resolution, live probe confidence, HTTPS preference, and non-raw-IP preference.
-- Prefer direct HLS `.m3u8` links. Prefer broadcaster/CDN HTTPS endpoints; retain HTTP/raw-IP direct-HLS only when it is the best recently verified fallback.
+- Prefer direct HLS `.m3u8` links. Prefer broadcaster/CDN HTTPS endpoints; retain HTTP/raw-IP direct-HLS only when it is the best recently verified fallback. This preference applies to normal M3U channels, not KBS1/KBS2 SPECIAL_PROVIDER channels.
 - If a stream fails on the target Samsung TV, remove or quarantine it before adding more candidates. Real-TV success has higher priority than list size.
 - The playlist should load automatically. Live TV should then allow immediate channel switching and automatically skip a genuinely failed channel during the current session, but failure-history skipping must never turn one physical channel press into two visible channel steps.
 - Do not host, proxy, decrypt, or bypass access controls for video streams.
@@ -69,7 +72,8 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 ## Architecture
 
 - `package.json`: TizenBrew application-module manifest and module-level remote key registration list.
-- `app/index.html`: stable installed TV shell. It loads the Samsung WebAPI library, provides the AVPlay object plus Mom/Korea TV UI containers, and loads `bootstrap.js`; it does not directly load runtime scripts.
+- `app/index.html`: stable installed TV shell. It loads the Samsung WebAPI library, provides the AVPlay object plus Mom/Korea TV UI containers, loads `kbs-provider.js` before `bootstrap.js`, and does not directly load normal runtime scripts.
+- `app/kbs-provider.js`: shell-side KBS1/KBS2 SPECIAL_PROVIDER. It injects the two official KBS ON AIR channels into the visible playlist, dynamically resolves current HLS only when selected, wraps AVPlay for those channels, and falls back to the official ON AIR web player. It must not contain a persisted KBS relay URL.
 - `app/bootstrap.js`: launch-time updater. It checks `runtime-version.json` for up to 450 ms, uses cached/packaged fallback immediately on slow/offline launches, downloads newer runtime files when a new version is confirmed, and executes exactly one runtime.
 - `app/runtime-version.json`: tiny runtime update manifest. Its version is automatically stamped after runtime-source changes on `main`.
 - `app/avplay-adapter.js`: remotely refreshable Samsung AVPlay adapter. It owns the native `webapis.avplay` open/listener/display/prepare/play/pause/stop/close lifecycle and diagnostics.
@@ -78,20 +82,21 @@ This repository is the owner's one-click Korean IPTV module for Samsung TizenBre
 - `app/numeric-remote.js`: remotely refreshable numeric channel buffer and direct channel-number tuning helper.
 - `app/style.css`: remotely refreshable 1920x1080 TV/player/overlay UI, including AVPlay plane and Mom OS Home.
 - `.github/workflows/stamp-runtime-version.yml`: stamps the source commit into `runtime-version.json` whenever a runtime file changes on `main`.
-- `korea.m3u`: stable approved 720p+ playlist consumed by the runtime.
+- `korea.m3u`: stable approved 720p+ playlist consumed by the runtime; KBS1/KBS2 are intentionally not stored here.
 - `stream_sources.json`: recent GitHub Korean IPTV discovery sources and freshness limits.
 - `scripts/collect_hd_korean_streams.py`: source freshness check, M3U parsing, URL dedupe, HLS/ffprobe validation, 720p filtering and registry/history generation.
 - `stream_candidates.json`: only currently observed 720p-or-higher Korean HLS candidates, deduplicated by canonical URL and logical channel.
-- `approved_channels.json`: reviewed channel identities allowed to appear in `korea.m3u`.
+- `approved_channels.json`: reviewed channel identities allowed to appear in `korea.m3u`; KBS1/KBS2 SPECIAL_PROVIDER channels are intentionally absent.
 - `scripts/approve_current_candidates.py`: one-shot helper that snapshots the current 720p+ candidate set into `approved_channels.json`; do not rerun automatically once the approval file exists.
 - `stream_registry.json`: latest result for every unique discovered URL, including failures and sub-720p results.
 - `stream_history.jsonl`: append-only status/resolution-change log.
 - `.github/workflows/check-streams.yml`: scheduled/manual collection and validation; refreshes the playlist only from the already approved set.
 - `scripts/update_playlist.py`: selects the best current 720p+ URL for each approved channel and emits `korea.m3u`.
 - `.github/workflows/update-playlist.yml`: scheduled/manual approved-playlist regeneration and structure validation.
-- `.github/workflows/validate-module.yml`: static module plus Samsung remote/Mom OS/AVPlay/update contract validation.
+- `.github/workflows/validate-module.yml`: static module plus Samsung remote/Mom OS/AVPlay/KBS-provider/update contract validation.
 - `scripts/test_remote_input_runtime.js`: deterministic simulation for Samsung channel direction, duplicate events, panel navigation, and remote registration aliases.
 - `scripts/test_avplay_adapter.js`: deterministic mocked Samsung AVPlay lifecycle simulation.
+- `scripts/test_kbs_provider.js`: deterministic simulation for KBS1/KBS2 injection, official ON AIR route selection, dynamic HLS extraction and AVPlay delegation.
 - `scripts/validate_remote_contract.py`: checks module keys, standalone privilege, runtime registration, Mom OS startup, AVPlay wiring, exact channel direction, updater entry point, 450 ms launch budget, manifest, and standalone sync coverage.
 - `.github/workflows/build-standalone.yml`: builds the stable bootstrap shell, creates an old-Tizen-compatible signed WGT, verifies signature/updater/Mom OS/AVPlay/remote files, and publishes the rolling `standalone-latest` release.
 - `THIRD_PARTY_NOTICES.md`: third-party licenses/references.
@@ -132,25 +137,32 @@ The AVPlay/WebAPI object addition changes the stable HTML shell, so the first re
 
 Rejected: adding arbitrary audio delays to hide drift before confirming the playback engine/source timestamps. Also rejected: importing an unrelated IPTV application wholesale. SamsungDForum's PlayerAVPlay sample and TV VOD reference are used as lifecycle/input references, with project-specific state management, updater integration, and tests retained locally.
 
+### 2026-08-19 KBS fixed-stream misunderstanding
+
+A staging attempt incorrectly treated KBS as another fixed M3U stream and added a third-party regional relay. That contradicted the owner's already-defined architecture. The correction is structural: KBS1/KBS2 are SPECIAL_PROVIDER channels driven from KBS official ON AIR at playback time. The mistaken fixed relay was removed from `korea.m3u` and `approved_channels.json` and must not be revived by future agents.
+
+Rejected: trying more hard-coded KBS CDN URLs after device failures, persisting dynamically discovered tokenized URLs, or routing KBS through arbitrary third-party relays. These approaches confuse a transient source URL with the stable channel identity and recreate the same failure mode.
+
 ## Validation
 
 For module/shell changes:
 
 1. Parse `package.json` and `app/runtime-version.json` as JSON.
-2. Run `node --check app/bootstrap.js`, `node --check app/main.js`, `node --check app/numeric-remote.js`, `node --check app/remote-input.js`, and `node --check app/avplay-adapter.js`.
+2. Run `node --check app/bootstrap.js`, `node --check app/main.js`, `node --check app/numeric-remote.js`, `node --check app/remote-input.js`, `node --check app/avplay-adapter.js`, and `node --check app/kbs-provider.js`.
 3. Run `node scripts/test_remote_input_runtime.js` and require `3 -> 4` for one UP/+ press plus duplicate suppression.
 4. Run `node scripts/test_avplay_adapter.js` and require open/listener/display/prepare/play plus pause/resume/stop/close lifecycle success.
-5. Run `python scripts/validate_remote_contract.py`.
-6. Verify `index.html` loads `$WEBAPIS/webapis/webapis.js`, contains an `application/avplayer` object, loads `bootstrap.js`, and does not directly load the runtime scripts.
-7. Verify the updater check budget remains 450 ms, fixed to `raw.githubusercontent.com/pryins-bit/tiz/main/app/`, with cached and packaged fallbacks.
-8. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
-9. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
-10. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml`.
-11. Verify the WGT contains `bootstrap.js`, `runtime-version.json`, all packaged fallback runtime files including `avplay-adapter.js`, and `tv.inputdevice` privilege.
-12. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
-13. Inspect GitHub Actions conclusions after merge, including runtime-version stamping when runtime files changed.
-14. Report TV launch/update/remote/AV-sync behavior separately; CI success is not Samsung/Tizen real-device confirmation.
-15. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
+5. Run `node scripts/test_kbs_provider.js`; require KBS1/KBS2 injection, `ch_code=11/12`, dynamic HLS extraction, AVPlay delegation, and no fixed third-party relay in the M3U.
+6. Run `python scripts/validate_remote_contract.py`.
+7. Verify `index.html` loads `$WEBAPIS/webapis/webapis.js`, contains an `application/avplayer` object, loads `kbs-provider.js` before `bootstrap.js`, and does not directly load the normal runtime scripts.
+8. Verify the updater check budget remains 450 ms, fixed to `raw.githubusercontent.com/pryins-bit/tiz/main/app/`, with cached and packaged fallbacks.
+9. Verify `packageType=app`, `appName`, and `appPath` point to a real file.
+10. For standalone WGT builds, verify `tizen:application package` is exactly 10 alphanumeric characters and `tizen:application id` begins with `${package}.`.
+11. For standalone WGT builds intended for the Tizen 6 target, verify the package contains both `author-signature.xml` and `signature1.xml`.
+12. Verify the WGT contains `bootstrap.js`, `kbs-provider.js`, `runtime-version.json`, all packaged fallback runtime files including `avplay-adapter.js`, and `tv.inputdevice` privilege.
+13. Verify `PLAYLIST_URL` still targets the stable raw `main/korea.m3u` URL.
+14. Inspect GitHub Actions conclusions after merge, including runtime-version stamping when runtime files changed.
+15. Report TV launch/update/remote/AV-sync/KBS-provider behavior separately; CI success is not Samsung/Tizen real-device confirmation.
+16. Verify no Supabase service-role/secret key, persistent signing key, or personal dashboard data are committed.
 
 For stream collection/updater changes:
 
@@ -159,7 +171,7 @@ For stream collection/updater changes:
 3. Require a valid HLS manifest and observed video resolution >=720p for `stream_candidates.json`.
 4. Keep excluded/dead/geo-ambiguous results in `stream_registry.json` rather than silently forgetting them.
 5. Record status or resolution transitions in `stream_history.jsonl`.
-6. Require membership in `approved_channels.json` before emitting a channel into `korea.m3u`.
+6. Require membership in `approved_channels.json` before emitting a channel into `korea.m3u`; KBS1/KBS2 remain the explicit SPECIAL_PROVIDER exception and must not be emitted there.
 7. Inspect GitHub Actions conclusion and report the exact candidate and promoted counts.
 
 ## Rollback

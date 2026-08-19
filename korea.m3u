@@ -1,6 +1,4 @@
 #EXTM3U
-#EXTINF:-1 tvg-id="HLKGDTV.kr" group-title="공중파",KBS1 대구 (720p)
-https://code.vthanhtivi.pw/getlink/kbs/30_11/playlist.m3u8
 #EXTINF:-1 tvg-id="HLANDTV.kr@SD" group-title="공중파",MBC 춘천 (1080p)
 https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8
 #EXTINF:-1 tvg-id="HLAODTV.kr@SD" group-title="공중파",MBC 충북 (720p)
