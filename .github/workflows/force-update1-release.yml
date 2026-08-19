@@ -1,6 +1,6 @@
 name: Force and verify Update 1 standalone release
 
-# Retriggered after Update 1 runtime/playlist fixes and signed-WGT validation hardening.
+# Direct publish path for the already-verified PR #58 signed artifact.
 on:
   push:
     branches: [main]
@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: write
-  actions: write
+  actions: read
 
 jobs:
   release:
@@ -18,32 +18,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Dispatch standalone build
+      - name: Download verified Update 1 artifact from PR 58
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh workflow run build-standalone.yml --ref main
-          sleep 5
-          RUN_ID="$(gh run list --workflow build-standalone.yml --branch main --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')"
-          test -n "$RUN_ID"
-          echo "BUILD_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
-          echo "Dispatched build run: $RUN_ID"
+          rm -rf release-src
+          mkdir release-src
+          cd release-src
+          gh run download 32264855278 -n korea-tv-tizen-project -R pryins-bit/tiz
+          find . -maxdepth 3 -type f -print
+          WGT="$(find . -type f -name 'KoreaTV.wgt' -print -quit)"
+          test -n "$WGT"
+          cp "$WGT" ../KoreaTV.wgt
 
-      - name: Require standalone build success
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Verify signed Update 1 WGT before publishing
         run: |
-          set -euo pipefail
-          gh run watch "$BUILD_RUN_ID" --exit-status
-
-      - name: Download and verify published rolling WGT
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          rm -f KoreaTV.wgt
-          gh release download standalone-latest --pattern KoreaTV.wgt --clobber
           python - <<'PY'
           import hashlib
           import json
@@ -52,7 +42,7 @@ jobs:
           from pathlib import Path
 
           path = Path('KoreaTV.wgt')
-          assert path.exists() and path.stat().st_size > 0, 'published KoreaTV.wgt missing'
+          assert path.exists() and path.stat().st_size > 0
           with zipfile.ZipFile(path) as zf:
               names = set(zf.namelist())
               required = {
@@ -62,59 +52,84 @@ jobs:
                   'author-signature.xml', 'signature1.xml'
               }
               missing = sorted(required - names)
-              assert not missing, f'published WGT missing Update 1 files: {missing}'
+              assert not missing, f'WGT missing Update 1 files: {missing}'
               index = zf.read('index.html').decode('utf-8')
               assert 'src="channel-policy.js"' in index
               assert 'src="kbs-provider.js"' in index
+              assert index.index('src="channel-policy.js"') < index.index('src="kbs-provider.js"') < index.index('src="bootstrap.js"')
               policy = zf.read('channel-policy.js').decode('utf-8')
               assert 'expectedNormalCount: 54' in policy
               assert 'expectedVisibleCount: 56' in policy
               kbs = zf.read('kbs-provider.js').decode('utf-8')
               assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
+              assert 'cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/' in kbs
               config = zf.read('config.xml').decode('utf-8')
               assert 'http://tizen.org/privilege/tv.window' not in config
-              match = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
-              assert match, 'WGT version missing'
-              version = match.group(1)
+              m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+              assert m, 'version missing'
+              version = m.group(1)
           digest = hashlib.sha256(path.read_bytes()).hexdigest()
           Path('release-verify.json').write_text(json.dumps({
               'version': version,
               'sha256': digest,
+              'source_run_id': 32264855278,
+              'source_artifact_id': 9369769414,
               'channel_contract': '54 ordinary + KBS1/KBS2 = 56',
-              'verified_files': ['channel-policy.js', 'kbs-provider.js'],
           }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          print('Published WGT verified:', version, digest)
+          print('Verified Update 1 WGT:', version, digest)
           PY
 
-      - name: Record verified release on main
-        shell: bash
+      - name: Publish standalone-latest release now
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          NOTES='Update 1 for Samsung Tizen 6. Exactly 56 visible channels: 54 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. Overseas broad FAST channels are excluded. RF tuner is not included. In TizenBrew Installer use: pryins-bit/tiz'
+          if gh release view standalone-latest -R pryins-bit/tiz >/dev/null 2>&1; then
+            gh release edit standalone-latest -R pryins-bit/tiz \
+              --target main \
+              --title 'Korea TV Update 1 - 56 Channels + KBS' \
+              --notes "$NOTES" \
+              --latest
+          else
+            gh release create standalone-latest -R pryins-bit/tiz \
+              --target main \
+              --title 'Korea TV Update 1 - 56 Channels + KBS' \
+              --notes "$NOTES" \
+              --latest
+          fi
+          gh release upload standalone-latest KoreaTV.wgt -R pryins-bit/tiz --clobber
+          gh release view standalone-latest -R pryins-bit/tiz --json tagName,name,url,publishedAt
+
+      - name: Verify published asset and record success marker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -f published-KoreaTV.wgt
+          gh release download standalone-latest -R pryins-bit/tiz --pattern KoreaTV.wgt --output published-KoreaTV.wgt --clobber
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          expected = json.loads(Path('release-verify.json').read_text(encoding='utf-8'))
+          published = Path('published-KoreaTV.wgt')
+          actual = hashlib.sha256(published.read_bytes()).hexdigest()
+          assert actual == expected['sha256'], (actual, expected['sha256'])
+          expected['published_sha256'] = actual
+          expected['release_tag'] = 'standalone-latest'
+          expected['asset'] = 'KoreaTV.wgt'
+          Path('standalone-latest.json').write_text(json.dumps(expected, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('Published asset hash verified:', actual)
+          PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           mkdir -p .release
-          python - <<'PY'
-          import json
-          import os
-          from datetime import datetime, timezone
-          from pathlib import Path
-
-          data = json.loads(Path('release-verify.json').read_text(encoding='utf-8'))
-          data.update({
-              'build_run_id': os.environ['BUILD_RUN_ID'],
-              'verified_at': datetime.now(timezone.utc).isoformat(),
-              'release_tag': 'standalone-latest',
-              'asset': 'KoreaTV.wgt',
-          })
-          Path('.release/standalone-latest.json').write_text(
-              json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
-          )
-          PY
+          cp standalone-latest.json .release/standalone-latest.json
           git add .release/standalone-latest.json
           if git diff --cached --quiet; then
-            echo "Release marker already current."
-            exit 0
+            echo 'Release marker already current.'
+          else
+            git commit -m 'release: verify standalone-latest Update 1'
+            git push
           fi
-          git commit -m "release: verify standalone-latest Update 1"
-          git push
