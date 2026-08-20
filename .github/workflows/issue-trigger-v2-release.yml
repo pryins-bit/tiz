@@ -1,0 +1,19 @@
+name: Explicit V2 release dispatcher
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    if: github.event.issue.title == '[deploy] V2 47-channel release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch proven force-release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run force-update1-release.yml -R pryins-bit/tiz --ref main
