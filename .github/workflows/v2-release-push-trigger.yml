@@ -1,0 +1,20 @@
+name: V2 release push dispatcher
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release-v2-trigger.txt'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch proven V2 force-release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run force-update1-release.yml -R pryins-bit/tiz --ref main
