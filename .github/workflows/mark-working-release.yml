@@ -1,0 +1,59 @@
+name: Mark standalone-latest as working
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mark-working-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Append physical-TV working confirmation to release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view standalone-latest --json body --jq '.body // ""' > /tmp/release-body.md
+          if ! grep -Fq '✅ 작동 확인' /tmp/release-body.md; then
+            cat >> /tmp/release-body.md <<'EOF'
+
+## ✅ 작동 확인
+- Samsung KU50UA7050FXKR / Tizen 6.0에서 실제 설치 후 작동 확인
+- 확인일: 2026-08-20
+- Update 1 기준: 54 일반 채널 + KBS1/KBS2 = 56채널
+- 이 릴리즈는 이후 채널 정리 실험의 기준점으로 보존
+EOF
+          fi
+          gh release edit standalone-latest --notes-file /tmp/release-body.md
+
+      - name: Record physical-TV confirmation in release marker
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('.release/standalone-latest.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          data['physical_tv_status'] = '✅ 작동 확인'
+          data['physical_tv_verified_on'] = '2026-08-20'
+          data['physical_tv_device'] = 'Samsung KU50UA7050FXKR / Tizen 6.0'
+          data['baseline_policy'] = '보존: 이후 채널 정리 실험은 별도 브랜치/버전에서 진행'
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          git add .release/standalone-latest.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "release: record physical TV working confirmation"
+          git push
