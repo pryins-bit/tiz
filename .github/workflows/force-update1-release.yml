@@ -27,7 +27,6 @@ jobs:
           mkdir release-src
           cd release-src
           gh run download 32264855278 -n korea-tv-tizen-project -R pryins-bit/tiz
-          find . -maxdepth 3 -type f -print
           WGT="$(find . -type f -name 'KoreaTV.wgt' -print -quit)"
           test -n "$WGT"
           cp "$WGT" ../KoreaTV.wgt
@@ -75,6 +74,10 @@ jobs:
               'source_run_id': 32264855278,
               'source_artifact_id': 9369769414,
               'channel_contract': '54 ordinary + KBS1/KBS2 = 56',
+              'physical_tv_status': '✅ 작동 확인',
+              'physical_tv_verified_on': '2026-08-20',
+              'physical_tv_device': 'Samsung KU50UA7050FXKR / Tizen 6.0',
+              'baseline_policy': '보존: 이후 채널 정리 실험은 별도 브랜치/버전에서 진행',
           }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           print('Verified Update 1 WGT:', version, digest)
           PY
@@ -84,18 +87,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES='Update 1 for Samsung Tizen 6. Exactly 56 visible channels: 54 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. Overseas broad FAST channels are excluded. RF tuner is not included. In TizenBrew Installer use: pryins-bit/tiz'
+          cat > /tmp/release-notes.md <<'EOF'
+          Update 1 for Samsung Tizen 6. Exactly 56 visible channels: 54 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. Overseas broad FAST channels are excluded. RF tuner is not included.
+
+          ## ✅ 작동 확인
+          - Samsung KU50UA7050FXKR / Tizen 6.0 실제 설치 후 작동 확인
+          - 확인일: 2026-08-20
+          - 이 릴리즈를 이후 채널 정리 실험의 기준점으로 보존
+
+          TizenBrew Installer: `pryins-bit/tiz`
+          EOF
           if gh release view standalone-latest -R pryins-bit/tiz >/dev/null 2>&1; then
             gh release edit standalone-latest -R pryins-bit/tiz \
               --target main \
-              --title 'Korea TV Update 1 - 56 Channels + KBS' \
-              --notes "$NOTES" \
+              --title 'Korea TV Update 1 - 56 Channels + KBS ✅ 작동 확인' \
+              --notes-file /tmp/release-notes.md \
               --latest
           else
             gh release create standalone-latest -R pryins-bit/tiz \
               --target main \
-              --title 'Korea TV Update 1 - 56 Channels + KBS' \
-              --notes "$NOTES" \
+              --title 'Korea TV Update 1 - 56 Channels + KBS ✅ 작동 확인' \
+              --notes-file /tmp/release-notes.md \
               --latest
           fi
           gh release upload standalone-latest KoreaTV.wgt -R pryins-bit/tiz --clobber
@@ -130,6 +142,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Release marker already current.'
           else
-            git commit -m 'release: verify standalone-latest Update 1'
+            git commit -m 'release: mark standalone-latest physically working'
             git push
           fi
