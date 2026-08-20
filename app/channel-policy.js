@@ -1,25 +1,14 @@
 (function () {
   'use strict';
 
-  // Update 1 reviewed lineup: 54 ordinary playlist channels + KBS1/KBS2
-  // special-provider channels = 56 visible channels total.
-  //
-  // This allowlist intentionally preserves the broad discovery/registry data
-  // while preventing unreviewed foreign FAST channels from appearing on the TV.
-  // MBC Gangwon (HLAQDTV.kr@SD) is intentionally omitted: the owner requested
-  // reducing the three 1080p regional MBC streams to two, and this raw-IP HTTP
-  // source is the least robust transport of the three when no final device-side
-  // winner was recorded.
+  // V2 finalized lineup: 45 ordinary playlist channels + KBS1/KBS2
+  // special-provider channels = 47 visible channels total.
+  // Broad discovery/registry data stay available for audit and future review,
+  // but only this owner-approved presentation set is visible on the TV.
   var ALLOWED_TVG_IDS = [
     'HLANDTV.kr@SD',
-    'HLAODTV.kr@SD',
-    'HLCQDTV.kr@SD',
-    'HLAMDTV.kr@SD',
     'HLATDTV.kr@SD',
     'OBSGyeonginTV.kr',
-    'HLDRDTV.kr@SD',
-    'HLCGDTV.kr@SD',
-    'HLDHDTV.kr@SD',
     'SBSTV.kr',
     'HLDPDTV.kr@SD',
     'KBSWorld.kr@SD',
@@ -41,9 +30,6 @@
     'LotteOneTV.kr@SD',
     'BBSTV.kr@SD',
     'BTNTV.kr@SD',
-    'FGTV.kr@SD',
-    'GoodTV.kr@SD',
-    'RUTCTV.kr@SD',
     '1c4de0451ea0c534',
     '406f02c36fb0bbf1',
     'af16af24e5f20960',
@@ -143,7 +129,7 @@
     allowedTvgIds: ALLOWED_TVG_IDS.slice(),
     filterPlaylist: filterPlaylist,
     isAllowed: isAllowed,
-    expectedNormalCount: 54,
-    expectedVisibleCount: 56
+    expectedNormalCount: 45,
+    expectedVisibleCount: 47
   };
 }());
