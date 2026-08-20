@@ -53,7 +53,7 @@ jobs:
       - name: Generate playlist
         run: python scripts/update_playlist.py
 
-      - name: Validate generated Update 1 playlist
+      - name: Validate generated V2 playlist
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -62,10 +62,16 @@ jobs:
           text = Path('korea.m3u').read_text(encoding='utf-8')
           validate(text)
           count = sum(1 for line in text.splitlines() if line.startswith('#EXTINF:'))
-          assert count == 56, f'Update 1 playlist must contain exactly 56 visible channels, got {count}'
+          assert count == 47, f'V2 playlist must contain exactly 47 visible channels, got {count}'
           assert 'tvg-id="KBS1.official"' in text
           assert 'tvg-id="KBS2.official"' in text
-          print('Update 1 playlist OK: 54 ordinary + KBS1/KBS2 = 56')
+          for removed in (
+              'HLAODTV.kr@SD', 'HLCQDTV.kr@SD', 'HLAMDTV.kr@SD',
+              'HLDRDTV.kr@SD', 'HLCGDTV.kr@SD', 'HLDHDTV.kr@SD',
+              'FGTV.kr@SD', 'GoodTV.kr@SD', 'RUTCTV.kr@SD',
+          ):
+              assert f'tvg-id="{removed}"' not in text, f'removed V2 channel leaked into playlist: {removed}'
+          print('V2 playlist OK: 45 ordinary + KBS1/KBS2 = 47')
           PY
 
       - name: Commit changes

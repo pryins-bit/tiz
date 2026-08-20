@@ -1,6 +1,6 @@
 name: Build standalone Tizen app
 
-# Update 1 release trigger: signed WGT must contain the 56-channel contract.
+# V2 release: signed WGT must contain the finalized 47-channel contract.
 on:
   workflow_dispatch:
   push:
@@ -59,7 +59,7 @@ jobs:
       - name: Simulate Samsung AVPlay lifecycle
         run: node scripts/test_avplay_adapter.js
 
-      - name: Validate Update 1 56-channel contract
+      - name: Validate V2 47-channel contract
         run: node scripts/test_update1_runtime.js
 
       - name: Validate Samsung remote input and updater contract
@@ -116,7 +116,7 @@ jobs:
               for node in root.findall('{http://tizen.org/ns/widgets}privilege')
           }
           assert 'http://tizen.org/privilege/tv.inputdevice' in privileges, 'tv.inputdevice privilege missing'
-          assert 'http://tizen.org/privilege/tv.window' not in privileges, 'Update 1 must not contain RF tv.window privilege'
+          assert 'http://tizen.org/privilege/tv.window' not in privileges, 'V2 must not contain RF tv.window privilege'
           assert '<widget ' in text or '<widget\n' in text
           assert '<tizen:application ' in text
           assert 'xmlns:tizen="http://tizen.org/ns/widgets"' in text
@@ -232,15 +232,17 @@ jobs:
               avplay = zf.read('avplay-adapter.js').decode('utf-8')
               assert 'webapis.avplay' in avplay and 'prepareAsync' in avplay and 'setDisplayRect' in avplay
               assert 'cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/' in avplay
+              assert 'FGTV.kr@SD' not in avplay and 'GoodTV.kr@SD' not in avplay and 'RUTCTV.kr@SD' not in avplay
               policy = zf.read('channel-policy.js').decode('utf-8')
-              assert 'expectedNormalCount: 54' in policy
-              assert 'expectedVisibleCount: 56' in policy
+              assert 'expectedNormalCount: 45' in policy
+              assert 'expectedVisibleCount: 47' in policy
+              assert 'HLAODTV.kr@SD' not in policy and 'HLDRDTV.kr@SD' not in policy
               kbs = zf.read('kbs-provider.js').decode('utf-8')
               assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
               main = zf.read('main.js').decode('utf-8')
               assert 'setTimeout(openMom, 40)' in main
               assert 'avplay.start(channel.url' in main
-          print('KoreaTV.wgt verified: signed Update 1 shell, 54+2 channel contract, dynamic KBS, no RF privilege')
+          print('KoreaTV.wgt verified: signed V2 shell, 45+2=47 channel contract, dynamic KBS, no RF privilege')
           PY
 
       - name: Package editable project ZIP
@@ -256,26 +258,61 @@ jobs:
             KoreaTV.wgt
           if-no-files-found: error
 
-      - name: Publish rolling GitHub release
+      - name: Preserve verified 56-channel rollback release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES='Update 1 for Samsung Tizen 6. Exactly 56 visible channels: 54 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. Overseas broad FAST channels are excluded. RF tuner is not included. In TizenBrew Installer use: pryins-bit/tiz'
+          set -euo pipefail
+          ROLLBACK_TAG='working-56ch-20260820'
+          EXPECTED='08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
+          if gh release view "$ROLLBACK_TAG" >/dev/null 2>&1; then
+            echo "$ROLLBACK_TAG already preserved; leaving it untouched."
+            exit 0
+          fi
+          rm -f rollback-KoreaTV.wgt
+          gh release download standalone-latest --pattern KoreaTV.wgt --output rollback-KoreaTV.wgt
+          ACTUAL="$(sha256sum rollback-KoreaTV.wgt | awk '{print $1}')"
+          test "$ACTUAL" = "$EXPECTED"
+          gh release create "$ROLLBACK_TAG" \
+            --target 'a41b6c8df211843f8c143df744422fd081c6207e' \
+            --title 'Korea TV - 56 Channels - ✅ 작동 확인 롤백 기준점' \
+            --notes 'Samsung KU50UA7050FXKR / Tizen 6.0에서 실제 작동 확인된 56채널 Update 1 기준점. SHA-256 08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1. V2 이후에도 롤백용으로 보존하며 덮어쓰지 않는다.' \
+            rollback-KoreaTV.wgt
+
+      - name: Publish V2 rolling and permanent releases
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES='V2 finalized channel lineup for Samsung Tizen 6. Exactly 47 visible channels: 45 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. MBC is reduced to Chuncheon + Yeosu; SBS group to SBS TV + UBC; FGTV, GoodTV and RUTC TV are excluded. BBS/BTN remain. RF tuner is not included. In TizenBrew Installer use: pryins-bit/tiz'
+
           if gh release view standalone-latest >/dev/null 2>&1; then
             gh release edit standalone-latest \
               --target "$GITHUB_SHA" \
-              --title 'Korea TV Update 1 - 56 Channels + KBS' \
+              --title 'Korea TV V2 - 47 Channels + KBS' \
               --notes "$NOTES" \
               --latest
           else
             gh release create standalone-latest \
               --target "$GITHUB_SHA" \
-              --title 'Korea TV Update 1 - 56 Channels + KBS' \
+              --title 'Korea TV V2 - 47 Channels + KBS' \
               --notes "$NOTES" \
               --latest
           fi
           gh release upload standalone-latest KoreaTV.wgt --clobber
+
+          V2_TAG='v2-47ch-20260820'
+          if gh release view "$V2_TAG" >/dev/null 2>&1; then
+            echo "$V2_TAG already exists; preserving the first successful V2 binary."
+          else
+            gh release create "$V2_TAG" \
+              --target "$GITHUB_SHA" \
+              --title 'Korea TV V2 - 47 Channels' \
+              --notes "$NOTES" \
+              KoreaTV.wgt
+          fi
 
       - name: Publish formal v1.0.0 release checkpoint
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'v1.0.0 stable checkpoint')

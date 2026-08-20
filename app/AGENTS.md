@@ -1,14 +1,17 @@
-# app/AGENTS.md — Update 1 TV contract
+# app/AGENTS.md — V2 TV contract
 
 This file is subordinate to the repository root `AGENTS.md` and adds durable requirements for the installed Korea TV shell.
 
-## Update 1 visible lineup
+## V2 visible lineup
 
 - Target device: Samsung KU50UA7050FXKR / Tizen 6.0.
-- The Update 1 visible channel contract is exactly **56 channels** when all 54 allowed ordinary channels are present in the fetched playlist: 54 ordinary playlist channels plus KBS1 and KBS2 special-provider channels.
+- The finalized V2 visible channel contract is exactly **47 channels** when all 45 approved ordinary channels are present: 45 ordinary playlist channels plus KBS1 and KBS2 special-provider channels.
 - `channel-policy.js` is the reviewed TV presentation boundary. Broad discovery/registry data may remain in repository data files, but unapproved entries must not become visible merely because an automated collector rediscovers them.
-- The review decision for former positions 56–62 is removal from TV presentation: Bloomberg TV+, France 24, Euronews English, FIFA+, TRT World, Newsmax and NTD.
-- The 1080p MBC trio is reduced from three to two for Update 1. MBC Gangwon (`HLAQDTV.kr@SD`) is omitted; Chuncheon and Yeosu remain. The decision log explains that the final physical-TV weakest station name was not recorded and that Gangwon was chosen conservatively because its candidate is raw-IP HTTP.
+- Preserve the previously verified 56-channel WGT/release as a rollback baseline; do not rewrite its protected backup/reference state.
+- V2 removes additional duplicate affiliates: MBC Chungbuk, MBC Daejeon, MBC Mokpo, SBS CJB, SBS G1, and SBS KBC.
+- V2 retains the reduced terrestrial set: MBC Chuncheon + MBC Yeosu, and SBS TV + SBS UBC.
+- V2 removes the Christian channels FGTV, GoodTV, and RUTC TV from the approved presentation set. BBS and BTN remain because the owner's current removal decision was specifically for the Christian channels.
+- The earlier overseas removals remain excluded: Bloomberg TV+, France 24, Euronews English, FIFA+, TRT World, Newsmax and NTD.
 - Do not silently expand the allowlist. Additions/removals require an explicit owner decision and an audit entry in `channel_decision_log.md`.
 
 ## KBS1 / KBS2 special provider
@@ -22,7 +25,7 @@ This file is subordinate to the repository root `AGENTS.md` and adds durable req
 - `channel-policy.js` must load before `kbs-provider.js`, and `kbs-provider.js` must load before `bootstrap.js`.
 - Standalone WGT packaging must include both `channel-policy.js` and `kbs-provider.js`.
 
-## Update boundary
+## Release boundary
 
-- Update 1 contains **no RF tuner / TVWindow functionality**. Do not add `rf-tuner.js`, an RF tile, `tv.window` privilege, or Broadcast/tuneDirect code to this release.
-- RF functionality belongs only to the separately staged Update 2 / RF branch.
+- V2 contains **no RF tuner / TVWindow functionality**. Do not add `rf-tuner.js`, an RF tile, `tv.window` privilege, or Broadcast/tuneDirect code to this release.
+- RF functionality remains separate from the 47-channel V2 release.

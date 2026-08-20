@@ -1,11 +1,10 @@
 (function () {
   'use strict';
 
-  // Update 1 is a frozen presentation model. The broad discovery playlist at
-  // the merge checkpoint is immutable; this runtime filters that snapshot to
-  // the 54 owner-reviewed ordinary channels and injects KBS1/KBS2 as dynamic
-  // official-provider identities. This prevents a stale jsDelivr @main cache or
-  // a later collector refresh from expanding the TV back to ~170 channels.
+  // V2 keeps the immutable Update 1 snapshot as the transport source, but
+  // narrows presentation to the 45 owner-approved ordinary channels and injects
+  // KBS1/KBS2 as dynamic official-provider identities. This also updates already
+  // installed bootstrap shells without requiring a WGT reinstall.
   var PLAYLIST_REQUEST_PREFIX = 'https://raw.githubusercontent.com/pryins-bit/tiz/main/korea.m3u';
   var UPDATE1_SNAPSHOT_SHA = '6980522daa03f157393b597bb7cecf0c732f7b48';
   var PLAYLIST_CDN_URL = 'https://cdn.jsdelivr.net/gh/pryins-bit/tiz@' + UPDATE1_SNAPSHOT_SHA + '/korea.m3u';
@@ -13,19 +12,17 @@
   var KBS1_PAGE = 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=globalList';
   var KBS2_PAGE = 'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=12&ch_type=globalList';
   var ALLOWED_TVG_IDS = [
-    'HLANDTV.kr@SD', 'HLAODTV.kr@SD', 'HLCQDTV.kr@SD', 'HLAMDTV.kr@SD', 'HLATDTV.kr@SD',
-    'OBSGyeonginTV.kr', 'HLDRDTV.kr@SD', 'HLCGDTV.kr@SD', 'HLDHDTV.kr@SD', 'SBSTV.kr',
-    'HLDPDTV.kr@SD', 'KBSWorld.kr@SD', 'ArirangUN.kr@SD', 'KCTV.kr@SD', 'NBS.kr@SD',
-    'NHTV.kr@SD', 'KTV.kr@SD', 'NationalAssemblyTV.kr@SD', 'TBSTV.kr@SD', 'GugakTV.kr@SD',
+    'HLANDTV.kr@SD', 'HLATDTV.kr@SD', 'OBSGyeonginTV.kr', 'SBSTV.kr', 'HLDPDTV.kr@SD',
+    'KBSWorld.kr@SD', 'ArirangUN.kr@SD', 'KCTV.kr@SD', 'NBS.kr@SD', 'NHTV.kr@SD',
+    'KTV.kr@SD', 'NationalAssemblyTV.kr@SD', 'TBSTV.kr@SD', 'GugakTV.kr@SD',
     'GSMyShop.kr@SD', 'GSShop.kr@SD', 'HyundaiHomeShopping.kr@SD', 'LotteHomeShopping.kr@SD',
     'ShinsegaeTVShopping.kr@SD', 'ShoppingNT.kr@SD', 'WShopping.kr@SD', 'LotteOneTV.kr@SD',
-    'BBSTV.kr@SD', 'BTNTV.kr@SD', 'FGTV.kr@SD', 'GoodTV.kr@SD', 'RUTCTV.kr@SD',
-    '1c4de0451ea0c534', '406f02c36fb0bbf1', 'af16af24e5f20960', '9ef68bf1f70e70cc',
-    '05f68da886351d47', 'eaa3ed55fee9d4f4', '27ac5c3d7a0804bd', '73e33b20d6e24a46',
-    '481692dcd69648d3', 'a72fdf2094abe782', '4cdb7f1638ed16ed', '992b6985e7bd5b52',
-    '77318ecb610c4d51', '278c76a81570bb46', 'b913a82ad1339712', '9cfd89b909b48a6c',
-    'a204567db85d2bc8', 'e3a3870360bb68d5', '5ce3daa40449da98', '1909781e5872797b',
-    'TVChosun2.kr@SD'
+    'BBSTV.kr@SD', 'BTNTV.kr@SD', '1c4de0451ea0c534', '406f02c36fb0bbf1',
+    'af16af24e5f20960', '9ef68bf1f70e70cc', '05f68da886351d47', 'eaa3ed55fee9d4f4',
+    '27ac5c3d7a0804bd', '73e33b20d6e24a46', '481692dcd69648d3', 'a72fdf2094abe782',
+    '4cdb7f1638ed16ed', '992b6985e7bd5b52', '77318ecb610c4d51', '278c76a81570bb46',
+    'b913a82ad1339712', '9cfd89b909b48a6c', 'a204567db85d2bc8', 'e3a3870360bb68d5',
+    '5ce3daa40449da98', '1909781e5872797b', 'TVChosun2.kr@SD'
   ];
   var allowed = {};
   ALLOWED_TVG_IDS.forEach(function (id) { allowed[String(id).toLowerCase()] = true; });
@@ -37,7 +34,7 @@
     return match ? match[1] : '';
   }
 
-  function prepareUpdate1Playlist(text) {
+  function prepareV2Playlist(text) {
     var lines = String(text || '').replace(/\r/g, '').split('\n');
     var output = [
       '#EXTM3U',
@@ -79,7 +76,7 @@
     return nativeFetch.call(window, url, init).then(function (response) {
       if (!response || !response.ok) throw new Error('playlist HTTP ' + (response ? response.status : 'unknown'));
       return response.text().then(function (text) {
-        return playlistResponse(response, prepareUpdate1Playlist(text));
+        return playlistResponse(response, prepareV2Playlist(text));
       });
     });
   }
