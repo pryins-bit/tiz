@@ -1,0 +1,20 @@
+{
+  "status": "published-and-verified",
+  "channel_contract": "45 ordinary + KBS1/KBS2 = 47",
+  "release_tag": "v2-47ch-20260820",
+  "rolling_tag": "standalone-latest",
+  "rollback_tag": "working-56ch-20260820",
+  "v2": {
+    "version": "0.5.122",
+    "sha256": "c554bfcadccecce2bcfca6ce306448344de701ccb2fa1ffec718a7409765df9f"
+  },
+  "rolling": {
+    "version": "0.5.121",
+    "sha256": "33fd9f2e3249aac3069931ac6060cd858835a87efdd0da693a3efe2935ea9230"
+  },
+  "rollback_56_sha256": "08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1",
+  "rf_included": false,
+  "verification_workflow_run": 32347829332,
+  "verification_artifact": 9398683845,
+  "verified_on": "2026-08-20"
+}
