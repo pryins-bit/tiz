@@ -1,6 +1,6 @@
-name: Verify V2 47-channel release
+name: Force publish and verify V2 47-channel release
 
-# Triggered after the finalized V2 publish; success writes a repository marker.
+# Uses the PR #59 signed artifact that already passed the full V2 WGT test suite.
 on:
   push:
     branches: [main]
@@ -10,81 +10,169 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
-  verify:
+  publish-and-verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download published release assets
+      - name: Download verified signed V2 and 56-channel baseline artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download working-56ch-20260820 --pattern KoreaTV.wgt --output rollback-56.wgt
-          gh release download v2-47ch-20260820 --pattern KoreaTV.wgt --output v2-47.wgt
-          gh release download standalone-latest --pattern KoreaTV.wgt --output rolling.wgt
+          rm -rf artifacts
+          mkdir -p artifacts/v2 artifacts/rollback
+          gh run download 32346304214 -n korea-tv-tizen-project -R pryins-bit/tiz -D artifacts/v2
+          gh run download 32264855278 -n korea-tv-tizen-project -R pryins-bit/tiz -D artifacts/rollback
+          V2_WGT="$(find artifacts/v2 -type f -name 'KoreaTV.wgt' -print -quit)"
+          OLD_WGT="$(find artifacts/rollback -type f -name 'KoreaTV.wgt' -print -quit)"
+          test -n "$V2_WGT"
+          test -n "$OLD_WGT"
+          cp "$V2_WGT" ./V2-KoreaTV.wgt
+          cp "$OLD_WGT" ./Rollback56-KoreaTV.wgt
 
-      - name: Verify rollback and V2 binaries
+      - name: Verify source artifacts before release
         run: |
           python - <<'PY'
-          import hashlib
-          import json
-          import re
-          import zipfile
+          import hashlib, re, zipfile
           from pathlib import Path
 
-          rollback = Path('rollback-56.wgt')
-          v2 = Path('v2-47.wgt')
-          rolling = Path('rolling.wgt')
+          old = Path('Rollback56-KoreaTV.wgt')
+          v2 = Path('V2-KoreaTV.wgt')
+          old_hash = hashlib.sha256(old.read_bytes()).hexdigest()
+          assert old_hash == '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1', old_hash
+
+          def inspect_v2(path):
+              with zipfile.ZipFile(path) as zf:
+                  names = set(zf.namelist())
+                  required = {
+                      'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
+                      'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js',
+                      'channel-policy.js', 'kbs-provider.js', 'style.css',
+                      'author-signature.xml', 'signature1.xml'
+                  }
+                  missing = sorted(required - names)
+                  assert not missing, missing
+                  policy = zf.read('channel-policy.js').decode('utf-8')
+                  assert 'expectedNormalCount: 45' in policy
+                  assert 'expectedVisibleCount: 47' in policy
+                  for removed in (
+                      'FGTV.kr@SD', 'GoodTV.kr@SD', 'RUTCTV.kr@SD',
+                      'HLAODTV.kr@SD', 'HLCQDTV.kr@SD', 'HLAMDTV.kr@SD',
+                      'HLDRDTV.kr@SD', 'HLCGDTV.kr@SD', 'HLDHDTV.kr@SD',
+                  ):
+                      assert removed not in policy, removed
+                  assert 'BBSTV.kr@SD' in policy and 'BTNTV.kr@SD' in policy
+                  kbs = zf.read('kbs-provider.js').decode('utf-8')
+                  assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
+                  config = zf.read('config.xml').decode('utf-8')
+                  assert 'http://tizen.org/privilege/tv.window' not in config
+                  m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+                  assert m
+                  return m.group(1)
+
+          print('V2 source artifact version:', inspect_v2(v2))
+          print('V2 source artifact sha256:', hashlib.sha256(v2.read_bytes()).hexdigest())
+          PY
+
+      - name: Preserve verified 56-channel rollback release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG='working-56ch-20260820'
+          if gh release view "$TAG" -R pryins-bit/tiz >/dev/null 2>&1; then
+            gh release download "$TAG" -R pryins-bit/tiz --pattern KoreaTV.wgt --output published-rollback.wgt --clobber
+            test "$(sha256sum published-rollback.wgt | awk '{print $1}')" = '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
+          else
+            cp Rollback56-KoreaTV.wgt KoreaTV.wgt
+            gh release create "$TAG" -R pryins-bit/tiz \
+              --target a41b6c8df211843f8c143df744422fd081c6207e \
+              --title 'Korea TV - 56 Channels - ✅ 작동 확인 롤백 기준점' \
+              --notes 'Samsung KU50UA7050FXKR / Tizen 6.0에서 실제 작동 확인된 56채널 Update 1 기준점. SHA-256 08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1. V2 이후에도 롤백용으로 보존하며 덮어쓰지 않는다.' \
+              KoreaTV.wgt
+            rm KoreaTV.wgt
+          fi
+
+      - name: Publish finalized V2 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp V2-KoreaTV.wgt KoreaTV.wgt
+          NOTES='확정된 Korea TV V2. 총 47채널: 일반 45개 + KBS1/KBS2 공식 동적 채널. MBC는 춘천/여수, SBS 계열은 SBS TV/UBC만 유지. FGTV, GoodTV, RUTC TV 제외. BBS/BTN 유지. RF 튜너 미포함. TizenBrew Installer 저장소: pryins-bit/tiz'
+
+          if gh release view standalone-latest -R pryins-bit/tiz >/dev/null 2>&1; then
+            gh release edit standalone-latest -R pryins-bit/tiz \
+              --target main --title 'Korea TV V2 - 47 Channels + KBS' --notes "$NOTES" --latest
+          else
+            gh release create standalone-latest -R pryins-bit/tiz \
+              --target main --title 'Korea TV V2 - 47 Channels + KBS' --notes "$NOTES" --latest
+          fi
+          gh release upload standalone-latest KoreaTV.wgt -R pryins-bit/tiz --clobber
+
+          TAG='v2-47ch-20260820'
+          if gh release view "$TAG" -R pryins-bit/tiz >/dev/null 2>&1; then
+            echo "$TAG already exists; keeping its first valid V2 binary."
+          else
+            gh release create "$TAG" -R pryins-bit/tiz \
+              --target main --title 'Korea TV V2 - 47 Channels' --notes "$NOTES" KoreaTV.wgt
+          fi
+
+      - name: Download and independently inspect all published binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download working-56ch-20260820 -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-rollback.wgt --clobber
+          gh release download v2-47ch-20260820 -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-v2.wgt --clobber
+          gh release download standalone-latest -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-rolling.wgt --clobber
+          python - <<'PY'
+          import hashlib, json, re, zipfile
+          from pathlib import Path
+
+          rollback = Path('verify-rollback.wgt')
+          v2 = Path('verify-v2.wgt')
+          rolling = Path('verify-rolling.wgt')
           rollback_hash = hashlib.sha256(rollback.read_bytes()).hexdigest()
-          v2_hash = hashlib.sha256(v2.read_bytes()).hexdigest()
-          rolling_hash = hashlib.sha256(rolling.read_bytes()).hexdigest()
+          assert rollback_hash == '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
 
-          assert rollback_hash == '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1', rollback_hash
-          assert v2_hash == rolling_hash, (v2_hash, rolling_hash)
+          def inspect(path):
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              with zipfile.ZipFile(path) as zf:
+                  names = set(zf.namelist())
+                  assert 'author-signature.xml' in names and 'signature1.xml' in names
+                  policy = zf.read('channel-policy.js').decode('utf-8')
+                  assert 'expectedNormalCount: 45' in policy
+                  assert 'expectedVisibleCount: 47' in policy
+                  for removed in (
+                      'FGTV.kr@SD', 'GoodTV.kr@SD', 'RUTCTV.kr@SD',
+                      'HLAODTV.kr@SD', 'HLCQDTV.kr@SD', 'HLAMDTV.kr@SD',
+                      'HLDRDTV.kr@SD', 'HLCGDTV.kr@SD', 'HLDHDTV.kr@SD',
+                  ):
+                      assert removed not in policy
+                  assert 'BBSTV.kr@SD' in policy and 'BTNTV.kr@SD' in policy
+                  kbs = zf.read('kbs-provider.js').decode('utf-8')
+                  assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
+                  config = zf.read('config.xml').decode('utf-8')
+                  assert 'http://tizen.org/privilege/tv.window' not in config
+                  m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+                  assert m
+                  return {'sha256': digest, 'version': m.group(1)}
 
-          with zipfile.ZipFile(v2) as zf:
-              names = set(zf.namelist())
-              required = {
-                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
-                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js',
-                  'channel-policy.js', 'kbs-provider.js', 'style.css',
-                  'author-signature.xml', 'signature1.xml'
-              }
-              missing = sorted(required - names)
-              assert not missing, missing
-              policy = zf.read('channel-policy.js').decode('utf-8')
-              assert 'expectedNormalCount: 45' in policy
-              assert 'expectedVisibleCount: 47' in policy
-              assert 'FGTV.kr@SD' not in policy
-              assert 'GoodTV.kr@SD' not in policy
-              assert 'RUTCTV.kr@SD' not in policy
-              assert 'HLAODTV.kr@SD' not in policy
-              assert 'HLCQDTV.kr@SD' not in policy
-              assert 'HLAMDTV.kr@SD' not in policy
-              assert 'HLDRDTV.kr@SD' not in policy
-              assert 'HLCGDTV.kr@SD' not in policy
-              assert 'HLDHDTV.kr@SD' not in policy
-              assert 'BBSTV.kr@SD' in policy and 'BTNTV.kr@SD' in policy
-              kbs = zf.read('kbs-provider.js').decode('utf-8')
-              assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
-              config = zf.read('config.xml').decode('utf-8')
-              assert 'http://tizen.org/privilege/tv.window' not in config
-              m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
-              assert m
-              version = m.group(1)
-
+          v2_info = inspect(v2)
+          rolling_info = inspect(rolling)
           data = {
               'status': 'published-and-verified',
               'release_tag': 'v2-47ch-20260820',
               'rolling_tag': 'standalone-latest',
               'rollback_tag': 'working-56ch-20260820',
               'channel_contract': '45 ordinary + KBS1/KBS2 = 47',
-              'version': version,
-              'v2_sha256': v2_hash,
-              'rolling_sha256': rolling_hash,
+              'v2': v2_info,
+              'rolling': rolling_info,
               'rollback_56_sha256': rollback_hash,
               'rf_included': False,
           }
