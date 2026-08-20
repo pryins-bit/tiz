@@ -53,8 +53,12 @@ jobs:
           TAG='working-56ch-20260820'
           EXPECTED='08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
           if gh release view "$TAG" -R pryins-bit/tiz >/dev/null 2>&1; then
-            gh release download "$TAG" -R pryins-bit/tiz --pattern KoreaTV.wgt --output rollback-check.wgt --clobber
-            test "$(sha256sum rollback-check.wgt | awk '{print $1}')" = "$EXPECTED"
+            rm -rf rollback-release
+            mkdir rollback-release
+            gh release download "$TAG" -R pryins-bit/tiz -D rollback-release
+            ROLLBACK="$(find rollback-release -type f -name '*.wgt' -print -quit)"
+            test -n "$ROLLBACK"
+            test "$(sha256sum "$ROLLBACK" | awk '{print $1}')" = "$EXPECTED"
           else
             cp Old56.wgt Rollback56-KoreaTV.wgt
             gh release create "$TAG" -R pryins-bit/tiz --target a41b6c8df211843f8c143df744422fd081c6207e --title 'Korea TV - 56 Channels - ✅ 작동 확인 롤백 기준점' --notes 'Samsung KU50UA7050FXKR / Tizen 6.0 실제 작동 확인된 56채널 Update 1. 롤백 기준점으로 영구 보존.' Rollback56-KoreaTV.wgt
@@ -84,7 +88,12 @@ jobs:
           set -euo pipefail
           gh release download v2-47ch-20260820 -R pryins-bit/tiz --pattern KoreaTV.wgt --output permanent.wgt --clobber
           gh release download standalone-latest -R pryins-bit/tiz --pattern KoreaTV.wgt --output rolling.wgt --clobber
-          gh release download working-56ch-20260820 -R pryins-bit/tiz --pattern KoreaTV.wgt --output rollback.wgt --clobber
+          rm -rf rollback-release-verify
+          mkdir rollback-release-verify
+          gh release download working-56ch-20260820 -R pryins-bit/tiz -D rollback-release-verify
+          ROLLBACK="$(find rollback-release-verify -type f -name '*.wgt' -print -quit)"
+          test -n "$ROLLBACK"
+          cp "$ROLLBACK" rollback.wgt
           python - <<'PY'
           import hashlib,json,re,zipfile
           from pathlib import Path
