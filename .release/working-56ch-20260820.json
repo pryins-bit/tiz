@@ -1,0 +1,10 @@
+{
+  "status": "✅ 작동 확인",
+  "version": "0.5.113",
+  "sha256": "08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1",
+  "channel_contract": "54 ordinary + KBS1/KBS2 = 56",
+  "release_tag": "working-56ch-20260820",
+  "physical_tv_verified_on": "2026-08-20",
+  "physical_tv_device": "Samsung KU50UA7050FXKR / Tizen 6.0",
+  "policy": "rollback baseline; do not overwrite"
+}
