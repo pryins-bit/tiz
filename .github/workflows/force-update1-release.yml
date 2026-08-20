@@ -1,6 +1,6 @@
-name: Force and verify Update 1 standalone release
+name: Force and verify V2 47-channel standalone release
 
-# Direct publish path for the already-verified PR #58 signed artifact.
+# Proven direct-publish path, now pointed at the PR #59 signed V2 artifact.
 on:
   push:
     branches: [main]
@@ -18,130 +18,143 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download verified Update 1 artifact from PR 58
+      - name: Download verified signed artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          rm -rf release-src
-          mkdir release-src
-          cd release-src
-          gh run download 32264855278 -n korea-tv-tizen-project -R pryins-bit/tiz
-          WGT="$(find . -type f -name 'KoreaTV.wgt' -print -quit)"
-          test -n "$WGT"
-          cp "$WGT" ../KoreaTV.wgt
+          rm -rf release-src rollback-src
+          mkdir release-src rollback-src
+          gh run download 32346304214 -n korea-tv-tizen-project -R pryins-bit/tiz -D release-src
+          gh run download 32264855278 -n korea-tv-tizen-project -R pryins-bit/tiz -D rollback-src
+          V2="$(find release-src -type f -name 'KoreaTV.wgt' -print -quit)"
+          OLD="$(find rollback-src -type f -name 'KoreaTV.wgt' -print -quit)"
+          test -n "$V2" && test -n "$OLD"
+          cp "$V2" V2-KoreaTV.wgt
+          cp "$OLD" Rollback56-KoreaTV.wgt
 
-      - name: Verify signed Update 1 WGT before publishing
+      - name: Verify source WGT contracts
         run: |
           python - <<'PY'
-          import hashlib
-          import json
-          import re
-          import zipfile
+          import hashlib, re, zipfile
           from pathlib import Path
 
-          path = Path('KoreaTV.wgt')
-          assert path.exists() and path.stat().st_size > 0
-          with zipfile.ZipFile(path) as zf:
+          old = Path('Rollback56-KoreaTV.wgt')
+          v2 = Path('V2-KoreaTV.wgt')
+          assert hashlib.sha256(old.read_bytes()).hexdigest() == '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
+          with zipfile.ZipFile(v2) as zf:
               names = set(zf.namelist())
-              required = {
-                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
-                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js',
-                  'channel-policy.js', 'kbs-provider.js', 'style.css',
-                  'author-signature.xml', 'signature1.xml'
-              }
-              missing = sorted(required - names)
-              assert not missing, f'WGT missing Update 1 files: {missing}'
-              index = zf.read('index.html').decode('utf-8')
-              assert 'src="channel-policy.js"' in index
-              assert 'src="kbs-provider.js"' in index
-              assert index.index('src="channel-policy.js"') < index.index('src="kbs-provider.js"') < index.index('src="bootstrap.js"')
+              assert 'author-signature.xml' in names and 'signature1.xml' in names
               policy = zf.read('channel-policy.js').decode('utf-8')
-              assert 'expectedNormalCount: 54' in policy
-              assert 'expectedVisibleCount: 56' in policy
+              assert 'expectedNormalCount: 45' in policy
+              assert 'expectedVisibleCount: 47' in policy
+              for removed in ('FGTV.kr@SD','GoodTV.kr@SD','RUTCTV.kr@SD','HLAODTV.kr@SD','HLCQDTV.kr@SD','HLAMDTV.kr@SD','HLDRDTV.kr@SD','HLCGDTV.kr@SD','HLDHDTV.kr@SD'):
+                  assert removed not in policy
+              assert 'BBSTV.kr@SD' in policy and 'BTNTV.kr@SD' in policy
               kbs = zf.read('kbs-provider.js').decode('utf-8')
               assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
-              assert 'cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/' in kbs
               config = zf.read('config.xml').decode('utf-8')
               assert 'http://tizen.org/privilege/tv.window' not in config
               m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
-              assert m, 'version missing'
-              version = m.group(1)
-          digest = hashlib.sha256(path.read_bytes()).hexdigest()
-          Path('release-verify.json').write_text(json.dumps({
-              'version': version,
-              'sha256': digest,
-              'source_run_id': 32264855278,
-              'source_artifact_id': 9369769414,
-              'channel_contract': '54 ordinary + KBS1/KBS2 = 56',
-              'physical_tv_status': '✅ 작동 확인',
-              'physical_tv_verified_on': '2026-08-20',
-              'physical_tv_device': 'Samsung KU50UA7050FXKR / Tizen 6.0',
-              'baseline_policy': '보존: 이후 채널 정리 실험은 별도 브랜치/버전에서 진행',
-          }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          print('Verified Update 1 WGT:', version, digest)
+              assert m
+              print('V2 WGT version:', m.group(1))
+          print('V2 WGT sha256:', hashlib.sha256(v2.read_bytes()).hexdigest())
           PY
 
-      - name: Publish standalone-latest release now
+      - name: Preserve verified 56-channel rollback release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cat > /tmp/release-notes.md <<'EOF'
-          Update 1 for Samsung Tizen 6. Exactly 56 visible channels: 54 reviewed ordinary channels plus KBS1/KBS2 resolved dynamically through the official KBS live API. Overseas broad FAST channels are excluded. RF tuner is not included.
-
-          ## ✅ 작동 확인
-          - Samsung KU50UA7050FXKR / Tizen 6.0 실제 설치 후 작동 확인
-          - 확인일: 2026-08-20
-          - 이 릴리즈를 이후 채널 정리 실험의 기준점으로 보존
-
-          TizenBrew Installer: `pryins-bit/tiz`
-          EOF
-          if gh release view standalone-latest -R pryins-bit/tiz >/dev/null 2>&1; then
-            gh release edit standalone-latest -R pryins-bit/tiz \
-              --target main \
-              --title 'Korea TV Update 1 - 56 Channels + KBS ✅ 작동 확인' \
-              --notes-file /tmp/release-notes.md \
-              --latest
+          TAG='working-56ch-20260820'
+          if gh release view "$TAG" -R pryins-bit/tiz >/dev/null 2>&1; then
+            gh release download "$TAG" -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-old.wgt --clobber
+            test "$(sha256sum verify-old.wgt | awk '{print $1}')" = '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
           else
-            gh release create standalone-latest -R pryins-bit/tiz \
-              --target main \
-              --title 'Korea TV Update 1 - 56 Channels + KBS ✅ 작동 확인' \
-              --notes-file /tmp/release-notes.md \
-              --latest
+            cp Rollback56-KoreaTV.wgt KoreaTV.wgt
+            gh release create "$TAG" -R pryins-bit/tiz \
+              --target a41b6c8df211843f8c143df744422fd081c6207e \
+              --title 'Korea TV - 56 Channels - ✅ 작동 확인 롤백 기준점' \
+              --notes 'Samsung KU50UA7050FXKR / Tizen 6.0 실제 작동 확인된 Update 1 56채널 WGT. 이 릴리즈는 롤백 기준점이며 덮어쓰지 않는다.' \
+              KoreaTV.wgt
+            rm KoreaTV.wgt
+          fi
+
+      - name: Publish V2 permanent and rolling releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp V2-KoreaTV.wgt KoreaTV.wgt
+          NOTES='Korea TV V2 확정본. 총 47채널 = 일반 45 + KBS1/KBS2 공식 동적 채널. MBC는 춘천/여수, SBS 계열은 SBS TV/UBC만 유지. FGTV/GoodTV/RUTC TV 삭제, BBS/BTN 유지. RF 튜너 미포함. TizenBrew Installer: pryins-bit/tiz'
+          TAG='v2-47ch-20260820'
+          if gh release view "$TAG" -R pryins-bit/tiz >/dev/null 2>&1; then
+            echo "$TAG already exists; preserving existing permanent V2 release."
+          else
+            gh release create "$TAG" -R pryins-bit/tiz --target main --title 'Korea TV V2 - 47 Channels' --notes "$NOTES" KoreaTV.wgt
+          fi
+          if gh release view standalone-latest -R pryins-bit/tiz >/dev/null 2>&1; then
+            gh release edit standalone-latest -R pryins-bit/tiz --target main --title 'Korea TV V2 - 47 Channels + KBS' --notes "$NOTES" --latest
+          else
+            gh release create standalone-latest -R pryins-bit/tiz --target main --title 'Korea TV V2 - 47 Channels + KBS' --notes "$NOTES" --latest
           fi
           gh release upload standalone-latest KoreaTV.wgt -R pryins-bit/tiz --clobber
-          gh release view standalone-latest -R pryins-bit/tiz --json tagName,name,url,publishedAt
 
-      - name: Verify published asset and record success marker
+      - name: Re-download and verify published WGT files
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          rm -f published-KoreaTV.wgt
-          gh release download standalone-latest -R pryins-bit/tiz --pattern KoreaTV.wgt --output published-KoreaTV.wgt --clobber
+          gh release download working-56ch-20260820 -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-rollback.wgt --clobber
+          gh release download v2-47ch-20260820 -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-v2.wgt --clobber
+          gh release download standalone-latest -R pryins-bit/tiz --pattern KoreaTV.wgt --output verify-rolling.wgt --clobber
           python - <<'PY'
-          import hashlib, json
+          import hashlib, json, re, zipfile
           from pathlib import Path
-          expected = json.loads(Path('release-verify.json').read_text(encoding='utf-8'))
-          published = Path('published-KoreaTV.wgt')
-          actual = hashlib.sha256(published.read_bytes()).hexdigest()
-          assert actual == expected['sha256'], (actual, expected['sha256'])
-          expected['published_sha256'] = actual
-          expected['release_tag'] = 'standalone-latest'
-          expected['asset'] = 'KoreaTV.wgt'
-          Path('standalone-latest.json').write_text(json.dumps(expected, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          print('Published asset hash verified:', actual)
+          rollback = Path('verify-rollback.wgt')
+          assert hashlib.sha256(rollback.read_bytes()).hexdigest() == '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1'
+
+          def inspect(path):
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              with zipfile.ZipFile(path) as zf:
+                  policy = zf.read('channel-policy.js').decode('utf-8')
+                  assert 'expectedNormalCount: 45' in policy and 'expectedVisibleCount: 47' in policy
+                  for removed in ('FGTV.kr@SD','GoodTV.kr@SD','RUTCTV.kr@SD','HLAODTV.kr@SD','HLCQDTV.kr@SD','HLAMDTV.kr@SD','HLDRDTV.kr@SD','HLCGDTV.kr@SD','HLDHDTV.kr@SD'):
+                      assert removed not in policy
+                  assert 'BBSTV.kr@SD' in policy and 'BTNTV.kr@SD' in policy
+                  assert 'author-signature.xml' in zf.namelist() and 'signature1.xml' in zf.namelist()
+                  kbs = zf.read('kbs-provider.js').decode('utf-8')
+                  assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
+                  config = zf.read('config.xml').decode('utf-8')
+                  assert 'http://tizen.org/privilege/tv.window' not in config
+                  m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+                  assert m
+                  return {'version': m.group(1), 'sha256': digest}
+
+          data = {
+              'status': 'published-and-verified',
+              'channel_contract': '45 ordinary + KBS1/KBS2 = 47',
+              'release_tag': 'v2-47ch-20260820',
+              'rolling_tag': 'standalone-latest',
+              'rollback_tag': 'working-56ch-20260820',
+              'v2': inspect(Path('verify-v2.wgt')),
+              'rolling': inspect(Path('verify-rolling.wgt')),
+              'rollback_56_sha256': hashlib.sha256(rollback.read_bytes()).hexdigest(),
+              'rf_included': False,
+          }
+          Path('v2-release-verify.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(data, ensure_ascii=False))
           PY
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Record verified V2 release marker
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git pull --rebase origin main
           mkdir -p .release
-          cp standalone-latest.json .release/standalone-latest.json
-          git add .release/standalone-latest.json
-          if git diff --cached --quiet; then
-            echo 'Release marker already current.'
-          else
-            git commit -m 'release: mark standalone-latest physically working'
-            git push
-          fi
+          cp v2-release-verify.json .release/v2-47ch-20260820.json
+          git add .release/v2-47ch-20260820.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'release: verify V2 47-channel publish'
+          git push
