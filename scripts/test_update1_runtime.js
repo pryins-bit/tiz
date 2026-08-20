@@ -26,17 +26,29 @@ loadScript('channel-policy.js', policyContext);
 
 const policy = baseWindow.KoreaTVChannelPolicy;
 assert(policy, 'KoreaTVChannelPolicy missing');
-assert.equal(policy.allowedTvgIds.length, 54, 'Update 1 ordinary allowlist must contain exactly 54 IDs');
-assert.equal(new Set(policy.allowedTvgIds.map((x) => x.toLowerCase())).size, 54, 'allowlist IDs must be unique');
-assert(!policy.allowedTvgIds.includes('HLAQDTV.kr@SD'), 'MBC Gangwon must be omitted from Update 1');
-for (const removed of ['bloombergtv', 'france24_en', 'euronews_en', 'fifaplus_en', 'trtworld', 'newsmax', 'ntd']) {
-  assert(!policy.allowedTvgIds.map((x) => x.toLowerCase()).includes(removed), `removed audience channel leaked into allowlist: ${removed}`);
+assert.equal(policy.allowedTvgIds.length, 45, 'V2 ordinary allowlist must contain exactly 45 IDs');
+assert.equal(new Set(policy.allowedTvgIds.map((x) => x.toLowerCase())).size, 45, 'allowlist IDs must be unique');
+
+const removed = [
+  'HLAQDTV.kr@SD',
+  'HLAODTV.kr@SD', 'HLCQDTV.kr@SD', 'HLAMDTV.kr@SD',
+  'HLDRDTV.kr@SD', 'HLCGDTV.kr@SD', 'HLDHDTV.kr@SD',
+  'FGTV.kr@SD', 'GoodTV.kr@SD', 'RUTCTV.kr@SD',
+  'bloombergtv', 'france24_en', 'euronews_en', 'fifaplus_en', 'trtworld', 'newsmax', 'ntd'
+].map((x) => x.toLowerCase());
+const allowedLower = policy.allowedTvgIds.map((x) => x.toLowerCase());
+for (const id of removed) {
+  assert(!allowedLower.includes(id), `removed V2 channel leaked into allowlist: ${id}`);
+}
+
+for (const retained of ['HLANDTV.kr@SD', 'HLATDTV.kr@SD', 'SBSTV.kr', 'HLDPDTV.kr@SD', 'BBSTV.kr@SD', 'BTNTV.kr@SD']) {
+  assert(allowedLower.includes(retained.toLowerCase()), `required V2 retained channel missing: ${retained}`);
 }
 
 const rawPlaylist = fs.readFileSync(path.join(root, 'korea.m3u'), 'utf8');
 const filtered = policy.filterPlaylist(rawPlaylist);
 const normalCount = (filtered.match(/^#EXTINF:/gm) || []).length;
-assert.equal(normalCount, 54, `current korea.m3u must supply all 54 Update 1 ordinary channels; got ${normalCount}`);
+assert.equal(normalCount, 45, `current korea.m3u must supply all 45 V2 ordinary channels; got ${normalCount}`);
 
 const kbsWindow = { fetch: null };
 const kbsContext = {
@@ -65,10 +77,12 @@ assert.equal(kbs.serviceUrlFromPayload({ channel_item: [{ service_url: 'javascri
 
 const visible = kbs.injectSpecialChannels(filtered);
 const visibleCount = (visible.match(/^#EXTINF:/gm) || []).length;
-assert.equal(visibleCount, 56, `Update 1 visible lineup must contain exactly 56 channels; got ${visibleCount}`);
+assert.equal(visibleCount, 47, `V2 visible lineup must contain exactly 47 channels; got ${visibleCount}`);
 assert(visible.includes('tvg-id="KBS1.official"'));
 assert(visible.includes('tvg-id="KBS2.official"'));
-assert(!visible.includes('tvg-id="bloombergtv"'));
-assert(!visible.includes('tvg-id="HLAQDTV.kr@SD"'));
+assert(!visible.includes('tvg-id="FGTV.kr@SD"'));
+assert(!visible.includes('tvg-id="RUTCTV.kr@SD"'));
+assert(!visible.includes('tvg-id="HLAODTV.kr@SD"'));
+assert(!visible.includes('tvg-id="HLDRDTV.kr@SD"'));
 
-console.log(`Update 1 contract OK: ${normalCount} ordinary + 2 KBS = ${visibleCount}`);
+console.log(`V2 contract OK: ${normalCount} ordinary + 2 KBS = ${visibleCount}`);
