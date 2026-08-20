@@ -1,5 +1,6 @@
 name: Verify V2 47-channel release
 
+# Triggered after the finalized V2 publish; success writes a repository marker.
 on:
   push:
     branches: [main]
