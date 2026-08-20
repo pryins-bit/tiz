@@ -1,0 +1,2 @@
+execute direct V2 release publisher
+contract=45 ordinary + KBS1/KBS2 = 47
