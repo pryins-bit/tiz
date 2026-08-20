@@ -1,5 +1,6 @@
 name: Mark standalone-latest as working
 
+# Triggered after physical-TV confirmation on 2026-08-20.
 on:
   push:
     branches: [main]
