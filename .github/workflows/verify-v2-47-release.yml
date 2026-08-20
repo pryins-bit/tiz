@@ -1,0 +1,109 @@
+name: Verify V2 47-channel release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-v2-47-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download published release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download working-56ch-20260820 --pattern KoreaTV.wgt --output rollback-56.wgt
+          gh release download v2-47ch-20260820 --pattern KoreaTV.wgt --output v2-47.wgt
+          gh release download standalone-latest --pattern KoreaTV.wgt --output rolling.wgt
+
+      - name: Verify rollback and V2 binaries
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import re
+          import zipfile
+          from pathlib import Path
+
+          rollback = Path('rollback-56.wgt')
+          v2 = Path('v2-47.wgt')
+          rolling = Path('rolling.wgt')
+          rollback_hash = hashlib.sha256(rollback.read_bytes()).hexdigest()
+          v2_hash = hashlib.sha256(v2.read_bytes()).hexdigest()
+          rolling_hash = hashlib.sha256(rolling.read_bytes()).hexdigest()
+
+          assert rollback_hash == '08fd08c8d0cce52a22019ff3e31cef332497c05e3875a97104471727d1f1fca1', rollback_hash
+          assert v2_hash == rolling_hash, (v2_hash, rolling_hash)
+
+          with zipfile.ZipFile(v2) as zf:
+              names = set(zf.namelist())
+              required = {
+                  'config.xml', 'index.html', 'bootstrap.js', 'runtime-version.json',
+                  'main.js', 'numeric-remote.js', 'remote-input.js', 'avplay-adapter.js',
+                  'channel-policy.js', 'kbs-provider.js', 'style.css',
+                  'author-signature.xml', 'signature1.xml'
+              }
+              missing = sorted(required - names)
+              assert not missing, missing
+              policy = zf.read('channel-policy.js').decode('utf-8')
+              assert 'expectedNormalCount: 45' in policy
+              assert 'expectedVisibleCount: 47' in policy
+              assert 'FGTV.kr@SD' not in policy
+              assert 'GoodTV.kr@SD' not in policy
+              assert 'RUTCTV.kr@SD' not in policy
+              assert 'HLAODTV.kr@SD' not in policy
+              assert 'HLCQDTV.kr@SD' not in policy
+              assert 'HLAMDTV.kr@SD' not in policy
+              assert 'HLDRDTV.kr@SD' not in policy
+              assert 'HLCGDTV.kr@SD' not in policy
+              assert 'HLDHDTV.kr@SD' not in policy
+              assert 'BBSTV.kr@SD' in policy and 'BTNTV.kr@SD' in policy
+              kbs = zf.read('kbs-provider.js').decode('utf-8')
+              assert "channelCode: '11'" in kbs and "channelCode: '12'" in kbs
+              config = zf.read('config.xml').decode('utf-8')
+              assert 'http://tizen.org/privilege/tv.window' not in config
+              m = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+              assert m
+              version = m.group(1)
+
+          data = {
+              'status': 'published-and-verified',
+              'release_tag': 'v2-47ch-20260820',
+              'rolling_tag': 'standalone-latest',
+              'rollback_tag': 'working-56ch-20260820',
+              'channel_contract': '45 ordinary + KBS1/KBS2 = 47',
+              'version': version,
+              'v2_sha256': v2_hash,
+              'rolling_sha256': rolling_hash,
+              'rollback_56_sha256': rollback_hash,
+              'rf_included': False,
+          }
+          Path('v2-release-verify.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(data, ensure_ascii=False))
+          PY
+
+      - name: Record verified release marker on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          mkdir -p .release
+          cp v2-release-verify.json .release/v2-47ch-20260820.json
+          git add .release/v2-47ch-20260820.json
+          if git diff --cached --quiet; then
+            echo 'V2 release marker already current.'
+            exit 0
+          fi
+          git commit -m 'release: verify V2 47-channel publish'
+          git push
