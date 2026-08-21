@@ -1,0 +1,90 @@
+name: tmp-sinilink-apk-build
+on:
+  push:
+    branches:
+      - tmp/sinilink-apk-build-20260821
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Android SDK components
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36.1' 'build-tools;36.1.0'
+
+      - name: Clone pinned Gadgetbridge
+        run: |
+          git clone --filter=blob:none https://github.com/pschmitt/Gadgetbridge.git /tmp/Gadgetbridge
+          git -C /tmp/Gadgetbridge checkout 951f3cf45991747cfae76f6abe2c9d019aad3b99
+          sha256sum /tmp/Gadgetbridge/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/SinilinkSupport.kt > /tmp/sinilink-support.before
+
+      - name: Add scheduler sources and minimal patches
+        run: |
+          cp -a tmp-sinilink-overlay/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/SinilinkScheduler.java /tmp/Gadgetbridge/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/
+          cp -a tmp-sinilink-overlay/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/SinilinkSchedulerWorker.java /tmp/Gadgetbridge/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/
+          cp -a tmp-sinilink-overlay/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/devices/sinilink/SinilinkSchedulerActivity.java /tmp/Gadgetbridge/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/devices/sinilink/
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('/tmp/Gadgetbridge')
+          p = root/'app/src/main/java/nodomain/freeyourgadget/gadgetbridge/devices/sinilink/SinilinkCoordinator.kt'
+          s = p.read_text()
+          marker = '''            DeviceCardAction.forConfiguration(\n                R.drawable.ic_skip_next,\n                R.string.pref_media_next,\n                SinilinkButton.NEXT.name\n            ),\n'''
+          add = marker + '''            DeviceCardAction.forActivity(\n                R.drawable.ic_settings,\n                R.string.sinilink_scheduler_title,\n                SinilinkSchedulerActivity::class.java\n            ),\n'''
+          if s.count(marker) != 1:
+              raise SystemExit('NEXT action marker mismatch')
+          p.write_text(s.replace(marker, add, 1))
+
+          p = root/'app/src/main/AndroidManifest.xml'
+          s = p.read_text()
+          marker = '        <activity\n            android:name=".activities.ControlCenterv2"'
+          activity = '        <activity\n            android:name=".devices.sinilink.SinilinkSchedulerActivity"\n            android:label="@string/sinilink_scheduler_title"\n            android:parentActivityName=".activities.ControlCenterv2" />\n'
+          if s.count(marker) != 1:
+              raise SystemExit('ControlCenterv2 marker mismatch')
+          p.write_text(s.replace(marker, activity + marker, 1))
+
+          p = root/'app/src/main/res/values/strings.xml'
+          s = p.read_text()
+          if s.count('</resources>') != 1:
+              raise SystemExit('resources closing tag mismatch')
+          p.write_text(s.replace('</resources>', '    <string name="sinilink_scheduler_title">Sinilink auto scheduler</string>\n</resources>', 1))
+          PY
+
+      - name: Regression guard
+        run: |
+          sha256sum /tmp/Gadgetbridge/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/SinilinkSupport.kt > /tmp/sinilink-support.after
+          diff -u /tmp/sinilink-support.before /tmp/sinilink-support.after
+          git -C /tmp/Gadgetbridge diff -- app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/SinilinkSupport.kt
+          test -z "$(git -C /tmp/Gadgetbridge diff -- app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/sinilink/SinilinkSupport.kt)"
+
+      - name: Build debug APK
+        working-directory: /tmp/Gadgetbridge
+        run: ./gradlew assembleMainlineDebug --stacktrace --no-build-cache
+
+      - name: Collect APK
+        id: apk
+        run: |
+          apk=$(find /tmp/Gadgetbridge/app/build/outputs/apk -type f -name '*.apk' | head -n1)
+          test -n "$apk"
+          cp "$apk" "$GITHUB_WORKSPACE/Gadgetbridge-Sinilink-Scheduler-debug.apk"
+          sha256sum "$GITHUB_WORKSPACE/Gadgetbridge-Sinilink-Scheduler-debug.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gadgetbridge-Sinilink-Scheduler-debug
+          path: Gadgetbridge-Sinilink-Scheduler-debug.apk
+          retention-days: 1
+          compression-level: 9
