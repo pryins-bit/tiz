@@ -47,7 +47,7 @@ public class SinilinkSchedulerWorker extends Worker {
             return Result.success();
         }
 
-        GBDevice device = GBApplication.getDeviceManager().getDeviceByAddress(address);
+        GBDevice device = GBApplication.app().getDeviceManager().getDeviceByAddress(address);
         if (device != null && device.isConnected()) {
             int volume = SinilinkScheduler.randomVolume(window);
             GBApplication.getDeviceSpecificSharedPrefs(address).edit()
@@ -99,7 +99,7 @@ public class SinilinkSchedulerWorker extends Worker {
     }
 
     private void stopIfPlaying(@NonNull String address) {
-        GBDevice device = GBApplication.getDeviceManager().getDeviceByAddress(address);
+        GBDevice device = GBApplication.app().getDeviceManager().getDeviceByAddress(address);
         if (device == null || !device.isConnected()) return;
         String state = (String) device.getExtraInfo("playback_state");
         if (SinilinkPlaybackState.PLAYING.name().equalsIgnoreCase(state)) {
