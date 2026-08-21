@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - tmp/sinilink-apk-build-20260821
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 permissions:
   contents: read
