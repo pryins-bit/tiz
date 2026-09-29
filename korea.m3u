@@ -31,8 +31,6 @@ https://amg15905-mediacan-amg15905c1-lg-kr-2672.playouts.now.amagi.tv/playlist/a
 https://stream8.cinerama.uz/1448/playlist.m3u8
 #EXTINF:-1 tvg-id="ArirangUN.kr@SD" group-title="케이블·일반",Arirang TV UN (1080p)
 https://amdlive-ch02-ctnd-com.akamaized.net/arirang_2ch/smil:arirang_2ch.smil/playlist.m3u8
-#EXTINF:-1 tvg-id="KCTV.kr@SD" group-title="케이블·일반",KCTV 광주 CH05 (720p)
-http://119.77.96.184:1935/chn05/chn05/playlist.m3u8
 #EXTINF:-1 tvg-id="LotteOneTV.kr@SD" group-title="케이블·일반",Lotte OneTV (720p)
 https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8
 #EXTINF:-1 tvg-id="NBS.kr@SD" group-title="케이블·일반",NBS Korea Agricultural Broadcasting (720p)
