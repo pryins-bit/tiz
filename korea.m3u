@@ -5,6 +5,8 @@ https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=11&ch_type=glo
 https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code=12&ch_type=globalList
 #EXTINF:-1 tvg-id="HLANDTV.kr@SD" group-title="공중파",MBC Chuncheon (춘천 MBC) (1080p)
 https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8
+#EXTINF:-1 tvg-id="HLATDTV.kr@SD" group-title="공중파",MBC Yeosu (여수 MBC) (1080p)
+https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8
 #EXTINF:-1 tvg-id="OBSGyeonginTV.kr" group-title="공중파",OBS TV (1080p)
 https://allanf181.github.io/adaptive-streams/streams/kr/OBSGyeonginTV.m3u8
 #EXTINF:-1 tvg-id="SBSTV.kr" group-title="공중파",SBS TV (1080p)
